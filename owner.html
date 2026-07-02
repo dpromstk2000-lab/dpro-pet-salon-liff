@@ -1072,7 +1072,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-14A owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-14C owner.html
     </div>
   </div>
 
@@ -1773,7 +1773,8 @@
           limit: 30
         });
 
-        renderCustomerSearchResults(res.customers || [], q);
+        const customers = q ? filterCustomersOnClient(res.customers || [], q) : (res.customers || []);
+        renderCustomerSearchResults(customers, q);
 
       }catch(e){
         console.error(e);
@@ -1781,11 +1782,48 @@
       }
     }
 
+    function filterCustomersOnClient(customers, q){
+      const keyword = String(q || "").trim().toLowerCase();
+      const digits = keyword.replace(/[^\d]/g, "");
+
+      if(!keyword) return customers || [];
+
+      function contains(value){
+        return String(value || "").toLowerCase().includes(keyword);
+      }
+
+      function phoneMatches(phone){
+        const raw = String(phone || "");
+        const phoneDigits = raw.replace(/[^\d]/g, "");
+        return contains(raw) || (digits.length >= 4 && phoneDigits.includes(digits));
+      }
+
+      return (customers || []).filter(c => {
+        const customerMatch =
+          contains(c.owner_name) ||
+          contains(c.owner_kana) ||
+          contains(c.line_display_name) ||
+          contains(c.memo) ||
+          phoneMatches(c.phone);
+
+        const pets = Array.isArray(c.pets) ? c.pets : [];
+        const petMatch = pets.some(p =>
+          contains(p.pet_name) ||
+          contains(p.breed) ||
+          contains(p.favorite_style) ||
+          contains(p.personality_notes) ||
+          contains(p.health_notes)
+        );
+
+        return customerMatch || petMatch;
+      });
+    }
+
     function renderCustomerSearchResults(customers, q){
       const el = $("customerSearchResults");
 
       if(!customers.length){
-        el.innerHTML = `<div class="empty">${q ? "該当するお客様は見つかりませんでした。" : "最近のお客様はありません。"}</div>`;
+        el.innerHTML = `<div class="empty">${q ? `「${escapeHtml(q)}」に該当するお客様は見つかりませんでした。` : "最近のお客様はありません。"}</div>`;
         return;
       }
 
