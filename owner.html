@@ -1,0 +1,1245 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>DPROペットサロン｜オーナー管理画面</title>
+  <style>
+    :root{
+      --bg:#fffaf4;
+      --card:#ffffff;
+      --ink:#2f2722;
+      --muted:#7d6f66;
+      --line:#eadfd5;
+      --main:#8a5a3c;
+      --main2:#b98055;
+      --soft:#f6eadf;
+      --soft2:#fff4ea;
+      --danger:#b54747;
+      --ok:#2f7d55;
+      --blue:#315f8f;
+      --yellow:#9a6b00;
+      --shadow:0 18px 45px rgba(70,42,25,.10);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(185,128,85,.18), transparent 34%),
+        linear-gradient(180deg,#fffaf4 0%,#fff 44%,#fffaf4 100%);
+      line-height:1.62;
+    }
+    button,input,select,textarea{font:inherit}
+    .wrap{max-width:1180px;margin:0 auto;padding:18px 14px 42px}
+    .hero{
+      background:linear-gradient(135deg,#3f2b22,#8a5a3c 56%,#c99a6b);
+      color:#fff;
+      border-radius:28px;
+      padding:22px 18px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .hero:after{
+      content:"";
+      position:absolute;
+      width:260px;height:260px;border-radius:999px;
+      right:-100px;top:-100px;
+      background:rgba(255,255,255,.13);
+    }
+    .hero-top{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      position:relative;
+      z-index:1;
+    }
+    .badge{
+      display:inline-flex;gap:7px;align-items:center;
+      padding:7px 11px;border-radius:999px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.25);
+      font-size:12px;
+      letter-spacing:.04em;
+    }
+    h1{margin:10px 0 5px;font-size:25px;line-height:1.25}
+    .hero p{margin:0;color:rgba(255,255,255,.88);font-size:13px}
+    .hero-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .pill{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--muted);
+      padding:7px 10px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .pill.dark{
+      color:#fff;
+      border-color:rgba(255,255,255,.25);
+      background:rgba(255,255,255,.12);
+    }
+    .tabs{
+      margin-top:14px;
+      display:flex;
+      gap:8px;
+      overflow:auto;
+      padding-bottom:2px;
+    }
+    .tab{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--muted);
+      border-radius:999px;
+      padding:9px 12px;
+      font-weight:800;
+      font-size:13px;
+      white-space:nowrap;
+      cursor:pointer;
+    }
+    .tab.active{
+      color:#fff;
+      background:var(--main);
+      border-color:var(--main);
+    }
+    .grid{display:grid;gap:14px;margin-top:14px}
+    @media(min-width:920px){.grid.two{grid-template-columns:1fr 1fr}.grid.sidebar{grid-template-columns:1.15fr .85fr}}
+    .card{
+      background:rgba(255,255,255,.94);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:17px;
+      box-shadow:0 10px 28px rgba(70,42,25,.07);
+    }
+    .card-head{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+    h2{font-size:18px;margin:0;line-height:1.35}
+    .lead{font-size:12px;color:var(--muted);margin:4px 0 0}
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-top:14px;
+    }
+    .kpi{
+      background:rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.24);
+      border-radius:18px;
+      padding:12px;
+      position:relative;
+      z-index:1;
+    }
+    .kpi b{display:block;font-size:23px;line-height:1}
+    .kpi span{display:block;font-size:11px;color:rgba(255,255,255,.78);margin-top:5px}
+    label{
+      display:block;
+      font-weight:800;
+      font-size:13px;
+      margin:12px 0 6px;
+    }
+    input,select,textarea{
+      width:100%;
+      border:1px solid #ddd2c9;
+      background:#fff;
+      border-radius:14px;
+      padding:11px 12px;
+      outline:none;
+      color:var(--ink);
+    }
+    textarea{min-height:92px;resize:vertical}
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--main2);
+      box-shadow:0 0 0 4px rgba(185,128,85,.13);
+    }
+    .row{display:grid;gap:10px}
+    @media(min-width:720px){.row.two{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:1fr 1fr 1fr}}
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:11px 13px;
+      font-weight:900;
+      cursor:pointer;
+      background:var(--main);
+      color:#fff;
+      box-shadow:0 10px 22px rgba(138,90,60,.18);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      text-decoration:none;
+    }
+    .btn.secondary{
+      background:#fff;
+      color:var(--main);
+      border:1px solid var(--line);
+      box-shadow:none;
+    }
+    .btn.ok{background:var(--ok)}
+    .btn.blue{background:var(--blue)}
+    .btn.warn{background:var(--yellow)}
+    .btn.danger{background:var(--danger)}
+    .btn.small{
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:11px;
+      box-shadow:none;
+    }
+    .btn[disabled]{opacity:.55;cursor:not-allowed}
+    .btns{display:flex;gap:8px;flex-wrap:wrap}
+    .notice{
+      padding:12px 13px;
+      border-radius:16px;
+      background:var(--soft2);
+      border:1px solid var(--line);
+      color:var(--muted);
+      font-size:13px;
+    }
+    .alert{
+      display:none;
+      padding:13px;
+      border-radius:16px;
+      margin-top:12px;
+      font-weight:800;
+      font-size:13px;
+      white-space:pre-wrap;
+    }
+    .alert.show{display:block}
+    .alert.err{background:#fff1f1;color:var(--danger);border:1px solid #f0caca}
+    .alert.ok{background:#eefaf3;color:var(--ok);border:1px solid #ccebd9}
+    .section{display:none}
+    .section.active{display:block}
+    .res-card,.follow-card{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:18px;
+      padding:13px;
+      margin-top:10px;
+    }
+    .res-top,.follow-top{
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      align-items:flex-start;
+      margin-bottom:8px;
+    }
+    .time{
+      font-size:21px;
+      font-weight:900;
+      color:var(--main);
+      line-height:1;
+      white-space:nowrap;
+    }
+    .name{
+      font-size:16px;
+      font-weight:900;
+      line-height:1.35;
+    }
+    .sub{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:2px;
+    }
+    .status{
+      border-radius:999px;
+      padding:5px 9px;
+      font-size:11px;
+      font-weight:900;
+      background:#f1ebe5;
+      color:var(--main);
+      white-space:nowrap;
+    }
+    .status.requested{background:#fff6dc;color:#8b6100}
+    .status.confirmed{background:#eaf3ff;color:#315f8f}
+    .status.visited{background:#edf7ef;color:#2f7d55}
+    .status.completed{background:#e9f7f0;color:#2f7d55}
+    .status.cancelled,.status.no_show{background:#fff0f0;color:#b54747}
+    .info-grid{display:grid;gap:8px;margin:10px 0}
+    @media(min-width:720px){.info-grid{grid-template-columns:1fr 1fr}}
+    .info{
+      background:var(--soft2);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:9px 10px;
+      font-size:12px;
+    }
+    .info b{
+      color:var(--main);
+      display:block;
+      font-size:11px;
+      margin-bottom:2px;
+    }
+    .message-box{
+      background:#f8f5f2;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:11px;
+      font-size:13px;
+      white-space:pre-wrap;
+      color:#463b35;
+      margin:8px 0;
+    }
+    .empty{
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed #d8c7ba;
+      border-radius:18px;
+      padding:24px 14px;
+      background:#fff;
+      margin-top:10px;
+    }
+    .modal{
+      position:fixed;
+      inset:0;
+      background:rgba(30,20,14,.42);
+      display:none;
+      place-items:center;
+      z-index:20;
+      padding:14px;
+    }
+    .modal.show{display:grid}
+    .modal-card{
+      background:#fff;
+      border-radius:24px;
+      border:1px solid var(--line);
+      padding:18px;
+      max-width:720px;
+      width:100%;
+      box-shadow:0 24px 70px rgba(0,0,0,.22);
+      max-height:88vh;
+      overflow:auto;
+    }
+    .close-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+      margin-bottom:12px;
+    }
+    .checks{display:grid;gap:8px}
+    @media(min-width:720px){.checks{grid-template-columns:1fr 1fr 1fr 1fr}}
+    .check{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      padding:9px;
+      border:1px solid var(--line);
+      background:var(--soft2);
+      border-radius:14px;
+      font-size:13px;
+      font-weight:800;
+    }
+    .check input{width:auto}
+    .footer{
+      text-align:center;
+      color:var(--muted);
+      font-size:11px;
+      margin-top:18px;
+    }
+    .hidden{display:none!important}
+    .copy-note{font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <span class="badge">🐾 DPRO PET SALON / OWNER</span>
+          <h1 id="shopName">DPROペットサロン 管理画面</h1>
+          <p>予約・ペットカルテ・次回案内をまとめて管理します。</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn secondary small" type="button" id="reloadBtn">再読み込み</button>
+          <button class="btn small" type="button" id="demoPrepareBtn">営業前デモ準備</button>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><b id="kpiToday">-</b><span>本日の予約</span></div>
+        <div class="kpi"><b id="kpiNext">-</b><span>次営業日の予約</span></div>
+        <div class="kpi"><b id="kpiFollow">-</b><span>本日の案内</span></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="dashboard">今日の管理</button>
+        <button class="tab" data-tab="day">日別予約</button>
+        <button class="tab" data-tab="followups">LINE案内</button>
+        <button class="tab" data-tab="settings">店舗設定</button>
+      </div>
+    </section>
+
+    <div class="alert err" id="errorBox"></div>
+    <div class="alert ok" id="okBox"></div>
+
+    <section class="card" style="margin-top:14px">
+      <div class="row three">
+        <div>
+          <label>管理コード</label>
+          <input id="adminCode" value="1234" inputmode="numeric" />
+        </div>
+        <div>
+          <label>Worker URL</label>
+          <input id="workerUrl" value="https://dpro-pet-salon-api.dpromstk2000.workers.dev" />
+        </div>
+        <div>
+          <label>Shop Code</label>
+          <input id="shopCode" value="pet_salon_demo" />
+        </div>
+      </div>
+      <div class="notice" style="margin-top:12px">
+        Supabaseのservice_role keyはこの画面には入れません。GitHub Pages → Cloudflare Worker → Supabase の順で安全に接続します。
+      </div>
+    </section>
+
+    <main>
+      <section class="section active" id="tab-dashboard">
+        <div class="grid sidebar">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>本日の予約</h2>
+                <p class="lead" id="todayLabel">今日の予約を表示します。</p>
+              </div>
+              <button class="btn secondary small" type="button" onclick="loadSummary()">更新</button>
+            </div>
+            <div id="todayReservations"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>本日やるLINE案内</h2>
+                <p class="lead">次回予約・お礼・休眠対策の文面をコピーできます。</p>
+              </div>
+            </div>
+            <div id="pendingFollowups"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>次営業日の予約</h2>
+              <p class="lead" id="nextDayLabel">次営業日の予約を表示します。</p>
+            </div>
+          </div>
+          <div id="nextReservations"></div>
+        </div>
+      </section>
+
+      <section class="section" id="tab-day">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>日別予約確認</h2>
+              <p class="lead">日付を選んで予約状況を確認できます。</p>
+            </div>
+          </div>
+          <div class="row two">
+            <div>
+              <label>表示日</label>
+              <input id="dayDate" type="date" />
+            </div>
+            <div style="align-self:end">
+              <button class="btn" type="button" id="loadDayBtn">この日の予約を見る</button>
+            </div>
+          </div>
+          <div id="dayReservations" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <section class="section" id="tab-followups">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>LINE案内一覧</h2>
+              <p class="lead">コピー済み・送信済み管理ができます。</p>
+            </div>
+          </div>
+          <div class="row three">
+            <div>
+              <label>状態</label>
+              <select id="followStatus">
+                <option value="pending">未対応</option>
+                <option value="copied">コピー済み</option>
+                <option value="sent">送信済み</option>
+                <option value="completed">完了</option>
+                <option value="skipped">スキップ</option>
+              </select>
+            </div>
+            <div>
+              <label>開始日</label>
+              <input id="followFrom" type="date" />
+            </div>
+            <div>
+              <label>終了日</label>
+              <input id="followTo" type="date" />
+            </div>
+          </div>
+          <div class="btns" style="margin-top:12px">
+            <button class="btn" type="button" id="loadFollowupsBtn">LINE案内を表示</button>
+          </div>
+          <div id="followupsList" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <section class="section" id="tab-settings">
+        <div class="grid two">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>店舗設定</h2>
+                <p class="lead">営業時間・定休日・予約上限を変更します。</p>
+              </div>
+            </div>
+
+            <label>店舗名</label>
+            <input id="setShopName" placeholder="DPROペットサロン" />
+
+            <div class="row two">
+              <div>
+                <label>開店時間</label>
+                <input id="setOpenTime" type="time" />
+              </div>
+              <div>
+                <label>閉店時間</label>
+                <input id="setCloseTime" type="time" />
+              </div>
+            </div>
+
+            <div class="row two">
+              <div>
+                <label>1日の予約上限</label>
+                <input id="setMaxReservations" type="number" min="1" max="100" />
+              </div>
+              <div>
+                <label>予約枠の分数</label>
+                <select id="setSlotMinutes">
+                  <option value="30">30分</option>
+                  <option value="60">60分</option>
+                  <option value="90">90分</option>
+                  <option value="120">120分</option>
+                </select>
+              </div>
+            </div>
+
+            <label>定休日</label>
+            <div class="checks" id="holidayChecks">
+              <label class="check"><input type="checkbox" value="sunday">日</label>
+              <label class="check"><input type="checkbox" value="monday">月</label>
+              <label class="check"><input type="checkbox" value="tuesday">火</label>
+              <label class="check"><input type="checkbox" value="wednesday">水</label>
+              <label class="check"><input type="checkbox" value="thursday">木</label>
+              <label class="check"><input type="checkbox" value="friday">金</label>
+              <label class="check"><input type="checkbox" value="saturday">土</label>
+            </div>
+
+            <div class="btns" style="margin-top:14px">
+              <button class="btn" type="button" id="saveSettingsBtn">店舗設定を保存</button>
+              <button class="btn secondary" type="button" id="loadSettingsBtn">設定を再取得</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>臨時休業日</h2>
+                <p class="lead">年末年始・急な休みなどを予約フォームへ反映します。</p>
+              </div>
+            </div>
+
+            <label>臨時休業日</label>
+            <input id="closedDate" type="date" />
+
+            <label>理由</label>
+            <input id="closedReason" placeholder="例：臨時休業 / 年末年始休業" />
+
+            <div class="btns" style="margin-top:14px">
+              <button class="btn danger" type="button" id="saveClosedBtn">休業日にする</button>
+              <button class="btn secondary" type="button" id="openClosedBtn">営業日に戻す</button>
+            </div>
+
+            <div class="notice" style="margin-top:12px">
+              臨時休業日はお客様予約フォームの希望日選択に反映されます。
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="footer">
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-4 owner.html
+    </div>
+  </div>
+
+  <div class="modal" id="completeModal">
+    <div class="modal-card">
+      <div class="close-row">
+        <div>
+          <h2>施術完了・次回案内作成</h2>
+          <p class="lead" id="completeTarget">対象予約</p>
+        </div>
+        <button class="btn secondary small" type="button" onclick="closeCompleteModal()">閉じる</button>
+      </div>
+
+      <input type="hidden" id="completeReservationId" />
+
+      <div class="row two">
+        <div>
+          <label>来店日</label>
+          <input id="visitDate" type="date" />
+        </div>
+        <div>
+          <label>次回おすすめ日</label>
+          <input id="nextRecommendDate" type="date" />
+        </div>
+      </div>
+
+      <label>実施メニュー</label>
+      <input id="menuDone" placeholder="例：シャンプー＋カットコース" />
+
+      <div class="row two">
+        <div>
+          <label>皮膚の状態</label>
+          <input id="skinCondition" placeholder="例：乾燥気味 / 良好" />
+        </div>
+        <div>
+          <label>被毛・毛玉の状態</label>
+          <select id="mattingLevel">
+            <option value="none">毛玉なし</option>
+            <option value="light">軽い毛玉</option>
+            <option value="middle">中程度の毛玉</option>
+            <option value="heavy">重い毛玉</option>
+          </select>
+        </div>
+      </div>
+
+      <label>施術メモ</label>
+      <textarea id="groomerNote" placeholder="例：前回と同じ丸め。足先は少し苦手。保湿ケアがおすすめ。"></textarea>
+
+      <label>次回案内理由</label>
+      <input id="nextRecommendReason" placeholder="例：前回来店からのお手入れ目安" />
+
+      <div class="btns" style="margin-top:14px">
+        <button class="btn ok" type="button" id="completeVisitBtn">完了して次回案内を作成</button>
+        <button class="btn secondary" type="button" onclick="closeCompleteModal()">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================
+    // STEP PETSALON-4
+    // owner.html オーナー管理画面
+    // =========================================================
+
+    const CONFIG_DEFAULT = {
+      WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
+      SHOP_CODE: "pet_salon_demo",
+      ADMIN_CODE: "1234"
+    };
+
+    const state = {
+      summary: null,
+      settings: null,
+      currentReservationForComplete: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      restoreInputs();
+      bindEvents();
+      setDefaultDates();
+
+      await loadSettings();
+      await loadSummary();
+    });
+
+    function bindEvents(){
+      $("reloadBtn").addEventListener("click", async () => {
+        await loadSettings();
+        await loadSummary();
+      });
+
+      $("demoPrepareBtn").addEventListener("click", prepareDemo);
+      $("loadDayBtn").addEventListener("click", loadDay);
+      $("loadFollowupsBtn").addEventListener("click", loadFollowups);
+      $("saveSettingsBtn").addEventListener("click", saveSettings);
+      $("loadSettingsBtn").addEventListener("click", loadSettings);
+      $("saveClosedBtn").addEventListener("click", () => saveClosedDay(true));
+      $("openClosedBtn").addEventListener("click", () => saveClosedDay(false));
+      $("completeVisitBtn").addEventListener("click", completeVisit);
+
+      ["adminCode","workerUrl","shopCode"].forEach(id => {
+        $(id).addEventListener("change", saveInputs);
+      });
+
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+          document.querySelectorAll(".section").forEach(x => x.classList.remove("active"));
+          tab.classList.add("active");
+          $("tab-" + tab.dataset.tab).classList.add("active");
+        });
+      });
+    }
+
+    function restoreInputs(){
+      $("adminCode").value = localStorage.getItem("petsalon_admin_code") || CONFIG_DEFAULT.ADMIN_CODE;
+      $("workerUrl").value = localStorage.getItem("petsalon_worker_url") || CONFIG_DEFAULT.WORKER_BASE_URL;
+      $("shopCode").value = localStorage.getItem("petsalon_shop_code") || CONFIG_DEFAULT.SHOP_CODE;
+    }
+
+    function saveInputs(){
+      localStorage.setItem("petsalon_admin_code", $("adminCode").value.trim());
+      localStorage.setItem("petsalon_worker_url", $("workerUrl").value.trim().replace(/\/$/, ""));
+      localStorage.setItem("petsalon_shop_code", $("shopCode").value.trim());
+    }
+
+    function setDefaultDates(){
+      const today = todayYmd();
+      $("dayDate").value = today;
+      $("followFrom").value = addDays(today, -30);
+      $("followTo").value = addDays(today, 30);
+      $("closedDate").value = today;
+    }
+
+    async function loadSettings(){
+      try{
+        showError("");
+        saveInputs();
+
+        const res = await apiGet("/api/admin/settings", {
+          admin_code: adminCode()
+        });
+
+        state.settings = res.settings || null;
+        const s = state.settings || {};
+
+        $("shopName").textContent = `${s.shop_name || "DPROペットサロン"} 管理画面`;
+        $("setShopName").value = s.shop_name || "";
+        $("setOpenTime").value = hm(s.open_time || "10:00");
+        $("setCloseTime").value = hm(s.close_time || "18:00");
+        $("setMaxReservations").value = s.max_reservations_per_day || 12;
+        $("setSlotMinutes").value = String(s.reservation_slot_minutes || 30);
+
+        const holidays = Array.isArray(s.regular_holidays) ? s.regular_holidays : [];
+        document.querySelectorAll("#holidayChecks input").forEach(ch => {
+          ch.checked = holidays.includes(ch.value);
+        });
+
+      }catch(e){
+        console.error(e);
+        showError(e.message || "店舗設定の取得に失敗しました。");
+      }
+    }
+
+    async function loadSummary(){
+      try{
+        showError("");
+        showOk("");
+        saveInputs();
+
+        const res = await apiGet("/api/admin/summary", {
+          admin_code: adminCode()
+        });
+
+        state.summary = res;
+
+        $("shopName").textContent = `${res.shop_name || "DPROペットサロン"} 管理画面`;
+        $("kpiToday").textContent = res.counts?.today_reservations ?? 0;
+        $("kpiNext").textContent = res.counts?.next_business_reservations ?? 0;
+        $("kpiFollow").textContent = res.counts?.pending_followups ?? 0;
+
+        $("todayLabel").textContent = `対象日：${res.today}`;
+        $("nextDayLabel").textContent = `対象日：${res.next_business_date}`;
+
+        renderReservations("todayReservations", res.today_reservations || []);
+        renderReservations("nextReservations", res.next_business_reservations || []);
+        renderFollowups("pendingFollowups", res.pending_followups || [], true);
+
+      }catch(e){
+        console.error(e);
+        showError(e.message || "管理画面データの取得に失敗しました。");
+      }
+    }
+
+    async function loadDay(){
+      try{
+        showError("");
+        saveInputs();
+
+        const date = $("dayDate").value || todayYmd();
+
+        const res = await apiGet("/api/admin/day", {
+          admin_code: adminCode(),
+          date
+        });
+
+        renderReservations("dayReservations", res.reservations || []);
+
+      }catch(e){
+        console.error(e);
+        showError(e.message || "日別予約の取得に失敗しました。");
+      }
+    }
+
+    async function loadFollowups(){
+      try{
+        showError("");
+        saveInputs();
+
+        const res = await apiGet("/api/admin/followups", {
+          admin_code: adminCode(),
+          status: $("followStatus").value,
+          from: $("followFrom").value,
+          to: $("followTo").value
+        });
+
+        renderFollowups("followupsList", res.followups || [], false);
+
+      }catch(e){
+        console.error(e);
+        showError(e.message || "LINE案内の取得に失敗しました。");
+      }
+    }
+
+    function renderReservations(targetId, reservations){
+      const el = $(targetId);
+
+      if(!reservations.length){
+        el.innerHTML = `<div class="empty">表示する予約はありません。</div>`;
+        return;
+      }
+
+      el.innerHTML = reservations.map(r => reservationCard(r)).join("");
+
+      el.querySelectorAll("[data-action]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const action = btn.dataset.action;
+          const id = btn.dataset.id;
+
+          if(action === "complete"){
+            const reservation = reservations.find(x => x.id === id);
+            openCompleteModal(reservation);
+            return;
+          }
+
+          await updateReservationStatus(id, action);
+        });
+      });
+    }
+
+    function reservationCard(r){
+      const c = r.customer || {};
+      const p = r.pet || {};
+      const status = r.status || "requested";
+
+      return `
+        <div class="res-card">
+          <div class="res-top">
+            <div>
+              <div class="time">${escapeHtml(hm(r.reservation_time))}</div>
+              <div class="name">${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん / ${escapeHtml(c.owner_name || "飼い主未登録")}</div>
+              <div class="sub">${escapeHtml(r.service_name || "")}　${escapeHtml(r.reservation_date || "")}</div>
+            </div>
+            <span class="status ${escapeHtml(status)}">${statusLabel(status)}</span>
+          </div>
+
+          <div class="info-grid">
+            <div class="info"><b>ペット情報</b>${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg</div>
+            <div class="info"><b>連絡先</b>${escapeHtml(c.phone || "電話未入力")} / LINE名：${escapeHtml(c.line_display_name || "-")}</div>
+            <div class="info"><b>性格・苦手</b>${escapeHtml([p.personality_notes, p.dislike_notes].filter(Boolean).join(" / ") || "未入力")}</div>
+            <div class="info"><b>皮膚・健康</b>${escapeHtml([p.skin_condition, p.health_notes].filter(Boolean).join(" / ") || "未入力")}</div>
+          </div>
+
+          ${r.request_note ? `<div class="message-box">${escapeHtml(r.request_note)}</div>` : ""}
+
+          <div class="btns">
+            <button class="btn blue small" data-action="confirmed" data-id="${escapeHtml(r.id)}">予約確定</button>
+            <button class="btn ok small" data-action="visited" data-id="${escapeHtml(r.id)}">来店済み</button>
+            <button class="btn small" data-action="complete" data-id="${escapeHtml(r.id)}">施術完了・次回案内</button>
+            <button class="btn danger small" data-action="cancelled" data-id="${escapeHtml(r.id)}">キャンセル</button>
+            <button class="btn secondary small" data-action="no_show" data-id="${escapeHtml(r.id)}">不在</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFollowups(targetId, followups, compact){
+      const el = $(targetId);
+
+      if(!followups.length){
+        el.innerHTML = `<div class="empty">対応が必要なLINE案内はありません。</div>`;
+        return;
+      }
+
+      el.innerHTML = followups.map(f => followupCard(f, compact)).join("");
+
+      el.querySelectorAll("[data-follow-action]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          const action = btn.dataset.followAction;
+          const card = btn.closest(".follow-card");
+          const message = card.querySelector(".message-box")?.innerText || "";
+
+          if(action === "copy"){
+            await copyText(message);
+            await updateFollowupStatus(id, "copied");
+            showOk("LINE文面をコピーしました。LINE公式のチャット欄へ貼り付けて送信できます。");
+            await refreshCurrentFollowupView();
+            return;
+          }
+
+          await updateFollowupStatus(id, action);
+          await refreshCurrentFollowupView();
+        });
+      });
+    }
+
+    function followupCard(f, compact){
+      const c = f.customer || {};
+      const p = f.pet || {};
+      return `
+        <div class="follow-card">
+          <div class="follow-top">
+            <div>
+              <div class="name">${escapeHtml(f.title || "LINE案内")}</div>
+              <div class="sub">${escapeHtml(f.scheduled_date || "")} / ${escapeHtml(p.pet_name || "ペット")}ちゃん / ${escapeHtml(c.owner_name || "飼い主")}</div>
+            </div>
+            <span class="status ${escapeHtml(f.status || "pending")}">${followStatusLabel(f.status)}</span>
+          </div>
+
+          <div class="message-box">${escapeHtml(f.message_body || "")}</div>
+
+          <div class="btns">
+            <button class="btn small" data-follow-action="copy" data-id="${escapeHtml(f.id)}">文面コピー</button>
+            <button class="btn ok small" data-follow-action="sent" data-id="${escapeHtml(f.id)}">送信済みにする</button>
+            <button class="btn secondary small" data-follow-action="completed" data-id="${escapeHtml(f.id)}">完了</button>
+            <button class="btn danger small" data-follow-action="skipped" data-id="${escapeHtml(f.id)}">スキップ</button>
+          </div>
+          <div class="copy-note">コピー後、LINE公式アカウントのチャットに貼り付けて送信してください。</div>
+        </div>
+      `;
+    }
+
+    async function updateReservationStatus(reservationId, status){
+      try{
+        showError("");
+        await apiPost("/api/admin/reservations/update-status", {
+          admin_code: adminCode(),
+          shop_code: shopCode(),
+          reservation_id: reservationId,
+          status
+        });
+        showOk(`予約ステータスを「${statusLabel(status)}」に更新しました。`);
+        await loadSummary();
+        await loadDayIfVisible();
+      }catch(e){
+        console.error(e);
+        showError(e.message || "予約ステータス更新に失敗しました。");
+      }
+    }
+
+    async function updateFollowupStatus(followupId, status){
+      await apiPost("/api/admin/followups/update-status", {
+        admin_code: adminCode(),
+        shop_code: shopCode(),
+        followup_id: followupId,
+        status
+      });
+    }
+
+    async function refreshCurrentFollowupView(){
+      if($("tab-followups").classList.contains("active")){
+        await loadFollowups();
+      }
+      await loadSummary();
+    }
+
+    async function loadDayIfVisible(){
+      if($("tab-day").classList.contains("active")){
+        await loadDay();
+      }
+    }
+
+    function openCompleteModal(reservation){
+      if(!reservation) return;
+
+      state.currentReservationForComplete = reservation;
+      const c = reservation.customer || {};
+      const p = reservation.pet || {};
+
+      $("completeReservationId").value = reservation.id;
+      $("completeTarget").textContent = `${reservation.reservation_date} ${hm(reservation.reservation_time)} / ${p.pet_name || "ペット"}ちゃん / ${c.owner_name || "飼い主"}`;
+      $("visitDate").value = reservation.reservation_date || todayYmd();
+      $("nextRecommendDate").value = addDays($("visitDate").value, 35);
+      $("menuDone").value = reservation.service_name || "";
+      $("skinCondition").value = p.skin_condition || "";
+      $("mattingLevel").value = "none";
+      $("groomerNote").value = p.last_style_note || "";
+      $("nextRecommendReason").value = "前回来店からのお手入れ目安";
+
+      $("completeModal").classList.add("show");
+    }
+
+    function closeCompleteModal(){
+      $("completeModal").classList.remove("show");
+      state.currentReservationForComplete = null;
+    }
+
+    async function completeVisit(){
+      try{
+        showError("");
+
+        const reservationId = $("completeReservationId").value;
+        if(!reservationId) throw new Error("対象予約がありません。");
+
+        await apiPost("/api/admin/visits/complete", {
+          admin_code: adminCode(),
+          shop_code: shopCode(),
+          reservation_id: reservationId,
+          visit_date: $("visitDate").value,
+          next_recommend_date: $("nextRecommendDate").value,
+          menu_done: $("menuDone").value.trim(),
+          skin_condition: $("skinCondition").value.trim(),
+          matting_level: $("mattingLevel").value,
+          groomer_note: $("groomerNote").value.trim(),
+          next_recommend_reason: $("nextRecommendReason").value.trim()
+        });
+
+        closeCompleteModal();
+        showOk("施術完了を記録し、来店後お礼と次回案内を作成しました。");
+        await loadSummary();
+        await loadDayIfVisible();
+      }catch(e){
+        console.error(e);
+        showError(e.message || "施術完了処理に失敗しました。");
+      }
+    }
+
+    async function prepareDemo(){
+      try{
+        showError("");
+        const ok = confirm("営業デモ用データを再作成します。\nline_user_id が demo_petsalon_ で始まるデモ顧客だけ削除して作り直します。\n実顧客データは削除しません。\n\n実行しますか？");
+        if(!ok) return;
+
+        $("demoPrepareBtn").disabled = true;
+        $("demoPrepareBtn").textContent = "準備中...";
+
+        const res = await apiPost("/api/admin/demo/prepare", {
+          admin_code: adminCode(),
+          shop_code: shopCode()
+        });
+
+        showOk([
+          "営業前デモ準備が完了しました。",
+          `デモ日：${res.demo_date}`,
+          `予約件数：${res.reservations_count}`,
+          `LINE案内：${res.followups_count}`
+        ].join("\n"));
+
+        await loadSummary();
+      }catch(e){
+        console.error(e);
+        showError(e.message || "営業デモ準備に失敗しました。");
+      }finally{
+        $("demoPrepareBtn").disabled = false;
+        $("demoPrepareBtn").textContent = "営業前デモ準備";
+      }
+    }
+
+    async function saveSettings(){
+      try{
+        showError("");
+        const regular_holidays = [...document.querySelectorAll("#holidayChecks input:checked")].map(x => x.value);
+
+        await apiPost("/api/admin/settings/update", {
+          admin_code: adminCode(),
+          shop_code: shopCode(),
+          shop_name: $("setShopName").value.trim(),
+          open_time: $("setOpenTime").value,
+          close_time: $("setCloseTime").value,
+          max_reservations_per_day: Number($("setMaxReservations").value || 12),
+          reservation_slot_minutes: Number($("setSlotMinutes").value || 30),
+          regular_holidays
+        });
+
+        showOk("店舗設定を保存しました。予約フォームにも反映されます。");
+        await loadSettings();
+        await loadSummary();
+      }catch(e){
+        console.error(e);
+        showError(e.message || "店舗設定の保存に失敗しました。");
+      }
+    }
+
+    async function saveClosedDay(isClosed){
+      try{
+        showError("");
+        const closedDate = $("closedDate").value;
+        if(!closedDate) throw new Error("日付を選択してください。");
+
+        await apiPost("/api/admin/special-closed-days/upsert", {
+          admin_code: adminCode(),
+          shop_code: shopCode(),
+          closed_date: closedDate,
+          reason: $("closedReason").value.trim() || (isClosed ? "臨時休業" : "営業日に戻す"),
+          is_closed: isClosed
+        });
+
+        showOk(isClosed ? "臨時休業日に設定しました。" : "営業日に戻しました。");
+        await loadSummary();
+      }catch(e){
+        console.error(e);
+        showError(e.message || "臨時休業日の保存に失敗しました。");
+      }
+    }
+
+    async function apiGet(path, params = {}){
+      const url = new URL(workerBase() + path);
+      url.searchParams.set("shop_code", shopCode());
+      for(const [k,v] of Object.entries(params)){
+        if(v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
+      }
+
+      const res = await fetch(url.toString());
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false){
+        throw new Error(formatApiError(json, res.status));
+      }
+      return json;
+    }
+
+    async function apiPost(path, body){
+      const res = await fetch(workerBase() + path, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false){
+        throw new Error(formatApiError(json, res.status));
+      }
+      return json;
+    }
+
+    function formatApiError(json, status){
+      if(!json) return `APIエラー ${status}`;
+      if(json.detail && json.detail.response){
+        return `${json.error || "APIエラー"}\n${JSON.stringify(json.detail.response, null, 2)}`;
+      }
+      return json.error || `APIエラー ${status}`;
+    }
+
+    function workerBase(){
+      return ($("workerUrl").value || CONFIG_DEFAULT.WORKER_BASE_URL).trim().replace(/\/$/, "");
+    }
+
+    function adminCode(){
+      return ($("adminCode").value || CONFIG_DEFAULT.ADMIN_CODE).trim();
+    }
+
+    function shopCode(){
+      return ($("shopCode").value || CONFIG_DEFAULT.SHOP_CODE).trim();
+    }
+
+    function showError(msg){
+      const el = $("errorBox");
+      if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
+      el.textContent = msg;
+      el.classList.add("show");
+      $("okBox").classList.remove("show");
+    }
+
+    function showOk(msg){
+      const el = $("okBox");
+      if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
+      el.textContent = msg;
+      el.classList.add("show");
+      $("errorBox").classList.remove("show");
+    }
+
+    async function copyText(text){
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+
+    function statusLabel(status){
+      return {
+        requested:"予約希望",
+        confirmed:"予約確定",
+        visited:"来店済み",
+        completed:"完了",
+        cancelled:"キャンセル",
+        no_show:"不在"
+      }[status] || status;
+    }
+
+    function followStatusLabel(status){
+      return {
+        pending:"未対応",
+        copied:"コピー済み",
+        sent:"送信済み",
+        completed:"完了",
+        skipped:"スキップ",
+        cancelled:"取消"
+      }[status] || status || "未対応";
+    }
+
+    function todayYmd(){
+      return new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(new Date());
+    }
+
+    function addDays(ymd, days){
+      const d = new Date(`${ymd}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + Number(days || 0));
+      return d.toISOString().slice(0,10);
+    }
+
+    function hm(v){
+      return String(v || "").slice(0,5);
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "").replace(/[&<>"']/g, s => ({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#39;"
+      }[s]));
+    }
+  </script>
+</body>
+</html>
