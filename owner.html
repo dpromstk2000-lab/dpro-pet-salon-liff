@@ -469,6 +469,7 @@
     }
     .hidden{display:none!important}
     .copy-note{font-size:12px;color:var(--muted)}
+      .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;filter:grayscale(.2)}
   </style>
 </head>
 <body>
@@ -777,7 +778,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-7 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-7B owner.html
     </div>
   </div>
 
@@ -1147,6 +1148,13 @@
     function hotelApplicationCard(app){
       const pets = Array.isArray(app.pets) ? app.pets : [];
       const petNames = pets.length ? pets.map(p => `${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん`).join("、") : "ペット情報なし";
+      const today = todayYmd();
+      const checkinDisabled = today < String(app.checkin_date || "");
+      const checkoutDisabled = today < String(app.checkout_date || "");
+      const dateGuardNote = [
+        checkinDisabled ? `チェックイン日 ${escapeHtml(app.checkin_date || "")} までは「お預かり中」にできません。` : "",
+        checkoutDisabled ? `チェックアウト日 ${escapeHtml(app.checkout_date || "")} までは「退店済み」にできません。` : ""
+      ].filter(Boolean).join(" ");
       const petDetail = pets.length ? pets.map((p, i) => `
         <div class="info">
           <b>${i + 1}頭目：${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん</b>
@@ -1188,10 +1196,12 @@
             <b>その他希望：</b>${escapeHtml(app.request_note || "未入力")}
           </div>
 
+          ${dateGuardNote ? `<div class="notice" style="margin-top:12px">${dateGuardNote}</div>` : ""}
+
           <div class="btns" style="margin-top:12px">
             <button class="btn blue small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="confirmed">確定済みにする</button>
-            <button class="btn ok small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="checked_in">お預かり中</button>
-            <button class="btn secondary small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="checked_out">退店済み</button>
+            <button class="btn ok small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="checked_in" ${checkinDisabled ? "disabled" : ""}>お預かり中</button>
+            <button class="btn secondary small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="checked_out" ${checkoutDisabled ? "disabled" : ""}>退店済み</button>
             <button class="btn danger small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="cancelled">キャンセル</button>
           </div>
         </div>
