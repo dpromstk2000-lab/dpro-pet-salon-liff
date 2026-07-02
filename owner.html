@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 今日やること集約</title>
+  <title>DPROペットサロン｜オーナー管理画面 営業デモ準備強化</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -984,7 +984,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-10 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-13 owner.html
     </div>
   </div>
 
@@ -2128,11 +2128,28 @@
     async function prepareDemo(){
       try{
         showError("");
-        const ok = confirm("営業デモ用データを再作成します。\nline_user_id が demo_petsalon_ で始まるデモ顧客だけ削除して作り直します。\n実顧客データは削除しません。\n\n実行しますか？");
+        showOk("");
+
+        const ok = confirm([
+          "営業デモ用データを再作成します。",
+          "",
+          "作り直す内容：",
+          "・本日の予約",
+          "・電話受付デモ",
+          "・多頭予約デモ",
+          "・キャンセル履歴",
+          "・ホテル申込デモ",
+          "・会員証の前回来店履歴",
+          "・本日やるLINE案内",
+          "",
+          "demo_mode=true の店舗で、デモ用の電話番号・demo_petsalon_ のデータだけ整理します。",
+          "実行しますか？"
+        ].join("\\n"));
+
         if(!ok) return;
 
         $("demoPrepareBtn").disabled = true;
-        $("demoPrepareBtn").textContent = "準備中...";
+        $("demoPrepareBtn").textContent = "デモ準備中...";
 
         const res = await apiPost("/api/admin/demo/prepare", {
           admin_code: adminCode(),
@@ -2141,12 +2158,20 @@
 
         showOk([
           "営業前デモ準備が完了しました。",
-          `デモ日：${res.demo_date}`,
-          `予約件数：${res.reservations_count}`,
-          `LINE案内：${res.followups_count}`
-        ].join("\n"));
+          `本日の予約日：${res.demo_date}`,
+          `次営業日の予約日：${res.next_demo_date}`,
+          `本日の未完了予約：${res.active_today_reservations_count}`,
+          `次営業日の予約：${res.next_reservations_count}`,
+          `ホテル申込：${res.hotel_applications_count}`,
+          `LINE案内：${res.followups_count}`,
+          `会員証用来店履歴：${res.visits_count}`
+        ].join("\\n"));
 
+        await loadSettings();
         await loadSummary();
+        await loadHotelApplications();
+        await loadManualAvailableTimes();
+
       }catch(e){
         console.error(e);
         showError(e.message || "営業デモ準備に失敗しました。");
