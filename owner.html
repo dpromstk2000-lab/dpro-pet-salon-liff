@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 顧客検索強化</title>
+  <title>DPROペットサロン｜オーナー管理画面 ホテル履歴整理</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -613,6 +613,66 @@
       .mini-list{grid-template-columns:1fr}
     }
 
+  
+    .hotel-board{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin-top:12px;
+    }
+    .hotel-summary-card{
+      border:1px solid var(--line);
+      background:#fffaf6;
+      border-radius:16px;
+      padding:12px;
+      min-height:86px;
+    }
+    .hotel-summary-card.attention{
+      background:#fff1ef;
+      border-color:#efc7c0;
+    }
+    .hotel-summary-card.good{
+      background:#eefaf5;
+      border-color:#c8eadb;
+    }
+    .hotel-summary-title{
+      font-size:12px;
+      font-weight:1000;
+      color:#6f4934;
+      margin-bottom:8px;
+    }
+    .hotel-summary-count{
+      font-size:24px;
+      font-weight:1000;
+      color:#8f5d3d;
+      line-height:1;
+    }
+    .hotel-summary-sub{
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.55;
+      margin-top:8px;
+    }
+    .hotel-section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin:18px 0 10px;
+      padding-top:8px;
+      border-top:1px solid #f0e2d6;
+    }
+    .hotel-section-title h3{
+      margin:0;
+      font-size:16px;
+    }
+    @media(max-width:900px){
+      .hotel-board{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:560px){
+      .hotel-board{grid-template-columns:1fr}
+    }
+
   </style>
 </head>
 <body>
@@ -881,23 +941,11 @@
           <div class="card-head">
             <div>
               <h2>ペットホテル申込</h2>
-              <p class="lead">ホテル申込は仮受付です。内容確認後、確定・お預かり中・退店済みに変更できます。</p>
+              <p class="lead">未完了・本日対応・退店済み履歴を分けて表示します。急に消えたように見えない整理です。</p>
             </div>
           </div>
 
-          <div class="row three">
-            <div>
-              <label>ステータス</label>
-              <select id="hotelStatus">
-                <option value="active">未完了のみ</option>
-                <option value="all">すべて</option>
-                <option value="requested">申込受付</option>
-                <option value="confirmed">確定済み</option>
-                <option value="checked_in">お預かり中</option>
-                <option value="checked_out">退店済み</option>
-                <option value="cancelled">キャンセル</option>
-              </select>
-            </div>
+          <div class="row two">
             <div>
               <label>開始日</label>
               <input id="hotelFrom" type="date" />
@@ -909,11 +957,27 @@
           </div>
 
           <div class="btns" style="margin-top:14px">
-            <button class="btn" type="button" id="loadHotelBtn">ホテル申込を表示</button>
+            <button class="btn" type="button" id="loadHotelBtn">ホテル申込を更新</button>
             <button class="btn secondary" type="button" onclick="window.open('./hotel.html','_blank')">ホテル申込画面を開く</button>
           </div>
 
-          <div id="hotelApplications" style="margin-top:12px"></div>
+          <div id="hotelTodayBoard"></div>
+
+          <div class="hotel-section-title">
+            <h3>未完了のホテル申込</h3>
+            <span class="history-count" id="hotelActiveCount">0</span>
+          </div>
+          <div id="hotelActiveApplications"></div>
+
+          <details class="history-wrap" id="hotelHistoryWrap">
+            <summary>
+              <span>退店済み・キャンセル履歴を見る</span>
+              <span class="history-count" id="hotelHistoryCount">0</span>
+            </summary>
+            <div style="padding:0 12px 12px">
+              <div id="hotelHistoryApplications"></div>
+            </div>
+          </details>
         </div>
       </section>
 
@@ -1072,7 +1136,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-14D owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-15 owner.html
     </div>
   </div>
 
@@ -1956,7 +2020,7 @@
 
         const res = await apiGet("/api/admin/hotel-applications", {
           admin_code: adminCode(),
-          status: $("hotelStatus").value,
+          status: "all",
           from: $("hotelFrom").value,
           to: $("hotelTo").value
         });
@@ -1972,20 +2036,84 @@
     }
 
     function renderHotelApplications(applications){
-      const el = $("hotelApplications");
+      const list = applications || [];
+      const today = todayYmd();
 
-      if(!applications.length){
-        el.innerHTML = `<div class="empty">表示するホテル申込はありません。</div>`;
-        return;
-      }
+      const activeStatuses = ["requested", "confirmed", "checked_in"];
+      const historyStatuses = ["checked_out", "cancelled"];
 
-      el.innerHTML = applications.map(hotelApplicationCard).join("");
+      const active = list
+        .filter(app => activeStatuses.includes(app.status || "requested"))
+        .sort(sortHotels);
 
-      el.querySelectorAll("[data-hotel-status]").forEach(btn => {
+      const history = list
+        .filter(app => historyStatuses.includes(app.status || "requested"))
+        .sort(sortHotelsDesc);
+
+      const todayCheckins = active.filter(app =>
+        app.checkin_date === today && ["requested", "confirmed"].includes(app.status || "requested")
+      );
+
+      const todayCheckouts = active.filter(app =>
+        app.checkout_date === today && ["confirmed", "checked_in"].includes(app.status || "requested")
+      );
+
+      const requested = active.filter(app => (app.status || "requested") === "requested");
+      const checkedIn = active.filter(app => (app.status || "requested") === "checked_in");
+
+      $("hotelTodayBoard").innerHTML = `
+        <div class="hotel-board">
+          <div class="hotel-summary-card ${todayCheckins.length ? "attention" : "good"}">
+            <div class="hotel-summary-title">本日お預かり</div>
+            <div class="hotel-summary-count">${todayCheckins.length}</div>
+            <div class="hotel-summary-sub">${todayCheckins.length ? "チェックイン予定があります。" : "本日のお預かり予定はありません。"}</div>
+          </div>
+          <div class="hotel-summary-card ${todayCheckouts.length ? "attention" : "good"}">
+            <div class="hotel-summary-title">本日お迎え</div>
+            <div class="hotel-summary-count">${todayCheckouts.length}</div>
+            <div class="hotel-summary-sub">${todayCheckouts.length ? "お迎え予定があります。" : "本日のお迎え予定はありません。"}</div>
+          </div>
+          <div class="hotel-summary-card ${requested.length ? "attention" : "good"}">
+            <div class="hotel-summary-title">未確認申込</div>
+            <div class="hotel-summary-count">${requested.length}</div>
+            <div class="hotel-summary-sub">${requested.length ? "内容確認後、確定にしてください。" : "未確認の申込はありません。"}</div>
+          </div>
+          <div class="hotel-summary-card ${checkedIn.length ? "attention" : "good"}">
+            <div class="hotel-summary-title">お預かり中</div>
+            <div class="hotel-summary-count">${checkedIn.length}</div>
+            <div class="hotel-summary-sub">${checkedIn.length ? "現在お預かり中の子がいます。" : "現在お預かり中はありません。"}</div>
+          </div>
+        </div>
+      `;
+
+      $("hotelActiveCount").textContent = active.length;
+      $("hotelHistoryCount").textContent = history.length;
+
+      $("hotelActiveApplications").innerHTML = active.length
+        ? active.map(hotelApplicationCard).join("")
+        : `<div class="empty">未完了のホテル申込はありません。</div>`;
+
+      $("hotelHistoryApplications").innerHTML = history.length
+        ? history.map(hotelApplicationCard).join("")
+        : `<div class="empty">退店済み・キャンセル履歴はありません。</div>`;
+
+      document.querySelectorAll("[data-hotel-status]").forEach(btn => {
         btn.addEventListener("click", async () => {
           await updateHotelApplicationStatus(btn.dataset.hotelId, btn.dataset.hotelStatus);
         });
       });
+    }
+
+    function sortHotels(a, b){
+      const ak = `${a.checkin_date || ""} ${hm(a.checkin_time || "")}`;
+      const bk = `${b.checkin_date || ""} ${hm(b.checkin_time || "")}`;
+      return ak.localeCompare(bk);
+    }
+
+    function sortHotelsDesc(a, b){
+      const ak = `${a.checkin_date || ""} ${hm(a.checkin_time || "")}`;
+      const bk = `${b.checkin_date || ""} ${hm(b.checkin_time || "")}`;
+      return bk.localeCompare(ak);
     }
 
     function hotelApplicationCard(app){
@@ -2041,12 +2169,19 @@
 
           ${dateGuardNote ? `<div class="notice" style="margin-top:12px">${dateGuardNote}</div>` : ""}
 
-          <div class="btns" style="margin-top:12px">
-            <button class="btn blue small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="confirmed">確定済みにする</button>
-            <button class="btn ok small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="checked_in" ${checkinDisabled ? "disabled" : ""}>お預かり中</button>
-            <button class="btn secondary small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="checked_out" ${checkoutDisabled ? "disabled" : ""}>退店済み</button>
-            <button class="btn danger small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="cancelled">キャンセル</button>
-          </div>
+          ${["checked_out","cancelled"].includes(app.status || "requested") ? `
+            <div class="notice" style="margin-top:12px">この申込は履歴扱いです。必要な場合のみ「確定済みにする」で未完了側へ戻せます。</div>
+            <div class="btns" style="margin-top:12px">
+              <button class="btn blue small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="confirmed">確定済みに戻す</button>
+            </div>
+          ` : `
+            <div class="btns" style="margin-top:12px">
+              <button class="btn blue small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="confirmed">確定済みにする</button>
+              <button class="btn ok small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="checked_in" ${checkinDisabled ? "disabled" : ""}>お預かり中</button>
+              <button class="btn secondary small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="checked_out" ${checkoutDisabled ? "disabled" : ""}>退店済み</button>
+              <button class="btn danger small" data-hotel-id="${escapeHtml(app.id)}" data-hotel-status="cancelled">キャンセル</button>
+            </div>
+          `}
         </div>
       `;
     }
