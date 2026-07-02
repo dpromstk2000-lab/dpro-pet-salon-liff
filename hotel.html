@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DPROペットサロン｜ペットホテル申込</title>
+  <style>
+    :root{
+      --bg:#fbf6ef;
+      --card:#fffdf9;
+      --main:#8f5d3d;
+      --main2:#b98055;
+      --text:#2d2119;
+      --muted:#7f6d61;
+      --line:#ead9ca;
+      --soft:#fff1e5;
+      --ok:#21836a;
+      --blue:#23699a;
+      --danger:#b94444;
+      --shadow:0 18px 45px rgba(86,55,35,.10);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+      background:linear-gradient(180deg,#fffaf4 0%,var(--bg) 100%);
+      color:var(--text);
+      padding:18px 14px 96px;
+    }
+    .wrap{max-width:860px;margin:0 auto}
+    .hero{
+      background:linear-gradient(135deg,#6d422d,#b77c51);
+      color:white;
+      border-radius:24px;
+      padding:24px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+      margin-bottom:16px;
+    }
+    .hero:after{
+      content:"";
+      width:210px;height:210px;
+      border-radius:50%;
+      background:rgba(255,255,255,.13);
+      position:absolute;right:-54px;top:-82px;
+    }
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.25);
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:12px;
+      font-weight:800;
+      margin-bottom:12px;
+    }
+    h1{font-size:25px;margin:0 0 8px;letter-spacing:.02em}
+    h2{font-size:18px;margin:0 0 6px}
+    h3{font-size:15px;margin:0 0 10px}
+    p{margin:0}
+    .lead{font-size:13px;color:var(--muted);line-height:1.65}
+    .hero .lead{color:rgba(255,255,255,.86)}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .chip{
+      background:rgba(255,255,255,.15);
+      color:white;
+      border:1px solid rgba(255,255,255,.28);
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:12px;
+      font-weight:800;
+    }
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .grid.three{grid-template-columns:1fr 1fr 1fr}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
+      margin-bottom:14px;
+    }
+    .section-title{display:flex;gap:10px;align-items:flex-start;margin-bottom:14px}
+    .num{
+      width:26px;height:26px;border-radius:50%;
+      background:var(--main);
+      color:white;
+      display:grid;place-items:center;
+      font-size:13px;font-weight:900;
+      flex:0 0 auto;
+    }
+    label{display:block;font-size:12px;font-weight:900;margin:12px 0 6px}
+    .req{color:#bd3e3e;font-size:11px;margin-left:4px}
+    input,select,textarea{
+      width:100%;
+      border:1px solid var(--line);
+      background:white;
+      border-radius:12px;
+      padding:12px;
+      font-size:15px;
+      outline:none;
+      color:var(--text);
+    }
+    textarea{min-height:86px;resize:vertical;line-height:1.55}
+    input:focus,select:focus,textarea:focus{border-color:var(--main2);box-shadow:0 0 0 3px rgba(185,128,85,.15)}
+    .checks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .check{
+      display:flex;gap:8px;align-items:center;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background:var(--soft);
+      font-size:13px;
+      font-weight:800;
+    }
+    .check input{width:auto}
+    .pet-card{
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:linear-gradient(180deg,#fff8f0,#fffdf9);
+      padding:14px;
+      margin-top:12px;
+    }
+    .pet-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+    .pet-title{font-weight:900;color:var(--main)}
+    .btns{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+    .btn{
+      border:0;
+      border-radius:12px;
+      padding:12px 16px;
+      font-weight:900;
+      cursor:pointer;
+      color:white;
+      background:var(--main);
+      box-shadow:0 8px 18px rgba(143,93,61,.18);
+    }
+    .btn.secondary{background:white;color:var(--main);border:1px solid var(--line);box-shadow:none}
+    .btn.ok{background:var(--ok)}
+    .btn.blue{background:var(--blue)}
+    .btn.danger{background:var(--danger)}
+    .btn.small{padding:8px 10px;font-size:12px}
+    .notice{
+      background:var(--soft);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.65;
+    }
+    .alert{display:none;border-radius:14px;padding:12px;margin:12px 0;font-size:13px;font-weight:800}
+    .alert.ok{background:#eefaf5;color:#17664f;border:1px solid #c8eadb}
+    .alert.err{background:#fff0f0;color:#a13333;border:1px solid #efc9c9}
+    .summary{
+      white-space:pre-wrap;
+      background:white;
+      border:1px dashed var(--line);
+      border-radius:14px;
+      padding:14px;
+      line-height:1.65;
+      font-size:13px;
+    }
+    .footer{text-align:center;color:#aa9a90;font-size:11px;margin:26px 0}
+    .bottom{
+      position:fixed;left:0;right:0;bottom:0;
+      background:rgba(255,250,244,.94);
+      backdrop-filter:blur(10px);
+      border-top:1px solid var(--line);
+      padding:12px 14px;
+      z-index:10;
+    }
+    .bottom-inner{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:760px){
+      .grid,.grid.three{grid-template-columns:1fr}
+      .checks{grid-template-columns:1fr}
+      body{padding:12px 10px 112px}
+      .hero{padding:20px}
+      .bottom-inner{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="pill">🏨 大枠STEP 3 / PET HOTEL LIFF</div>
+      <h1 id="shopName">DPROペットサロン</h1>
+      <p class="lead">宿泊日・ごはん・お薬・緊急連絡先・確認事項を、ホテル申込として事前に送れます。</p>
+      <div class="chips">
+        <span class="chip" id="apiState">API確認中</span>
+        <span class="chip">ホテルは仮申込</span>
+        <span class="chip">電話確認後に確定</span>
+      </div>
+    </section>
+
+    <div class="alert err" id="errorBox"></div>
+    <div class="alert ok" id="okBox"></div>
+
+    <section class="card">
+      <div class="section-title">
+        <div class="num">1</div>
+        <div>
+          <h2>飼い主さま情報</h2>
+          <p class="lead">LINE内では自動取得、通常ブラウザでは電話番号で確認できます。</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>飼い主さま氏名<span class="req">必須</span></label>
+          <input id="ownerName" placeholder="例：佐藤 花子" />
+        </div>
+        <div>
+          <label>ふりがな</label>
+          <input id="ownerKana" placeholder="例：さとう はなこ" />
+        </div>
+        <div>
+          <label>電話番号<span class="req">必須</span></label>
+          <input id="phone" placeholder="例：090-0000-0000" inputmode="tel" />
+        </div>
+        <div>
+          <label>メールアドレス</label>
+          <input id="email" placeholder="任意" inputmode="email" />
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <div class="num">2</div>
+        <div>
+          <h2>宿泊日時</h2>
+          <p class="lead">お預かり・お迎えの希望日時を入力してください。</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>チェックイン日<span class="req">必須</span></label>
+          <input id="checkinDate" type="date" />
+        </div>
+        <div>
+          <label>チェックイン時間<span class="req">必須</span></label>
+          <select id="checkinTime"></select>
+        </div>
+        <div>
+          <label>チェックアウト日<span class="req">必須</span></label>
+          <input id="checkoutDate" type="date" />
+        </div>
+        <div>
+          <label>チェックアウト時間<span class="req">必須</span></label>
+          <select id="checkoutTime"></select>
+        </div>
+      </div>
+
+      <label>お迎え・送迎などの希望</label>
+      <textarea id="pickupNote" placeholder="例：夕方のお迎え希望 / 家族が迎えに来ます"></textarea>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <div class="num">3</div>
+        <div>
+          <h2>お預かりするペット</h2>
+          <p class="lead">最大頭数は店舗設定の「多頭予約の同時受付」に合わせます。</p>
+        </div>
+      </div>
+
+      <div id="petList"></div>
+
+      <div class="btns" style="margin-top:14px">
+        <button class="btn secondary" type="button" id="addPetBtn">＋ 2頭目を追加</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <div class="num">4</div>
+        <div>
+          <h2>ごはん・お薬・健康状態</h2>
+          <p class="lead">ホテルは安全面が重要なので、食事・投薬・アレルギーを事前に確認します。</p>
+        </div>
+      </div>
+
+      <label>ごはんについて</label>
+      <textarea id="mealNote" placeholder="例：朝晩2回、持参フード。1回30g。おやつ少なめ。"></textarea>
+
+      <label>お薬について</label>
+      <textarea id="medicineNote" placeholder="例：朝食後に1錠。飲ませ方の注意など。"></textarea>
+
+      <label>アレルギー・苦手なもの</label>
+      <textarea id="allergyNote" placeholder="例：鶏肉アレルギー、雷が苦手、他の犬が苦手など。"></textarea>
+
+      <label>健康状態・注意点</label>
+      <textarea id="healthNote" placeholder="例：高齢犬、持病、最近の体調、咳、下痢、皮膚状態など。"></textarea>
+
+      <label>性格・過ごし方</label>
+      <textarea id="personalityNote" placeholder="例：人懐っこい、寂しがり、ケージが苦手、散歩好きなど。"></textarea>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <div class="num">5</div>
+        <div>
+          <h2>緊急連絡先・確認事項</h2>
+          <p class="lead">ホテル申込は仮受付です。サロン確認後、LINEまたは電話で確定します。</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>緊急連絡先の名前</label>
+          <input id="emergencyName" placeholder="例：佐藤 太郎" />
+        </div>
+        <div>
+          <label>緊急連絡先の電話番号<span class="req">必須</span></label>
+          <input id="emergencyPhone" placeholder="例：090-1111-2222" inputmode="tel" />
+        </div>
+      </div>
+
+      <div class="checks">
+        <label class="check"><input id="vaccineConfirmed" type="checkbox">混合ワクチン接種済み</label>
+        <label class="check"><input id="rabiesConfirmed" type="checkbox">狂犬病ワクチン接種済み</label>
+        <label class="check"><input id="termsAccepted" type="checkbox">お預かり確認事項に同意する<span class="req">必須</span></label>
+      </div>
+
+      <label>その他の希望・連絡事項</label>
+      <textarea id="requestNote" placeholder="例：初めてのホテルなので様子をLINEで教えてほしいです"></textarea>
+
+      <div class="notice" style="margin-top:12px">
+        これは予約確定ではなく「ホテル申込」です。お部屋の空き状況・健康状態・ワクチン確認後、サロンからの連絡で確定します。
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <div class="num">✓</div>
+        <div>
+          <h2>送信前確認</h2>
+          <p class="lead">内容を確認してから送信してください。</p>
+        </div>
+      </div>
+      <div class="summary" id="summaryBox"></div>
+    </section>
+
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-7 hotel.html</div>
+  </div>
+
+  <div class="bottom">
+    <div class="bottom-inner">
+      <button class="btn secondary" type="button" id="reviewBtn">内容を再確認</button>
+      <button class="btn" type="button" id="submitBtn">ホテル申込を送信する</button>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
+      SHOP_CODE: "pet_salon_demo",
+      LIFF_ID: ""
+    };
+
+    const state = {
+      settings: null,
+      maxPets: 3,
+      petCount: 1
+    };
+
+    const $ = id => document.getElementById(id);
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      bindEvents();
+      fillTimeOptions();
+      setDefaultDates();
+      renderPets();
+      updateSummary();
+      await boot();
+    });
+
+    function bindEvents(){
+      $("addPetBtn").addEventListener("click", addPet);
+      $("reviewBtn").addEventListener("click", updateSummary);
+      $("submitBtn").addEventListener("click", submitHotelApplication);
+
+      document.addEventListener("input", e => {
+        if(e.target.matches("input,textarea,select")) updateSummary();
+      });
+      document.addEventListener("change", e => {
+        if(e.target.matches("input,textarea,select")) updateSummary();
+      });
+    }
+
+    async function boot(){
+      try{
+        const status = await apiGet("/api/public/status");
+        state.settings = status;
+        state.maxPets = Number(status.max_pets_per_group || 3);
+        $("shopName").textContent = status.shop_name || "DPROペットサロン";
+        $("apiState").textContent = "API接続OK";
+        renderPets();
+        updateSummary();
+      }catch(e){
+        console.error(e);
+        $("apiState").textContent = "API未確認";
+        showError(e.message || "API確認に失敗しました。");
+      }
+    }
+
+    function setDefaultDates(){
+      const today = todayYmd();
+      $("checkinDate").value = today;
+      $("checkoutDate").value = addDays(today, 1);
+      $("checkinDate").min = today;
+      $("checkoutDate").min = today;
+    }
+
+    function fillTimeOptions(){
+      const times = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00"];
+      $("checkinTime").innerHTML = times.map(t => `<option value="${t}">${t}</option>`).join("");
+      $("checkoutTime").innerHTML = times.map(t => `<option value="${t}">${t}</option>`).join("");
+      $("checkinTime").value = "10:00";
+      $("checkoutTime").value = "10:00";
+    }
+
+    function addPet(){
+      if(state.petCount >= state.maxPets){
+        showError(`一度に申込できる頭数は最大${state.maxPets}頭までです。`);
+        return;
+      }
+      state.petCount++;
+      renderPets();
+      updateSummary();
+    }
+
+    function removePet(index){
+      if(state.petCount <= 1) return;
+      const current = collectPets();
+      current.splice(index, 1);
+      state.petCount--;
+      renderPets(current);
+      updateSummary();
+    }
+
+    function renderPets(existing = null){
+      const values = existing || collectPets();
+      const count = Math.max(1, state.petCount);
+      let html = "";
+
+      for(let i=0; i<count; i++){
+        const v = values[i] || {};
+        html += `
+          <div class="pet-card" data-pet-index="${i}">
+            <div class="pet-head">
+              <div class="pet-title">${i + 1}頭目の情報</div>
+              ${i > 0 ? `<button class="btn danger small" type="button" onclick="removePet(${i})">削除</button>` : ""}
+            </div>
+
+            <div class="grid three">
+              <div>
+                <label>ペット名<span class="req">必須</span></label>
+                <input data-pet-field="pet_name" value="${escapeAttr(v.pet_name || "")}" placeholder="例：モコ" />
+              </div>
+              <div>
+                <label>犬種</label>
+                <input data-pet-field="breed" value="${escapeAttr(v.breed || "")}" placeholder="例：トイプードル" />
+              </div>
+              <div>
+                <label>年齢</label>
+                <input data-pet-field="age_label" value="${escapeAttr(v.age_label || "")}" placeholder="例：3歳" />
+              </div>
+              <div>
+                <label>体重 kg</label>
+                <input data-pet-field="weight" value="${escapeAttr(v.weight || "")}" placeholder="例：3.8" inputmode="decimal" />
+              </div>
+              <div>
+                <label>性別</label>
+                <select data-pet-field="sex">
+                  ${option("unknown","未選択",v.sex)}
+                  ${option("male","男の子",v.sex)}
+                  ${option("female","女の子",v.sex)}
+                </select>
+              </div>
+              <div>
+                <label>避妊・去勢</label>
+                <select data-pet-field="neutered">
+                  ${option("","未選択",v.neutered)}
+                  ${option("true","済み",v.neutered)}
+                  ${option("false","未実施",v.neutered)}
+                </select>
+              </div>
+            </div>
+
+            <div class="grid">
+              <div>
+                <label>この子のごはん量</label>
+                <input data-pet-field="meal_amount" value="${escapeAttr(v.meal_amount || "")}" placeholder="例：朝晩30gずつ" />
+              </div>
+              <div>
+                <label>この子のお薬</label>
+                <input data-pet-field="medicine_detail" value="${escapeAttr(v.medicine_detail || "")}" placeholder="例：朝1錠 / なし" />
+              </div>
+              <div>
+                <label>この子のアレルギー</label>
+                <input data-pet-field="allergy_detail" value="${escapeAttr(v.allergy_detail || "")}" placeholder="例：鶏肉 / なし" />
+              </div>
+              <div>
+                <label>健康状態</label>
+                <input data-pet-field="health_detail" value="${escapeAttr(v.health_detail || "")}" placeholder="例：良好 / 皮膚が弱い" />
+              </div>
+            </div>
+
+            <label>注意点</label>
+            <textarea data-pet-field="caution_note" placeholder="例：他の犬が苦手、ケージが少し苦手">${escapeHtml(v.caution_note || "")}</textarea>
+          </div>
+        `;
+      }
+
+      $("petList").innerHTML = html;
+      updateAddPetButton();
+    }
+
+    function updateAddPetButton(){
+      const next = state.petCount + 1;
+      $("addPetBtn").textContent = state.petCount >= state.maxPets
+        ? `最大${state.maxPets}頭まで入力済み`
+        : `＋ ${next}頭目を追加`;
+      $("addPetBtn").disabled = state.petCount >= state.maxPets;
+    }
+
+    function collectPets(){
+      return [...document.querySelectorAll(".pet-card")].map(card => {
+        const data = {};
+        card.querySelectorAll("[data-pet-field]").forEach(el => {
+          data[el.dataset.petField] = el.value;
+        });
+        return data;
+      });
+    }
+
+    function buildPayload(){
+      return {
+        shop_code: CONFIG.SHOP_CODE,
+        owner_name: $("ownerName").value.trim(),
+        owner_kana: $("ownerKana").value.trim(),
+        phone: $("phone").value.trim(),
+        email: $("email").value.trim(),
+        checkin_date: $("checkinDate").value,
+        checkin_time: $("checkinTime").value,
+        checkout_date: $("checkoutDate").value,
+        checkout_time: $("checkoutTime").value,
+        pickup_note: $("pickupNote").value.trim(),
+        meal_note: $("mealNote").value.trim(),
+        medicine_note: $("medicineNote").value.trim(),
+        allergy_note: $("allergyNote").value.trim(),
+        health_note: $("healthNote").value.trim(),
+        personality_note: $("personalityNote").value.trim(),
+        emergency_contact_name: $("emergencyName").value.trim(),
+        emergency_contact_phone: $("emergencyPhone").value.trim(),
+        vaccine_confirmed: $("vaccineConfirmed").checked,
+        rabies_confirmed: $("rabiesConfirmed").checked,
+        terms_accepted: $("termsAccepted").checked,
+        request_note: $("requestNote").value.trim(),
+        pets: collectPets()
+      };
+    }
+
+    function updateSummary(){
+      const p = buildPayload();
+      const pets = p.pets.map((pet, i) => {
+        return [
+          `【${i + 1}頭目】${pet.pet_name || "未入力"}ちゃん`,
+          `犬種：${pet.breed || "未入力"} / 年齢：${pet.age_label || "未入力"} / 体重：${pet.weight || "未入力"}kg`,
+          `ごはん：${pet.meal_amount || "未入力"}`,
+          `お薬：${pet.medicine_detail || "未入力"}`,
+          `注意：${pet.caution_note || "未入力"}`
+        ].join("\n");
+      }).join("\n\n");
+
+      $("summaryBox").textContent = [
+        "【ホテル申込】",
+        `飼い主さま：${p.owner_name || "未入力"}`,
+        `電話番号：${p.phone || "未入力"}`,
+        `お預かり：${p.checkin_date || "未入力"} ${p.checkin_time || ""}`,
+        `お迎え：${p.checkout_date || "未入力"} ${p.checkout_time || ""}`,
+        `緊急連絡先：${p.emergency_contact_phone || "未入力"}`,
+        "",
+        pets || "ペット情報：未入力",
+        "",
+        `ごはん全体メモ：${p.meal_note || "未入力"}`,
+        `お薬全体メモ：${p.medicine_note || "未入力"}`,
+        `健康メモ：${p.health_note || "未入力"}`,
+        `その他希望：${p.request_note || "未入力"}`,
+        "",
+        `確認事項：${p.terms_accepted ? "同意済み" : "未同意"}`
+      ].join("\n");
+    }
+
+    async function submitHotelApplication(){
+      try{
+        showError("");
+        showOk("");
+        updateSummary();
+
+        const payload = buildPayload();
+        validatePayload(payload);
+
+        $("submitBtn").disabled = true;
+        $("submitBtn").textContent = "送信中...";
+
+        const res = await apiPost("/api/hotel/applications/create", payload);
+
+        showOk("ペットホテル申込を受け付けました。サロン確認後、LINEまたは電話でご連絡します。");
+        window.scrollTo({ top:0, behavior:"smooth" });
+
+      }catch(e){
+        console.error(e);
+        showError(e.message || "送信に失敗しました。");
+      }finally{
+        $("submitBtn").disabled = false;
+        $("submitBtn").textContent = "ホテル申込を送信する";
+      }
+    }
+
+    function validatePayload(p){
+      if(!p.owner_name) throw new Error("飼い主さま氏名を入力してください。");
+      if(!p.phone) throw new Error("電話番号を入力してください。");
+      if(!p.checkin_date) throw new Error("チェックイン日を選択してください。");
+      if(!p.checkout_date) throw new Error("チェックアウト日を選択してください。");
+      if(p.checkout_date < p.checkin_date) throw new Error("チェックアウト日はチェックイン日以降を選択してください。");
+      if(!p.emergency_contact_phone) throw new Error("緊急連絡先の電話番号を入力してください。");
+      if(!p.terms_accepted) throw new Error("お預かり確認事項への同意が必要です。");
+      if(!p.pets.length) throw new Error("ペット情報を入力してください。");
+      p.pets.forEach((pet, i) => {
+        if(!pet.pet_name || !pet.pet_name.trim()) throw new Error(`${i + 1}頭目のペット名を入力してください。`);
+      });
+    }
+
+    async function apiGet(path){
+      const url = new URL(CONFIG.WORKER_BASE_URL + path);
+      url.searchParams.set("shop_code", CONFIG.SHOP_CODE);
+      const res = await fetch(url.toString());
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false) throw new Error(formatApiError(json, res.status));
+      return json;
+    }
+
+    async function apiPost(path, body){
+      const res = await fetch(CONFIG.WORKER_BASE_URL + path, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false) throw new Error(formatApiError(json, res.status));
+      return json;
+    }
+
+    function formatApiError(json, status){
+      if(json?.detail?.response?.message) return json.detail.response.message;
+      if(json?.detail?.response?.hint) return json.detail.response.hint;
+      return json?.error || json?.message || `APIエラー ${status}`;
+    }
+
+    function showError(msg){
+      const el = $("errorBox");
+      if(!msg){ el.style.display = "none"; el.textContent = ""; return; }
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    function showOk(msg){
+      const el = $("okBox");
+      if(!msg){ el.style.display = "none"; el.textContent = ""; return; }
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    function option(value, label, current){
+      return `<option value="${value}" ${String(current ?? "") === String(value) ? "selected" : ""}>${label}</option>`;
+    }
+
+    function todayYmd(){
+      const now = new Date();
+      const jst = new Date(now.toLocaleString("en-US", { timeZone:"Asia/Tokyo" }));
+      return `${jst.getFullYear()}-${String(jst.getMonth()+1).padStart(2,"0")}-${String(jst.getDate()).padStart(2,"0")}`;
+    }
+
+    function addDays(ymd, days){
+      const d = new Date(`${ymd}T00:00:00+09:00`);
+      d.setDate(d.getDate() + days);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    }
+
+    function escapeHtml(value){
+      return String(value ?? "").replace(/[&<>"']/g, s => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]));
+    }
+
+    function escapeAttr(value){
+      return escapeHtml(value).replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
