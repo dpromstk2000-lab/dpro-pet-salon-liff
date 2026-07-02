@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 完了履歴分離</title>
+  <title>DPROペットサロン｜オーナー管理画面 予約受付ルール設定</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -639,11 +639,35 @@
               </div>
             </div>
 
-            <div class="row two">
+            <label>予約受付ルール</label>
+            <select id="setRulePreset">
+              <option value="solo">1人サロン向け</option>
+              <option value="two_staff">2人サロン向け</option>
+              <option value="relaxed">ゆったり営業向け</option>
+              <option value="multi_pet">多頭予約多め向け</option>
+              <option value="custom">自由設定</option>
+            </select>
+
+            <div class="notice" id="rulePresetNote" style="margin-top:10px">
+              プリセットを選んだ後でも、下の数字を少しだけ変更できます。
+            </div>
+
+            <div class="row three">
               <div>
                 <label>1日の予約上限</label>
                 <input id="setMaxReservations" type="number" min="1" max="100" />
               </div>
+              <div>
+                <label>同じ時間に受けられる予約数</label>
+                <input id="setMaxReservationsPerSlot" type="number" min="1" max="20" />
+              </div>
+              <div>
+                <label>多頭予約の同時受付</label>
+                <input id="setMaxPetsPerGroup" type="number" min="1" max="10" />
+              </div>
+            </div>
+
+            <div class="row two">
               <div>
                 <label>予約枠の分数</label>
                 <select id="setSlotMinutes">
@@ -653,6 +677,17 @@
                   <option value="120">120分</option>
                 </select>
               </div>
+              <div>
+                <label>多頭予約の同時間受付</label>
+                <select id="setAllowMultiPetSameTime">
+                  <option value="true">同じ飼い主さまならOK</option>
+                  <option value="false">通常予約と同じ制限にする</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="notice" style="margin-top:10px">
+              例：1人サロン向けを選んだ後に、1日の予約上限だけ 4 → 5 に変えることもできます。
             </div>
 
             <label>定休日</label>
@@ -700,7 +735,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-6.1 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-6.5 owner.html
     </div>
   </div>
 
@@ -799,6 +834,11 @@
       $("loadFollowupsBtn").addEventListener("click", loadFollowups);
       $("saveSettingsBtn").addEventListener("click", saveSettings);
       $("loadSettingsBtn").addEventListener("click", loadSettings);
+      $("setRulePreset").addEventListener("change", applyRulePreset);
+      ["setMaxReservations","setMaxReservationsPerSlot","setMaxPetsPerGroup","setSlotMinutes","setAllowMultiPetSameTime"].forEach(id => {
+        $(id).addEventListener("input", markCustomRule);
+        $(id).addEventListener("change", markCustomRule);
+      });
       $("saveClosedBtn").addEventListener("click", () => saveClosedDay(true));
       $("openClosedBtn").addEventListener("click", () => saveClosedDay(false));
       $("completeVisitBtn").addEventListener("click", completeVisit);
@@ -853,8 +893,13 @@
         $("setShopName").value = s.shop_name || "";
         $("setOpenTime").value = hm(s.open_time || "10:00");
         $("setCloseTime").value = hm(s.close_time || "18:00");
-        $("setMaxReservations").value = s.max_reservations_per_day || 12;
+        $("setRulePreset").value = s.reservation_rule_preset || "solo";
+        $("setMaxReservations").value = s.max_reservations_per_day || 4;
+        $("setMaxReservationsPerSlot").value = s.max_reservations_per_slot || 1;
+        $("setMaxPetsPerGroup").value = s.max_pets_per_group || 3;
+        $("setAllowMultiPetSameTime").value = String(s.allow_multi_pet_same_time !== false);
         $("setSlotMinutes").value = String(s.reservation_slot_minutes || 30);
+        updateRulePresetNote();
 
         const holidays = Array.isArray(s.regular_holidays) ? s.regular_holidays : [];
         document.querySelectorAll("#holidayChecks input").forEach(ch => {
@@ -865,6 +910,99 @@
         console.error(e);
         showError(e.message || "店舗設定の取得に失敗しました。");
       }
+    }
+
+    const BOOKING_RULE_PRESETS = {
+      solo: {
+        label: "1人サロン向け",
+        max_reservations_per_day: 4,
+        max_reservations_per_slot: 1,
+        max_pets_per_group: 3,
+        reservation_slot_minutes: 30,
+        allow_multi_pet_same_time: true,
+        note: "1人で無理なく対応しやすい基本設定です。1日4件、同じ時間は1組まで、多頭は同じ飼い主さまなら最大3頭までOKです。"
+      },
+      two_staff: {
+        label: "2人サロン向け",
+        max_reservations_per_day: 6,
+        max_reservations_per_slot: 2,
+        max_pets_per_group: 3,
+        reservation_slot_minutes: 30,
+        allow_multi_pet_same_time: true,
+        note: "スタッフ2名以上の店舗向けです。1日6件、同じ時間に2組まで受けられる設定です。"
+      },
+      relaxed: {
+        label: "ゆったり営業向け",
+        max_reservations_per_day: 3,
+        max_reservations_per_slot: 1,
+        max_pets_per_group: 2,
+        reservation_slot_minutes: 60,
+        allow_multi_pet_same_time: true,
+        note: "高齢犬・初回相談・丁寧な施術を重視する店舗向けです。余裕を持った受付にできます。"
+      },
+      multi_pet: {
+        label: "多頭予約多め向け",
+        max_reservations_per_day: 6,
+        max_reservations_per_slot: 1,
+        max_pets_per_group: 3,
+        reservation_slot_minutes: 30,
+        allow_multi_pet_same_time: true,
+        note: "多頭飼いのお客様が多い店舗向けです。同じ飼い主さまのまとめ予約に対応しやすい設定です。"
+      },
+      custom: {
+        label: "自由設定",
+        note: "お店に合わせて数字を自由に調整できます。"
+      }
+    };
+
+    function applyRulePreset(){
+      const presetKey = $("setRulePreset").value;
+      const preset = BOOKING_RULE_PRESETS[presetKey];
+      if(!preset || presetKey === "custom"){
+        updateRulePresetNote();
+        return;
+      }
+
+      $("setMaxReservations").value = preset.max_reservations_per_day;
+      $("setMaxReservationsPerSlot").value = preset.max_reservations_per_slot;
+      $("setMaxPetsPerGroup").value = preset.max_pets_per_group;
+      $("setSlotMinutes").value = String(preset.reservation_slot_minutes);
+      $("setAllowMultiPetSameTime").value = String(preset.allow_multi_pet_same_time !== false);
+      updateRulePresetNote();
+    }
+
+    function markCustomRule(){
+      const presetKey = $("setRulePreset").value;
+      if(!presetKey || presetKey === "custom") {
+        updateRulePresetNote();
+        return;
+      }
+
+      const preset = BOOKING_RULE_PRESETS[presetKey];
+      if(!preset) return;
+
+      const changed =
+        Number($("setMaxReservations").value || 0) !== Number(preset.max_reservations_per_day) ||
+        Number($("setMaxReservationsPerSlot").value || 0) !== Number(preset.max_reservations_per_slot) ||
+        Number($("setMaxPetsPerGroup").value || 0) !== Number(preset.max_pets_per_group) ||
+        Number($("setSlotMinutes").value || 0) !== Number(preset.reservation_slot_minutes) ||
+        ($("setAllowMultiPetSameTime").value !== String(preset.allow_multi_pet_same_time !== false));
+
+      if(changed){
+        $("setRulePreset").value = "custom";
+      }
+
+      updateRulePresetNote();
+    }
+
+    function updateRulePresetNote(){
+      const presetKey = $("setRulePreset").value || "custom";
+      const preset = BOOKING_RULE_PRESETS[presetKey] || BOOKING_RULE_PRESETS.custom;
+      const maxDay = $("setMaxReservations")?.value || "-";
+      const maxSlot = $("setMaxReservationsPerSlot")?.value || "-";
+      const maxPets = $("setMaxPetsPerGroup")?.value || "-";
+
+      $("rulePresetNote").textContent = `${preset.label}：${preset.note} 現在の設定：1日${maxDay}件 / 同じ時間${maxSlot}組 / 多頭最大${maxPets}頭`;
     }
 
     async function loadSummary(){
@@ -1266,7 +1404,11 @@
           shop_name: $("setShopName").value.trim(),
           open_time: $("setOpenTime").value,
           close_time: $("setCloseTime").value,
-          max_reservations_per_day: Number($("setMaxReservations").value || 12),
+          reservation_rule_preset: $("setRulePreset").value,
+          max_reservations_per_day: Number($("setMaxReservations").value || 4),
+          max_reservations_per_slot: Number($("setMaxReservationsPerSlot").value || 1),
+          max_pets_per_group: Number($("setMaxPetsPerGroup").value || 3),
+          allow_multi_pet_same_time: $("setAllowMultiPetSameTime").value !== "false",
           reservation_slot_minutes: Number($("setSlotMinutes").value || 30),
           regular_holidays
         });
