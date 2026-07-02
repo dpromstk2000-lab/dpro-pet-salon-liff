@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 ホテル履歴整理</title>
+  <title>DPROペットサロン｜オーナー管理画面 LINE文面テンプレート整理</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -673,6 +673,58 @@
       .hotel-board{grid-template-columns:1fr}
     }
 
+  
+    .template-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:12px;
+    }
+    .template-card{
+      border:1px solid var(--line);
+      background:white;
+      border-radius:18px;
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .template-card h3{
+      margin:0;
+      font-size:16px;
+      color:#5b3526;
+    }
+    .template-card .lead{
+      min-height:36px;
+    }
+    .template-text{
+      width:100%;
+      min-height:170px;
+      font-size:13px;
+      line-height:1.65;
+      background:#fffaf6;
+      white-space:pre-wrap;
+    }
+    .template-help{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+    .template-help div{
+      border:1px solid var(--line);
+      background:#fff4ec;
+      border-radius:12px;
+      padding:9px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.55;
+    }
+    @media(max-width:900px){
+      .template-grid{grid-template-columns:1fr}
+      .template-help{grid-template-columns:1fr}
+    }
+
   </style>
 </head>
 <body>
@@ -703,6 +755,7 @@
         <button class="tab" data-tab="day">日別予約</button>
         <button class="tab" data-tab="hotel">ホテル申込</button>
         <button class="tab" data-tab="followups">LINE案内</button>
+        <button class="tab" data-tab="templates">文面テンプレ</button>
         <button class="tab" data-tab="settings">店舗設定</button>
       </div>
     </section>
@@ -1016,6 +1069,29 @@
         </div>
       </section>
 
+      <section class="section" id="tab-templates">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>LINE文面テンプレート</h2>
+              <p class="lead">電話対応・予約確定・ホテル連絡など、よく使う文面をここからコピーできます。</p>
+            </div>
+          </div>
+
+          <div class="notice">
+            本番では自動送信にしすぎず、まずは「コピーしてLINE公式チャットに貼る」運用が安全です。
+            お客様名・ペット名・日時だけ直して使える文面にしています。
+          </div>
+
+          <div class="template-help">
+            <div><b>基本の使い方</b><br>文面を確認 → 必要箇所を少し直す → コピー → LINE公式チャットへ貼り付け。</div>
+            <div><b>注意</b><br>予約確定・ホテル確定は、必ず日時や内容を確認してから送ってください。</div>
+          </div>
+
+          <div id="templateList" class="template-grid"></div>
+        </div>
+      </section>
+
       <section class="section" id="tab-settings">
         <div class="grid two">
           <div class="card">
@@ -1136,7 +1212,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-15 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-16 owner.html
     </div>
   </div>
 
@@ -1252,6 +1328,7 @@
       $("loadDayBtn").addEventListener("click", loadDay);
       $("loadHotelBtn").addEventListener("click", loadHotelApplications);
       $("loadFollowupsBtn").addEventListener("click", loadFollowups);
+      renderLineTemplates();
       $("saveSettingsBtn").addEventListener("click", saveSettings);
       $("loadSettingsBtn").addEventListener("click", loadSettings);
       $("setRulePreset").addEventListener("change", applyRulePreset);
@@ -1310,6 +1387,162 @@
       $("manualDate").value = today;
       $("hotelFrom").value = addDays(today, -7);
       $("hotelTo").value = addDays(today, 90);
+    }
+
+    function lineTemplates(){
+      return [
+        {
+          key: "reservation_received",
+          title: "予約希望を受け付けました",
+          desc: "お客様が予約フォームを送った直後に使う文面です。",
+          text: [
+            "{ペット名}ちゃんのご予約希望を受け付けました。",
+            "",
+            "【希望日時】{予約日} {予約時間}",
+            "【メニュー】{メニュー}",
+            "",
+            "内容を確認後、こちらのLINEまたはお電話で確定のご連絡をいたします。",
+            "毛玉・皮膚・苦手な作業など気になる点があれば、このLINEにそのままご返信ください。"
+          ].join("\n")
+        },
+        {
+          key: "reservation_confirmed",
+          title: "予約確定のご連絡",
+          desc: "サロン側で日時を確認したあとに使う文面です。",
+          text: [
+            "{飼い主名}さま",
+            "{ペット名}ちゃんのご予約を確定しました。",
+            "",
+            "【日時】{予約日} {予約時間}",
+            "【メニュー】{メニュー}",
+            "",
+            "当日はお気をつけてお越しください。",
+            "変更やキャンセルが必要な場合は、LINEからご連絡ください。"
+          ].join("\n")
+        },
+        {
+          key: "reservation_change",
+          title: "予約変更希望を受け付けました",
+          desc: "予約変更フォームから希望が届いた時に使う文面です。",
+          text: [
+            "{ペット名}ちゃんの予約変更希望を受け付けました。",
+            "",
+            "【変更前】{変更前日時}",
+            "【変更希望】{変更後日時}",
+            "",
+            "サロンで空き状況を確認後、確定のご連絡をいたします。",
+            "まだ変更確定ではありませんので、少しお待ちください。"
+          ].join("\n")
+        },
+        {
+          key: "reservation_cancel",
+          title: "キャンセル希望を受け付けました",
+          desc: "キャンセル希望が届いた時に使う文面です。",
+          text: [
+            "{ペット名}ちゃんのキャンセル希望を受け付けました。",
+            "",
+            "【予約日時】{予約日} {予約時間}",
+            "",
+            "確認後、キャンセル処理を行います。",
+            "またのご予約をお待ちしております。"
+          ].join("\n")
+        },
+        {
+          key: "after_visit",
+          title: "来店後のお礼",
+          desc: "施術完了後に送るとリピートにつながりやすい文面です。",
+          text: [
+            "{飼い主名}さま",
+            "本日は{ペット名}ちゃんのご来店ありがとうございました。",
+            "",
+            "今回の内容：{メニュー}",
+            "気になった点：{施術メモ}",
+            "",
+            "次回のお手入れ目安は {次回おすすめ日} ごろです。",
+            "気になることがあれば、いつでもLINEでご相談ください。"
+          ].join("\n")
+        },
+        {
+          key: "next_recommend",
+          title: "次回おすすめ案内",
+          desc: "前回来店から一定期間後に送る文面です。",
+          text: [
+            "{ペット名}ちゃん、そろそろお手入れ時期の目安です。",
+            "",
+            "前回の内容：{前回メニュー}",
+            "次回おすすめ目安：{次回おすすめ日}",
+            "",
+            "前回と同じ内容でのご予約もできます。",
+            "ご希望の日程があれば、このLINEにそのままご返信ください。"
+          ].join("\n")
+        },
+        {
+          key: "hotel_received",
+          title: "ホテル申込受付",
+          desc: "ホテル申込が届いた時に使う文面です。",
+          text: [
+            "{ペット名}ちゃんのペットホテル申込を受け付けました。",
+            "",
+            "【お預かり】{チェックイン日} {チェックイン時間}",
+            "【お迎え】{チェックアウト日} {チェックアウト時間}",
+            "",
+            "ごはん・お薬・緊急連絡先などを確認後、確定のご連絡をいたします。",
+            "まだ確定ではありませんので、少しお待ちください。"
+          ].join("\n")
+        },
+        {
+          key: "hotel_confirmed",
+          title: "ホテル確定のご連絡",
+          desc: "ホテル利用を確定したあとに使う文面です。",
+          text: [
+            "{飼い主名}さま",
+            "{ペット名}ちゃんのペットホテルを確定しました。",
+            "",
+            "【お預かり】{チェックイン日} {チェックイン時間}",
+            "【お迎え】{チェックアウト日} {チェックアウト時間}",
+            "",
+            "当日は、普段のごはん・必要なお薬・リード等をお持ちください。",
+            "体調に変化がある場合は、事前にLINEでご連絡ください。"
+          ].join("\n")
+        }
+      ];
+    }
+
+    function renderLineTemplates(){
+      const el = $("templateList");
+      if(!el) return;
+
+      el.innerHTML = lineTemplates().map(t => `
+        <div class="template-card">
+          <div>
+            <h3>${escapeHtml(t.title)}</h3>
+            <p class="lead">${escapeHtml(t.desc)}</p>
+          </div>
+          <textarea class="template-text" id="template_${escapeHtml(t.key)}">${escapeHtml(t.text)}</textarea>
+          <div class="btns">
+            <button class="btn small" type="button" data-template-copy="${escapeHtml(t.key)}">文面コピー</button>
+            <button class="btn secondary small" type="button" data-template-reset="${escapeHtml(t.key)}">初期文面に戻す</button>
+          </div>
+        </div>
+      `).join("");
+
+      el.querySelectorAll("[data-template-copy]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const key = btn.dataset.templateCopy;
+          const text = $("template_" + key).value;
+          await copyText(text);
+          showOk("LINE文面をコピーしました。LINE公式のチャット欄へ貼り付けて使えます。");
+        });
+      });
+
+      el.querySelectorAll("[data-template-reset]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const key = btn.dataset.templateReset;
+          const template = lineTemplates().find(t => t.key === key);
+          if(template) $("template_" + key).value = template.text;
+          showOk("初期文面に戻しました。");
+        });
+      });
     }
 
     async function loadSettings(){
