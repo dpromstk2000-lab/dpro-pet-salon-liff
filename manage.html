@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>DPROペットサロン｜予約変更・キャンセル</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root{
+      --bg:#fffaf4;
+      --card:#ffffff;
+      --ink:#2f2722;
+      --muted:#7d6f66;
+      --line:#eadfd5;
+      --main:#8a5a3c;
+      --main2:#b98055;
+      --soft:#f6eadf;
+      --soft2:#fff4ea;
+      --danger:#b54747;
+      --ok:#2f7d55;
+      --blue:#315f8f;
+      --shadow:0 18px 45px rgba(70,42,25,.10);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(185,128,85,.18), transparent 34%),
+        linear-gradient(180deg,#fffaf4 0%,#fff 45%,#fffaf4 100%);
+      line-height:1.65;
+    }
+    button,input,select,textarea{font:inherit}
+    .wrap{max-width:980px;margin:0 auto;padding:18px 14px 46px}
+    .hero{
+      background:linear-gradient(135deg,#4b3328,#8a5a3c 55%,#c99a6b);
+      color:#fff;
+      border-radius:28px;
+      padding:24px 18px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .hero:after{
+      content:"";
+      position:absolute;
+      width:240px;height:240px;border-radius:999px;
+      right:-80px;top:-90px;
+      background:rgba(255,255,255,.13);
+    }
+    .hero-content{position:relative;z-index:1}
+    .badge{
+      display:inline-flex;gap:7px;align-items:center;
+      padding:7px 11px;border-radius:999px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.25);
+      font-size:12px;
+    }
+    h1{margin:12px 0 7px;font-size:25px;line-height:1.25}
+    .hero p{margin:0;color:rgba(255,255,255,.88);font-size:14px}
+    .status{
+      margin-top:12px;
+      display:flex;gap:8px;flex-wrap:wrap;
+      font-size:12px;
+    }
+    .pill{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--muted);
+      padding:7px 10px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .pill.dark{
+      color:#fff;
+      border-color:rgba(255,255,255,.25);
+      background:rgba(255,255,255,.12);
+    }
+    .grid{display:grid;gap:14px;margin-top:14px}
+    @media(min-width:880px){.grid.two{grid-template-columns:.8fr 1.2fr}}
+    .card{
+      background:rgba(255,255,255,.94);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:0 10px 28px rgba(70,42,25,.07);
+    }
+    .card-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+    h2{font-size:18px;margin:0;line-height:1.35}
+    .lead{font-size:13px;color:var(--muted);margin:4px 0 0}
+    label{display:block;font-weight:900;font-size:13px;margin:12px 0 6px}
+    input,select,textarea{
+      width:100%;
+      border:1px solid #ddd2c9;
+      background:#fff;
+      border-radius:14px;
+      padding:12px;
+      outline:none;
+      color:var(--ink);
+    }
+    textarea{min-height:92px;resize:vertical}
+    input:focus,select:focus,textarea:focus{border-color:var(--main2);box-shadow:0 0 0 4px rgba(185,128,85,.13)}
+    .btn{
+      border:0;
+      border-radius:16px;
+      padding:13px 15px;
+      font-weight:1000;
+      cursor:pointer;
+      background:var(--main);
+      color:#fff;
+      box-shadow:0 12px 26px rgba(138,90,60,.22);
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      gap:6px;
+      text-decoration:none;
+      text-align:center;
+    }
+    .btn.secondary{background:#fff;color:var(--main);border:1px solid var(--line);box-shadow:none}
+    .btn.danger{background:var(--danger)}
+    .btn.blue{background:var(--blue)}
+    .btn[disabled]{opacity:.55;cursor:not-allowed}
+    .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .notice{
+      padding:12px 13px;
+      border-radius:16px;
+      background:var(--soft2);
+      border:1px solid var(--line);
+      color:var(--muted);
+      font-size:13px;
+      margin-top:12px;
+    }
+    .alert{
+      display:none;
+      padding:13px;
+      border-radius:16px;
+      margin-top:12px;
+      font-weight:900;
+      font-size:13px;
+      white-space:pre-wrap;
+    }
+    .alert.show{display:block}
+    .alert.err{background:#fff1f1;color:var(--danger);border:1px solid #f0caca}
+    .alert.ok{background:#eefaf3;color:var(--ok);border:1px solid #ccebd9}
+    .reservation{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:18px;
+      padding:13px;
+      margin-top:10px;
+      cursor:pointer;
+    }
+    .reservation.selected{
+      border-color:var(--main);
+      background:var(--soft);
+      box-shadow:0 0 0 3px rgba(138,90,60,.12);
+    }
+    .reservation-top{
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      align-items:flex-start;
+    }
+    .date{font-size:19px;font-weight:1000;color:var(--main);line-height:1.1}
+    .name{font-size:15px;font-weight:1000;margin-top:5px}
+    .sub{font-size:12px;color:var(--muted);margin-top:3px}
+    .status-label{
+      border-radius:999px;
+      padding:5px 9px;
+      font-size:11px;
+      font-weight:1000;
+      background:#f1ebe5;
+      color:var(--main);
+      white-space:nowrap;
+    }
+    .day-list,.time-list{display:grid;gap:9px}
+    .day-list{grid-template-columns:repeat(2,1fr)}
+    @media(min-width:720px){.day-list{grid-template-columns:repeat(4,1fr)}}
+    .time-list{grid-template-columns:repeat(3,1fr)}
+    @media(min-width:720px){.time-list{grid-template-columns:repeat(5,1fr)}}
+    .day-btn,.time-btn{
+      width:100%;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:16px;
+      padding:10px;
+      cursor:pointer;
+      text-align:center;
+      font-weight:900;
+    }
+    .day-btn.selected,.time-btn.selected{border-color:var(--main);background:var(--soft);box-shadow:0 0 0 3px rgba(138,90,60,.12)}
+    .day-btn[disabled]{opacity:.48;cursor:not-allowed;background:#f2f0ee}
+    .day-sub{font-size:11px;color:var(--muted)}
+    .empty{
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed #d8c7ba;
+      border-radius:18px;
+      padding:24px 14px;
+      background:#fff;
+      margin-top:10px;
+    }
+    .summary{
+      background:#fff;
+      border:1px dashed #d9c7b8;
+      border-radius:18px;
+      padding:13px;
+      font-size:13px;
+      white-space:pre-wrap;
+      margin-top:12px;
+    }
+    .footer{text-align:center;color:var(--muted);font-size:11px;margin-top:18px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-content">
+        <span class="badge">🐾 予約変更・キャンセル</span>
+        <h1 id="shopName">DPROペットサロン</h1>
+        <p>現在の予約を確認して、変更希望またはキャンセル希望を送れます。</p>
+        <div class="status">
+          <span class="pill dark" id="apiState">API確認中</span>
+          <span class="pill dark" id="lineState">LINE確認中</span>
+          <span class="pill dark" id="customerState">予約確認待ち</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="alert err" id="errorBox"></div>
+    <div class="alert ok" id="okBox"></div>
+
+    <div class="grid two">
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>予約者確認</h2>
+            <p class="lead">LINE内では自動確認、通常ブラウザでは電話番号で確認できます。</p>
+          </div>
+        </div>
+
+        <label>電話番号</label>
+        <input id="phoneSearch" inputmode="tel" placeholder="例：090-0000-0000" />
+
+        <div class="btns">
+          <button class="btn" type="button" id="searchBtn">現在の予約を表示</button>
+          <a class="btn secondary" href="./member.html">会員証へ戻る</a>
+        </div>
+
+        <div class="notice">
+          予約変更・キャンセルは「希望受付」です。サロン確認後、LINEまたはお電話で連絡があります。
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>現在の予約</h2>
+            <p class="lead">変更・キャンセルしたい予約を選んでください。</p>
+          </div>
+        </div>
+        <div id="reservationsBox">
+          <div class="empty">電話番号で予約を確認してください。</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card grid">
+      <div class="card-head">
+        <div>
+          <h2>予約変更希望</h2>
+          <p class="lead">新しい希望日時を選んで送信します。</p>
+        </div>
+      </div>
+
+      <div id="selectedBox" class="notice">予約を選択してください。</div>
+
+      <label>変更後の希望日</label>
+      <div class="day-list" id="dayList">
+        <div class="notice">予約可能日を読み込み中です。</div>
+      </div>
+
+      <label>変更後の希望時間</label>
+      <div class="time-list" id="timeList"></div>
+
+      <label>変更理由・ご希望</label>
+      <textarea id="changeReason" placeholder="例：予定が変わったため、同じ内容で別日に変更したいです"></textarea>
+
+      <div class="btns">
+        <button class="btn blue" type="button" id="changeBtn">予約変更希望を送信</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>キャンセル希望</h2>
+          <p class="lead">選択した予約のキャンセル希望を送信します。</p>
+        </div>
+      </div>
+
+      <label>キャンセル理由</label>
+      <textarea id="cancelReason" placeholder="例：予定が合わなくなったため"></textarea>
+
+      <div class="btns">
+        <button class="btn danger" type="button" id="cancelBtn">キャンセル希望を送信</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>送信前確認</h2>
+      <div class="summary" id="summaryBox">予約を選択すると内容が表示されます。</div>
+    </section>
+
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-6.4 manage.html</div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
+      SHOP_CODE: "pet_salon_demo",
+      LIFF_ID: ""
+    };
+
+    const state = {
+      profile: { line_user_id: "", line_display_name: "" },
+      customer: null,
+      pets: [],
+      reservations: [],
+      days: [],
+      settings: null,
+      selectedReservation: null,
+      selectedDate: "",
+      selectedTime: ""
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      $("searchBtn").addEventListener("click", searchByPhone);
+      $("changeBtn").addEventListener("click", submitChange);
+      $("cancelBtn").addEventListener("click", submitCancel);
+      $("changeReason").addEventListener("input", updateSelectedBox);
+      $("cancelReason").addEventListener("input", updateSelectedBox);
+      await initLiff();
+      await boot();
+    });
+
+    async function initLiff(){
+      try{
+        if(!CONFIG.LIFF_ID){
+          $("lineState").textContent = "通常ブラウザ表示";
+          return;
+        }
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+        if(!liff.isLoggedIn()){
+          liff.login();
+          return;
+        }
+        const profile = await liff.getProfile();
+        state.profile.line_user_id = profile.userId || "";
+        state.profile.line_display_name = profile.displayName || "";
+        $("lineState").textContent = `LINE連携：${state.profile.line_display_name || "取得OK"}`;
+      }catch(e){
+        console.warn(e);
+        $("lineState").textContent = "LINE未連携";
+      }
+    }
+
+    async function boot(){
+      try{
+        showError("");
+        const status = await apiGet("/api/public/status");
+        state.settings = status;
+        $("apiState").textContent = "API接続OK";
+        $("shopName").textContent = status.shop_name || "DPROペットサロン";
+
+        const daysRes = await apiGet("/api/public/available-days?days=28");
+        state.days = daysRes.days || [];
+        renderDays();
+        renderTimes();
+
+        if(state.profile.line_user_id){
+          await loadCustomer({ line_user_id: state.profile.line_user_id });
+        }
+      }catch(e){
+        console.error(e);
+        $("apiState").textContent = "API接続エラー";
+        showError(e.message || "読み込みに失敗しました。");
+      }
+    }
+
+    async function searchByPhone(){
+      const phone = $("phoneSearch").value.trim();
+      if(!phone){
+        showError("電話番号を入力してください。");
+        return;
+      }
+      await loadCustomer({ phone });
+    }
+
+    async function loadCustomer(params){
+      try{
+        showError("");
+        showOk("");
+
+        const query = new URLSearchParams(params).toString();
+        const res = await apiGet(`/api/public/customer?${query}`);
+
+        if(!res.found){
+          state.customer = null;
+          state.pets = [];
+          state.reservations = [];
+          $("customerState").textContent = "登録なし";
+          renderReservations();
+          showError("登録情報が見つかりませんでした。");
+          return;
+        }
+
+        state.customer = res.customer;
+        state.pets = res.pets || [];
+        state.reservations = res.reservations || [];
+
+        if(state.customer.phone) $("phoneSearch").value = state.customer.phone;
+
+        $("customerState").textContent = `予約 ${state.reservations.length}件`;
+        renderReservations();
+      }catch(e){
+        console.error(e);
+        showError(e.message || "予約情報の取得に失敗しました。");
+      }
+    }
+
+    function renderReservations(){
+      const box = $("reservationsBox");
+      state.selectedReservation = null;
+      updateSelectedBox();
+
+      if(!state.reservations.length){
+        box.innerHTML = `<div class="empty">現在変更できる予約はありません。</div>`;
+        return;
+      }
+
+      box.innerHTML = state.reservations.map(r => {
+        const pet = state.pets.find(p => p.id === r.pet_id) || {};
+        return `
+          <div class="reservation" data-id="${escapeHtml(r.id)}">
+            <div class="reservation-top">
+              <div>
+                <div class="date">${escapeHtml(r.reservation_date || "")} ${escapeHtml(hm(r.reservation_time))}</div>
+                <div class="name">${escapeHtml(pet.pet_name || "ペット")}ちゃん</div>
+                <div class="sub">${escapeHtml(r.service_name || "")}</div>
+              </div>
+              <span class="status-label">${reservationStatusLabel(r.status)}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      box.querySelectorAll(".reservation").forEach(card => {
+        card.addEventListener("click", () => {
+          box.querySelectorAll(".reservation").forEach(x => x.classList.remove("selected"));
+          card.classList.add("selected");
+          state.selectedReservation = state.reservations.find(r => r.id === card.dataset.id) || null;
+          updateSelectedBox();
+        });
+      });
+
+      const first = box.querySelector(".reservation");
+      if(first) first.click();
+    }
+
+    function updateSelectedBox(){
+      const r = state.selectedReservation;
+      if(!r){
+        $("selectedBox").textContent = "予約を選択してください。";
+        $("summaryBox").textContent = "予約を選択すると内容が表示されます。";
+        return;
+      }
+
+      const pet = state.pets.find(p => p.id === r.pet_id) || {};
+      $("selectedBox").textContent = `${r.reservation_date} ${hm(r.reservation_time)} / ${pet.pet_name || "ペット"}ちゃん / ${r.service_name || ""}`;
+
+      $("summaryBox").textContent = [
+        "【選択中の予約】",
+        `${r.reservation_date} ${hm(r.reservation_time)}`,
+        `${pet.pet_name || "ペット"}ちゃん`,
+        `${r.service_name || ""}`,
+        "",
+        "【変更後】",
+        `${state.selectedDate || "未選択"} ${state.selectedTime || ""}`,
+        $("changeReason").value ? `変更理由：${$("changeReason").value}` : "",
+        "",
+        "【キャンセル理由】",
+        $("cancelReason").value || "未入力"
+      ].filter(Boolean).join("\\n");
+    }
+
+    function renderDays(){
+      const el = $("dayList");
+      if(!state.days.length){
+        el.innerHTML = `<div class="notice">予約可能日を取得できませんでした。</div>`;
+        return;
+      }
+
+      el.innerHTML = state.days.slice(0, 28).map(d => {
+        const disabled = !d.can_reserve;
+        return `
+          <button type="button" class="day-btn" data-date="${escapeHtml(d.date)}" ${disabled ? "disabled" : ""}>
+            <div>${formatDateShort(d.date)}（${escapeHtml(d.weekday_label)}）</div>
+            <div class="day-sub">${disabled ? escapeHtml(d.closed_reason || (d.is_full ? "満席" : "受付不可")) : `残り${d.remaining}`}</div>
+          </button>
+        `;
+      }).join("");
+
+      el.querySelectorAll(".day-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if(btn.disabled) return;
+          state.selectedDate = btn.dataset.date;
+          el.querySelectorAll(".day-btn").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          updateSelectedBox();
+        });
+      });
+
+      const first = el.querySelector(".day-btn:not([disabled])");
+      if(first && !state.selectedDate) first.click();
+    }
+
+    function renderTimes(){
+      const el = $("timeList");
+      const settings = state.settings;
+      if(!settings){
+        el.innerHTML = "";
+        return;
+      }
+
+      const times = buildTimes(settings.open_time || "10:00", settings.close_time || "18:00", Number(settings.reservation_slot_minutes || 30));
+      el.innerHTML = times.map(t => `<button type="button" class="time-btn" data-time="${t}">${t}</button>`).join("");
+
+      el.querySelectorAll(".time-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.selectedTime = btn.dataset.time;
+          el.querySelectorAll(".time-btn").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          updateSelectedBox();
+        });
+      });
+
+      const first = el.querySelector(".time-btn");
+      if(first && !state.selectedTime) first.click();
+    }
+
+    async function submitChange(){
+      try{
+        showError("");
+        showOk("");
+
+        const r = state.selectedReservation;
+        if(!r) throw new Error("変更する予約を選択してください。");
+        if(!state.selectedDate) throw new Error("変更後の日付を選択してください。");
+        if(!state.selectedTime) throw new Error("変更後の時間を選択してください。");
+
+        $("changeBtn").disabled = true;
+        $("changeBtn").textContent = "送信中...";
+
+        const res = await apiPost("/api/reservations/change", {
+          shop_code: CONFIG.SHOP_CODE,
+          reservation_id: r.id,
+          phone: $("phoneSearch").value.trim(),
+          line_user_id: state.profile.line_user_id,
+          new_reservation_date: state.selectedDate,
+          new_reservation_time: state.selectedTime,
+          reason: $("changeReason").value.trim()
+        });
+
+        showOk(["予約変更希望を受け付けました。", "", res.line_message || "", "", "サロン確認後、LINEまたはお電話でご連絡します。"].join("\\n"));
+        await reloadCurrentCustomer();
+      }catch(e){
+        showError(e.message || "予約変更希望の送信に失敗しました。");
+      }finally{
+        $("changeBtn").disabled = false;
+        $("changeBtn").textContent = "予約変更希望を送信";
+      }
+    }
+
+    async function submitCancel(){
+      try{
+        showError("");
+        showOk("");
+
+        const r = state.selectedReservation;
+        if(!r) throw new Error("キャンセルする予約を選択してください。");
+
+        const ok = confirm("選択した予約のキャンセル希望を送信します。よろしいですか？");
+        if(!ok) return;
+
+        $("cancelBtn").disabled = true;
+        $("cancelBtn").textContent = "送信中...";
+
+        const res = await apiPost("/api/reservations/cancel", {
+          shop_code: CONFIG.SHOP_CODE,
+          reservation_id: r.id,
+          phone: $("phoneSearch").value.trim(),
+          line_user_id: state.profile.line_user_id,
+          reason: $("cancelReason").value.trim()
+        });
+
+        showOk(["キャンセル希望を受け付けました。", "", res.line_message || "", "", "必要に応じて、サロンからLINEまたはお電話でご連絡します。"].join("\\n"));
+        await reloadCurrentCustomer();
+      }catch(e){
+        showError(e.message || "キャンセル希望の送信に失敗しました。");
+      }finally{
+        $("cancelBtn").disabled = false;
+        $("cancelBtn").textContent = "キャンセル希望を送信";
+      }
+    }
+
+    async function reloadCurrentCustomer(){
+      const phone = $("phoneSearch").value.trim();
+      if(phone) await loadCustomer({ phone });
+      else if(state.profile.line_user_id) await loadCustomer({ line_user_id: state.profile.line_user_id });
+    }
+
+    async function apiGet(path){
+      const joiner = path.includes("?") ? "&" : "?";
+      const url = `${CONFIG.WORKER_BASE_URL}${path}${joiner}shop_code=${encodeURIComponent(CONFIG.SHOP_CODE)}`;
+      const res = await fetch(url);
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false) throw new Error(json && json.error ? json.error : `APIエラー ${res.status}`);
+      return json;
+    }
+
+    async function apiPost(path, body){
+      const res = await fetch(`${CONFIG.WORKER_BASE_URL}${path}`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false) throw new Error(json && json.error ? json.error : `APIエラー ${res.status}`);
+      return json;
+    }
+
+    function buildTimes(open, close, slot){
+      const start = toMinutes(open);
+      const end = toMinutes(close);
+      const arr = [];
+      for(let m = start; m < end; m += slot) arr.push(fromMinutes(m));
+      return arr;
+    }
+
+    function toMinutes(hm){
+      const [h,m] = String(hm).slice(0,5).split(":").map(Number);
+      return h * 60 + (m || 0);
+    }
+
+    function fromMinutes(min){
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+    }
+
+    function showError(msg){
+      const el = $("errorBox");
+      if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
+      el.textContent = msg;
+      el.classList.add("show");
+      $("okBox").classList.remove("show");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function showOk(msg){
+      const el = $("okBox");
+      if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
+      el.textContent = msg;
+      el.classList.add("show");
+      $("errorBox").classList.remove("show");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function hm(v){ return String(v || "").slice(0,5); }
+
+    function formatDateShort(ymd){
+      const [y,m,d] = ymd.split("-");
+      return `${Number(m)}/${Number(d)}`;
+    }
+
+    function reservationStatusLabel(status){
+      return {
+        requested:"予約希望",
+        confirmed:"予約確定",
+        visited:"来店済み",
+        completed:"完了",
+        cancelled:"キャンセル",
+        no_show:"不在"
+      }[status] || status || "-";
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "").replace(/[&<>"']/g, s => ({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#39;"
+      }[s]));
+    }
+  </script>
+</body>
+</html>
