@@ -1072,7 +1072,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-14C owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-14D owner.html
     </div>
   </div>
 
@@ -1180,10 +1180,10 @@
       $("manualCreateBtn").addEventListener("click", createManualReservation);
       $("manualClearBtn").addEventListener("click", clearManualForm);
       $("manualDate").addEventListener("change", loadManualAvailableTimes);
-      $("customerSearchBtn").addEventListener("click", searchCustomers);
+      $("customerSearchBtn").addEventListener("click", () => searchCustomers(false));
       $("recentCustomersBtn").addEventListener("click", () => searchCustomers(true));
       $("customerSearchQuery").addEventListener("keydown", (e) => {
-        if(e.key === "Enter") searchCustomers();
+        if(e.key === "Enter") searchCustomers(false);
       });
       $("loadDayBtn").addEventListener("click", loadDay);
       $("loadHotelBtn").addEventListener("click", loadHotelApplications);
@@ -1761,11 +1761,13 @@
     }
 
     async function searchCustomers(recent = false){
+      recent = recent === true;
       try{
         showError("");
         showOk("");
         saveInputs();
 
+        if(recent) $("customerSearchQuery").value = "";
         const q = recent ? "" : $("customerSearchQuery").value.trim();
         const res = await apiGet("/api/admin/customers/search", {
           admin_code: adminCode(),
