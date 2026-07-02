@@ -1072,7 +1072,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-14 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-14A owner.html
     </div>
   </div>
 
@@ -2574,6 +2574,10 @@
 
     function hm(v){
       return String(v || "").slice(0,5);
+    }
+
+    function escapeAttr(str){
+      return escapeHtml(str).replace(/"/g, "&quot;");
     }
 
     function escapeHtml(str){
