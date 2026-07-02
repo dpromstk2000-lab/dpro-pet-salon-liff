@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>DPROペットサロン｜ペット会員証</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root{
+      --bg:#fffaf4;
+      --card:#ffffff;
+      --ink:#2f2722;
+      --muted:#7d6f66;
+      --line:#eadfd5;
+      --main:#8a5a3c;
+      --main2:#b98055;
+      --soft:#f6eadf;
+      --soft2:#fff4ea;
+      --danger:#b54747;
+      --ok:#2f7d55;
+      --blue:#315f8f;
+      --shadow:0 18px 45px rgba(70,42,25,.10);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(185,128,85,.18), transparent 34%),
+        linear-gradient(180deg,#fffaf4 0%,#fff 45%,#fffaf4 100%);
+      line-height:1.65;
+    }
+    button,input,select,textarea{font:inherit}
+    .wrap{max-width:980px;margin:0 auto;padding:18px 14px 44px}
+    .hero{
+      background:linear-gradient(135deg,#4b3328,#8a5a3c 55%,#c99a6b);
+      color:#fff;
+      border-radius:28px;
+      padding:24px 18px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .hero:after{
+      content:"";
+      position:absolute;
+      width:240px;height:240px;border-radius:999px;
+      right:-80px;top:-90px;
+      background:rgba(255,255,255,.13);
+    }
+    .hero-content{position:relative;z-index:1}
+    .badge{
+      display:inline-flex;gap:7px;align-items:center;
+      padding:7px 11px;border-radius:999px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.25);
+      font-size:12px;
+      letter-spacing:.04em;
+    }
+    h1{margin:12px 0 7px;font-size:25px;line-height:1.25}
+    .hero p{margin:0;color:rgba(255,255,255,.88);font-size:14px}
+    .status{
+      margin-top:12px;
+      display:flex;gap:8px;flex-wrap:wrap;
+      font-size:12px;
+    }
+    .pill{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--muted);
+      padding:7px 10px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .pill.dark{
+      color:#fff;
+      border-color:rgba(255,255,255,.25);
+      background:rgba(255,255,255,.12);
+    }
+    .grid{display:grid;gap:14px;margin-top:14px}
+    @media(min-width:840px){.grid.two{grid-template-columns:.8fr 1.2fr}}
+    .card{
+      background:rgba(255,255,255,.94);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:0 10px 28px rgba(70,42,25,.07);
+    }
+    .card-head{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+    h2{font-size:18px;margin:0;line-height:1.35}
+    .lead{font-size:13px;color:var(--muted);margin:4px 0 0}
+    label{
+      display:block;
+      font-weight:800;
+      font-size:13px;
+      margin:12px 0 6px;
+    }
+    input{
+      width:100%;
+      border:1px solid #ddd2c9;
+      background:#fff;
+      border-radius:14px;
+      padding:12px 12px;
+      outline:none;
+      color:var(--ink);
+    }
+    input:focus{
+      border-color:var(--main2);
+      box-shadow:0 0 0 4px rgba(185,128,85,.13);
+    }
+    .btn{
+      border:0;
+      border-radius:16px;
+      padding:13px 15px;
+      font-weight:900;
+      cursor:pointer;
+      background:var(--main);
+      color:#fff;
+      box-shadow:0 12px 26px rgba(138,90,60,.22);
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      gap:6px;
+      text-decoration:none;
+      text-align:center;
+    }
+    .btn.secondary{
+      background:#fff;
+      color:var(--main);
+      border:1px solid var(--line);
+      box-shadow:none;
+    }
+    .btn.blue{background:var(--blue)}
+    .btn.small{
+      font-size:12px;
+      padding:9px 11px;
+      border-radius:12px;
+      box-shadow:none;
+    }
+    .btn[disabled]{opacity:.55;cursor:not-allowed}
+    .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .notice{
+      padding:12px 13px;
+      border-radius:16px;
+      background:var(--soft2);
+      border:1px solid var(--line);
+      color:var(--muted);
+      font-size:13px;
+    }
+    .alert{
+      display:none;
+      padding:13px;
+      border-radius:16px;
+      margin-top:12px;
+      font-weight:800;
+      font-size:13px;
+      white-space:pre-wrap;
+    }
+    .alert.show{display:block}
+    .alert.err{background:#fff1f1;color:var(--danger);border:1px solid #f0caca}
+    .alert.ok{background:#eefaf3;color:var(--ok);border:1px solid #ccebd9}
+    .member-card{
+      border:1px solid var(--line);
+      border-radius:24px;
+      background:
+        radial-gradient(circle at top right, rgba(185,128,85,.20), transparent 35%),
+        linear-gradient(135deg,#fff,#fff7ef);
+      padding:18px;
+      box-shadow:0 14px 34px rgba(70,42,25,.08);
+      margin-top:12px;
+      overflow:hidden;
+      position:relative;
+    }
+    .member-card:before{
+      content:"";
+      position:absolute;
+      left:-40px;
+      bottom:-60px;
+      width:170px;
+      height:170px;
+      border-radius:999px;
+      background:rgba(138,90,60,.08);
+    }
+    .pet-head{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      position:relative;
+      z-index:1;
+    }
+    .avatar{
+      width:62px;
+      height:62px;
+      border-radius:22px;
+      display:grid;
+      place-items:center;
+      background:var(--main);
+      color:#fff;
+      font-size:28px;
+      flex:none;
+      box-shadow:0 10px 24px rgba(138,90,60,.2);
+    }
+    .pet-name{
+      font-size:24px;
+      line-height:1.1;
+      font-weight:1000;
+      color:var(--main);
+    }
+    .owner{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:4px;
+    }
+    .info-grid{
+      display:grid;
+      gap:8px;
+      margin-top:14px;
+      position:relative;
+      z-index:1;
+    }
+    @media(min-width:720px){.info-grid{grid-template-columns:1fr 1fr}}
+    .info{
+      background:rgba(255,255,255,.78);
+      border:1px solid var(--line);
+      border-radius:15px;
+      padding:10px;
+      font-size:13px;
+    }
+    .info b{
+      color:var(--main);
+      display:block;
+      font-size:11px;
+      margin-bottom:3px;
+    }
+    .memo{
+      background:#fff;
+      border:1px dashed #d8c7ba;
+      border-radius:16px;
+      padding:11px;
+      margin-top:10px;
+      font-size:13px;
+      white-space:pre-wrap;
+      position:relative;
+      z-index:1;
+    }
+    .reservation{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:18px;
+      padding:13px;
+      margin-top:10px;
+    }
+    .reservation-top{
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      align-items:flex-start;
+    }
+    .date{
+      font-size:19px;
+      font-weight:1000;
+      color:var(--main);
+      line-height:1.1;
+    }
+    .sub{font-size:12px;color:var(--muted);margin-top:3px}
+    .status-label{
+      border-radius:999px;
+      padding:5px 9px;
+      font-size:11px;
+      font-weight:900;
+      background:#f1ebe5;
+      color:var(--main);
+      white-space:nowrap;
+    }
+    .status-label.requested{background:#fff6dc;color:#8b6100}
+    .status-label.confirmed{background:#eaf3ff;color:#315f8f}
+    .status-label.visited{background:#edf7ef;color:#2f7d55}
+    .empty{
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed #d8c7ba;
+      border-radius:18px;
+      padding:24px 14px;
+      background:#fff;
+      margin-top:10px;
+    }
+    .link-grid{display:grid;gap:10px;margin-top:12px}
+    @media(min-width:720px){.link-grid{grid-template-columns:1fr 1fr}}
+    .footer{
+      text-align:center;
+      color:var(--muted);
+      font-size:11px;
+      margin-top:18px;
+    }
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-content">
+        <span class="badge">🐾 ペット会員証</span>
+        <h1 id="shopName">DPROペットサロン</h1>
+        <p>ペット情報・予約内容をLINEから確認できます。次回予約もスムーズにできます。</p>
+        <div class="status">
+          <span class="pill dark" id="apiState">API確認中</span>
+          <span class="pill dark" id="lineState">LINE確認中</span>
+          <span class="pill dark" id="customerState">会員確認中</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="alert err" id="errorBox"></div>
+    <div class="alert ok" id="okBox"></div>
+
+    <div class="grid two">
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>会員情報を確認</h2>
+            <p class="lead">LINE内では自動確認、通常ブラウザでは電話番号で確認できます。</p>
+          </div>
+        </div>
+
+        <label>電話番号で確認</label>
+        <input id="phoneSearch" inputmode="tel" placeholder="例：090-0000-0000" />
+
+        <div class="btns">
+          <button class="btn" type="button" id="searchBtn">会員証を表示</button>
+          <a class="btn secondary" id="reserveLink" href="./index.html">新しく予約する</a>
+        </div>
+
+        <div class="notice" style="margin-top:12px">
+          まだ登録がない場合は、まず予約フォームからペット情報を登録してください。
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>お客様情報</h2>
+            <p class="lead">登録済みの飼い主さま情報です。</p>
+          </div>
+        </div>
+        <div id="customerBox">
+          <div class="empty">会員情報を読み込むと表示されます。</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card grid">
+      <div class="card-head">
+        <div>
+          <h2>ペット会員証</h2>
+          <p class="lead">複数頭登録にも対応できます。</p>
+        </div>
+      </div>
+      <div id="petsBox">
+        <div class="empty">ペット情報はまだ表示されていません。</div>
+      </div>
+    </section>
+
+    <section class="card grid">
+      <div class="card-head">
+        <div>
+          <h2>現在の予約</h2>
+          <p class="lead">予約希望・確定済みの内容を確認できます。</p>
+        </div>
+      </div>
+      <div id="reservationsBox">
+        <div class="empty">現在の予約はまだ表示されていません。</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>次の行動</h2>
+          <p class="lead">予約・変更・相談をLINEからスムーズにできます。</p>
+        </div>
+      </div>
+      <div class="link-grid">
+        <a class="btn" href="./index.html">予約フォームを開く</a>
+        <button class="btn secondary" type="button" id="copyConsultBtn">相談メッセージをコピー</button>
+      </div>
+      <div class="notice" style="margin-top:12px">
+        予約変更やキャンセルは、LINE公式アカウントへ「予約変更希望」と送ってください。後のSTEPで専用の変更・キャンセルLIFFを追加できます。
+      </div>
+    </section>
+
+    <div class="footer">
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-5 member.html
+    </div>
+  </div>
+
+  <script>
+    // =========================================================
+    // STEP PETSALON-5
+    // member.html ペット会員証
+    // =========================================================
+
+    const CONFIG = {
+      WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
+      SHOP_CODE: "pet_salon_demo",
+
+      // LINE DevelopersでLIFF IDを作成したらここに入れてください。
+      // 未設定でも通常ブラウザでデモできます。
+      LIFF_ID: ""
+    };
+
+    const state = {
+      profile: {
+        line_user_id: "",
+        line_display_name: ""
+      },
+      customer: null,
+      pets: [],
+      reservations: []
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      $("searchBtn").addEventListener("click", searchByPhone);
+      $("copyConsultBtn").addEventListener("click", copyConsultMessage);
+
+      await initLiff();
+      await boot();
+    });
+
+    async function initLiff(){
+      try{
+        if(!CONFIG.LIFF_ID){
+          $("lineState").textContent = "通常ブラウザ表示";
+          return;
+        }
+
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+
+        if(!liff.isLoggedIn()){
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        state.profile.line_user_id = profile.userId || "";
+        state.profile.line_display_name = profile.displayName || "";
+        $("lineState").textContent = `LINE連携：${state.profile.line_display_name || "取得OK"}`;
+      }catch(e){
+        console.warn(e);
+        $("lineState").textContent = "LINE未連携";
+      }
+    }
+
+    async function boot(){
+      try{
+        showError("");
+        const status = await apiGet("/api/public/status");
+        $("apiState").textContent = "API接続OK";
+        $("shopName").textContent = status.shop_name || "DPROペットサロン";
+
+        if(state.profile.line_user_id){
+          await loadCustomer({ line_user_id: state.profile.line_user_id });
+        }else{
+          $("customerState").textContent = "電話番号で確認";
+        }
+      }catch(e){
+        console.error(e);
+        $("apiState").textContent = "API接続エラー";
+        showError(e.message || "読み込みに失敗しました。");
+      }
+    }
+
+    async function searchByPhone(){
+      const phone = $("phoneSearch").value.trim();
+      if(!phone){
+        showError("電話番号を入力してください。");
+        return;
+      }
+      await loadCustomer({ phone });
+    }
+
+    async function loadCustomer(params){
+      try{
+        showError("");
+        showOk("");
+
+        const query = new URLSearchParams(params).toString();
+        const res = await apiGet(`/api/public/customer?${query}`);
+
+        if(!res.found){
+          state.customer = null;
+          state.pets = [];
+          state.reservations = [];
+          $("customerState").textContent = "登録なし";
+          renderEmpty();
+          showError("登録情報が見つかりませんでした。先に予約フォームから登録してください。");
+          return;
+        }
+
+        state.customer = res.customer;
+        state.pets = res.pets || [];
+        state.reservations = res.reservations || [];
+
+        $("customerState").textContent = "会員情報OK";
+        if(state.customer.phone){
+          $("phoneSearch").value = state.customer.phone;
+        }
+
+        renderCustomer();
+        renderPets();
+        renderReservations();
+
+      }catch(e){
+        console.error(e);
+        showError(e.message || "会員情報の取得に失敗しました。");
+      }
+    }
+
+    function renderEmpty(){
+      $("customerBox").innerHTML = `<div class="empty">登録情報が見つかりません。</div>`;
+      $("petsBox").innerHTML = `<div class="empty">ペット情報はありません。</div>`;
+      $("reservationsBox").innerHTML = `<div class="empty">現在の予約はありません。</div>`;
+    }
+
+    function renderCustomer(){
+      const c = state.customer || {};
+      $("customerBox").innerHTML = `
+        <div class="info-grid">
+          <div class="info"><b>飼い主さま</b>${escapeHtml(c.owner_name || "-")}</div>
+          <div class="info"><b>ふりがな</b>${escapeHtml(c.owner_kana || "-")}</div>
+          <div class="info"><b>電話番号</b>${escapeHtml(c.phone || "-")}</div>
+          <div class="info"><b>LINE名</b>${escapeHtml(c.line_display_name || "-")}</div>
+          <div class="info"><b>ステータス</b>${customerStatusLabel(c.customer_status)}</div>
+          <div class="info"><b>最終来店日</b>${escapeHtml(c.last_visit_date || "未登録")}</div>
+        </div>
+      `;
+    }
+
+    function renderPets(){
+      if(!state.pets.length){
+        $("petsBox").innerHTML = `<div class="empty">登録済みペットはありません。</div>`;
+        return;
+      }
+
+      $("petsBox").innerHTML = state.pets.map(p => {
+        const memoLines = [
+          p.personality_notes ? `性格：${p.personality_notes}` : "",
+          p.dislike_notes ? `苦手：${p.dislike_notes}` : "",
+          p.health_notes ? `健康・注意：${p.health_notes}` : "",
+          p.favorite_style ? `希望スタイル：${p.favorite_style}` : "",
+          p.last_style_note ? `前回メモ：${p.last_style_note}` : ""
+        ].filter(Boolean);
+
+        return `
+          <div class="member-card">
+            <div class="pet-head">
+              <div class="avatar">${petIcon(p.species)}</div>
+              <div>
+                <div class="pet-name">${escapeHtml(p.pet_name || "ペット")}ちゃん</div>
+                <div class="owner">${escapeHtml(state.customer?.owner_name || "")}さまのペット会員証</div>
+              </div>
+            </div>
+
+            <div class="info-grid">
+              <div class="info"><b>犬種</b>${escapeHtml(p.breed || "未入力")}</div>
+              <div class="info"><b>年齢・体重</b>${escapeHtml(p.age_label || "未入力")} / ${escapeHtml(p.weight || "-")}kg</div>
+              <div class="info"><b>性別</b>${sexLabel(p.sex)} / ${p.neutered ? "避妊・去勢済み" : "避妊・去勢未確認"}</div>
+              <div class="info"><b>ワクチン</b>${p.vaccine_confirmed ? "確認済み" : "未確認"}</div>
+              <div class="info"><b>皮膚の状態</b>${escapeHtml(p.skin_condition || "未入力")}</div>
+              <div class="info"><b>被毛の状態</b>${escapeHtml(p.coat_condition || "未入力")}</div>
+            </div>
+
+            <div class="memo">${memoLines.length ? escapeHtml(memoLines.join("\n")) : "メモはまだ登録されていません。"}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderReservations(){
+      if(!state.reservations.length){
+        $("reservationsBox").innerHTML = `<div class="empty">現在の予約はありません。次回予約は予約フォームからできます。</div>`;
+        return;
+      }
+
+      $("reservationsBox").innerHTML = state.reservations.map(r => {
+        const pet = state.pets.find(p => p.id === r.pet_id) || {};
+        return `
+          <div class="reservation">
+            <div class="reservation-top">
+              <div>
+                <div class="date">${escapeHtml(r.reservation_date || "")} ${escapeHtml(hm(r.reservation_time))}</div>
+                <div class="sub">${escapeHtml(pet.pet_name || "ペット")}ちゃん / ${escapeHtml(r.service_name || "")}</div>
+              </div>
+              <span class="status-label ${escapeHtml(r.status || "")}">${reservationStatusLabel(r.status)}</span>
+            </div>
+            ${r.request_note ? `<div class="memo">${escapeHtml(r.request_note)}</div>` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function copyConsultMessage(){
+      const c = state.customer || {};
+      const p = state.pets?.[0] || {};
+      const text = [
+        "予約・相談希望です。",
+        "",
+        c.owner_name ? `飼い主名：${c.owner_name}` : "",
+        p.pet_name ? `ペット名：${p.pet_name}` : "",
+        "",
+        "希望内容：",
+        "希望日時：",
+        "相談したいこと："
+      ].filter(line => line !== "").join("\n");
+
+      await copyText(text);
+      showOk("相談メッセージをコピーしました。LINE公式のトークに貼り付けて送信できます。");
+    }
+
+    async function apiGet(path){
+      const joiner = path.includes("?") ? "&" : "?";
+      const url = `${CONFIG.WORKER_BASE_URL}${path}${joiner}shop_code=${encodeURIComponent(CONFIG.SHOP_CODE)}`;
+      const res = await fetch(url);
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false){
+        throw new Error(json && json.error ? json.error : `APIエラー ${res.status}`);
+      }
+      return json;
+    }
+
+    function showError(msg){
+      const el = $("errorBox");
+      if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
+      el.textContent = msg;
+      el.classList.add("show");
+      $("okBox").classList.remove("show");
+    }
+
+    function showOk(msg){
+      const el = $("okBox");
+      if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
+      el.textContent = msg;
+      el.classList.add("show");
+      $("errorBox").classList.remove("show");
+    }
+
+    async function copyText(text){
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+
+    function hm(v){
+      return String(v || "").slice(0,5);
+    }
+
+    function petIcon(species){
+      return species === "cat" ? "🐱" : "🐶";
+    }
+
+    function sexLabel(sex){
+      return {
+        male:"男の子",
+        female:"女の子",
+        unknown:"未確認"
+      }[sex] || "未確認";
+    }
+
+    function customerStatusLabel(status){
+      return {
+        new:"新規",
+        active:"利用中",
+        repeat:"リピート",
+        sleeping:"休眠",
+        vip:"VIP",
+        blocked:"停止"
+      }[status] || escapeHtml(status || "-");
+    }
+
+    function reservationStatusLabel(status){
+      return {
+        requested:"予約希望",
+        confirmed:"予約確定",
+        visited:"来店済み",
+        completed:"完了",
+        cancelled:"キャンセル",
+        no_show:"不在"
+      }[status] || status || "-";
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "").replace(/[&<>"']/g, s => ({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#39;"
+      }[s]));
+    }
+  </script>
+</body>
+</html>
