@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜多頭対応LINE予約・事前カルテ</title>
+  <title>DPROペットサロン｜予約受付ルール対応LINE予約</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -171,7 +171,7 @@
     .day-btn{padding:10px;text-align:center}
     .day-date{font-weight:900}
     .day-sub{font-size:11px;color:var(--muted)}
-    .day-btn[disabled]{opacity:.48;cursor:not-allowed;box-shadow:none;transform:none;background:#f2f0ee}
+    .day-btn[disabled],.time-btn[disabled]{opacity:.48;cursor:not-allowed;box-shadow:none;transform:none;background:#f2f0ee}
     .time-list{grid-template-columns:repeat(3,1fr)}
     @media(min-width:720px){.time-list{grid-template-columns:repeat(5,1fr)}}
     .time-btn{text-align:center;font-weight:900}
@@ -393,7 +393,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-5.5 multi-pet index.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-6.5 index.html
     </div>
   </div>
 
@@ -504,7 +504,7 @@
       LIFF_ID: ""
     };
 
-    const MAX_PETS = 3;
+    let MAX_PETS = 3;
 
     const state = {
       profile: {
@@ -514,6 +514,7 @@
       settings: null,
       services: [],
       days: [],
+      availableTimes: [],
       selectedDate: "",
       selectedTime: ""
     };
@@ -560,9 +561,10 @@
         showError("");
         const status = await apiGet("/api/public/status");
         state.settings = status;
+        MAX_PETS = Number(status.max_pets_per_group || 3);
         $("apiState").textContent = "API接続OK";
         $("shopName").textContent = status.shop_name || "DPROペットサロン";
-        $("openState").textContent = `営業時間 ${status.open_time}〜${status.close_time}`;
+        $("openState").textContent = `営業時間 ${status.open_time}〜${status.close_time} / 1日${status.max_reservations_per_day || 4}件まで`;
 
         const servicesRes = await apiGet("/api/public/services");
         state.services = servicesRes.services || [];
@@ -670,27 +672,51 @@
 
       el.innerHTML = state.days.slice(0, 28).map(d => {
         const disabled = !d.can_reserve;
+        const availableLabel = disabled
+          ? escapeHtml(d.closed_reason || (d.is_full ? "満枠" : "受付不可"))
+          : `この日あと${d.remaining}件`;
+
         return `
           <button type="button" class="day-btn" data-date="${escapeHtml(d.date)}" ${disabled ? "disabled" : ""}>
             <div class="day-date">${formatDateShort(d.date)}（${escapeHtml(d.weekday_label)}）</div>
-            <div class="day-sub">${disabled ? escapeHtml(d.closed_reason || (d.is_full ? "満席" : "受付不可")) : `残り${d.remaining}`}</div>
+            <div class="day-sub">${availableLabel}</div>
           </button>
         `;
       }).join("");
 
       el.querySelectorAll(".day-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
           if(btn.disabled) return;
           state.selectedDate = btn.dataset.date;
+          state.selectedTime = "";
           el.querySelectorAll(".day-btn").forEach(b => b.classList.remove("selected"));
           btn.classList.add("selected");
-          renderTimes();
+          await loadAvailableTimes();
           updateSummary();
         });
       });
 
       const first = el.querySelector(".day-btn:not([disabled])");
       if(first && !state.selectedDate) first.click();
+    }
+
+    async function loadAvailableTimes(){
+      if(!state.selectedDate){
+        state.availableTimes = [];
+        renderTimes();
+        return;
+      }
+
+      try{
+        const res = await apiGet(`/api/public/available-times?date=${encodeURIComponent(state.selectedDate)}`);
+        state.availableTimes = res.times || [];
+        renderTimes();
+      }catch(e){
+        console.error(e);
+        state.availableTimes = [];
+        renderTimes();
+        showError(e.message || "予約時間の取得に失敗しました。");
+      }
     }
 
     function renderTimes(){
@@ -701,15 +727,19 @@
         return;
       }
 
-      const open = settings.open_time || "10:00";
-      const close = settings.close_time || "18:00";
-      const slot = Number(settings.reservation_slot_minutes || 30);
-      const times = buildTimes(open, close, slot);
+      const times = state.availableTimes && state.availableTimes.length
+        ? state.availableTimes
+        : buildTimes(settings.open_time || "10:00", settings.close_time || "18:00", Number(settings.reservation_slot_minutes || 30)).map(time => ({ time, can_reserve:true, remaining: Number(settings.max_reservations_per_slot || 1) }));
 
-      el.innerHTML = times.map(t => `<button type="button" class="time-btn" data-time="${t}">${t}</button>`).join("");
+      el.innerHTML = times.map(t => {
+        const disabled = !t.can_reserve;
+        const sub = disabled ? (t.disabled_reason || "満枠") : (Number(t.remaining || 0) <= 1 ? "受付可" : `残り${t.remaining}`);
+        return `<button type="button" class="time-btn" data-time="${t.time}" ${disabled ? "disabled" : ""}>${t.time}<br><span style="font-size:10px;color:var(--muted)">${escapeHtml(sub)}</span></button>`;
+      }).join("");
 
       el.querySelectorAll(".time-btn").forEach(btn => {
         btn.addEventListener("click", () => {
+          if(btn.disabled) return;
           state.selectedTime = btn.dataset.time;
           el.querySelectorAll(".time-btn").forEach(b => b.classList.remove("selected"));
           btn.classList.add("selected");
@@ -717,8 +747,17 @@
         });
       });
 
-      const first = el.querySelector(".time-btn");
-      if(first && !state.selectedTime) first.click();
+      const selectedStillValid = state.selectedTime && el.querySelector(`.time-btn[data-time="${CSS.escape(state.selectedTime)}"]:not([disabled])`);
+      if(selectedStillValid){
+        selectedStillValid.classList.add("selected");
+      }else{
+        const first = el.querySelector(".time-btn:not([disabled])");
+        if(first){
+          first.click();
+        }else{
+          state.selectedTime = "";
+        }
+      }
     }
 
     function collectPets(){
