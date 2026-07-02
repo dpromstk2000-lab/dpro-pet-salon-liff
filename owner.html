@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 電話受付満枠制御</title>
+  <title>DPROペットサロン｜オーナー管理画面 今日やること集約</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -486,6 +486,74 @@
       flex-wrap:wrap;
       margin-top:10px;
     }
+  
+    .todo-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-top:12px;
+    }
+    .todo-item{
+      border:1px solid var(--line);
+      background:#fffaf6;
+      border-radius:16px;
+      padding:13px;
+      min-height:92px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .todo-item.urgent{
+      background:#fff1ef;
+      border-color:#efc7c0;
+    }
+    .todo-item.good{
+      background:#eefaf5;
+      border-color:#c8eadb;
+    }
+    .todo-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .todo-title{
+      font-size:13px;
+      font-weight:1000;
+      color:#6f4934;
+    }
+    .todo-count{
+      display:inline-flex;
+      min-width:30px;
+      height:28px;
+      border-radius:999px;
+      align-items:center;
+      justify-content:center;
+      background:var(--main);
+      color:white;
+      font-weight:1000;
+      padding:0 9px;
+      font-size:14px;
+    }
+    .todo-sub{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.55;
+    }
+    .todo-actions{
+      display:flex;
+      gap:7px;
+      flex-wrap:wrap;
+    }
+    .todo-actions .btn{
+      padding:8px 10px;
+      font-size:12px;
+    }
+    @media(max-width:900px){
+      .todo-grid{grid-template-columns:1fr}
+    }
+
   </style>
 </head>
 <body>
@@ -544,6 +612,17 @@
 
     <main>
       <section class="section active" id="tab-dashboard">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>今日やること</h2>
+              <p class="lead">朝にここだけ見れば、今日の予約・ホテル・LINE案内・未確認申込がわかります。</p>
+            </div>
+            <button class="btn secondary small" type="button" id="refreshTodayTasksBtn">今日やること更新</button>
+          </div>
+          <div id="todayTasksBox"></div>
+        </div>
+
         <div class="grid sidebar">
           <div class="card">
             <div class="card-head">
@@ -905,7 +984,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-8B owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-10 owner.html
     </div>
   </div>
 
@@ -979,6 +1058,7 @@
     const state = {
       summary: null,
       settings: null,
+      hotelApplications: [],
       currentReservationForComplete: null
     };
 
@@ -1000,6 +1080,11 @@
       $("reloadBtn").addEventListener("click", async () => {
         await loadSettings();
         await loadSummary();
+        await loadHotelApplications();
+      });
+      $("refreshTodayTasksBtn").addEventListener("click", async () => {
+        await loadSummary();
+        await loadHotelApplications();
       });
 
       $("demoPrepareBtn").addEventListener("click", prepareDemo);
@@ -1031,15 +1116,20 @@
       });
 
       document.querySelectorAll(".tab").forEach(tab => {
-        tab.addEventListener("click", () => {
-          showError("");
-          showOk("");
-          document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-          document.querySelectorAll(".section").forEach(x => x.classList.remove("active"));
-          tab.classList.add("active");
-          $("tab-" + tab.dataset.tab).classList.add("active");
-        });
+        tab.addEventListener("click", () => activateTab(tab.dataset.tab));
       });
+    }
+
+    function activateTab(tabName){
+      showError("");
+      showOk("");
+      document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+      document.querySelectorAll(".section").forEach(x => x.classList.remove("active"));
+      const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+      if(tab) tab.classList.add("active");
+      const section = $("tab-" + tabName);
+      if(section) section.classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function restoreInputs(){
@@ -1222,11 +1312,115 @@
         renderReservations("todayReservations", todayReservations);
         renderReservations("nextReservations", nextReservations);
         renderFollowups("pendingFollowups", res.pending_followups || [], true);
+        renderTodayTasks();
 
       }catch(e){
         console.error(e);
         showError(e.message || "管理画面データの取得に失敗しました。");
       }
+    }
+
+    function renderTodayTasks(){
+      const el = $("todayTasksBox");
+      if(!el) return;
+
+      const summary = state.summary || {};
+      const today = summary.today || todayYmd();
+      const todayReservations = (summary.today_reservations || []).filter(isActiveReservation);
+      const pendingFollowups = summary.pending_followups || [];
+      const hotels = state.hotelApplications || [];
+
+      const nextReservation = todayReservations
+        .slice()
+        .sort((a,b) => hm(a.reservation_time).localeCompare(hm(b.reservation_time)))[0] || null;
+
+      const hotelCheckins = hotels.filter(h => h.checkin_date === today && ["requested","confirmed"].includes(h.status || "requested"));
+      const hotelCheckouts = hotels.filter(h => h.checkout_date === today && ["checked_in","confirmed"].includes(h.status || "requested"));
+      const requestedHotels = hotels.filter(h => (h.status || "requested") === "requested");
+
+      const tasks = [
+        {
+          title: "本日の予約",
+          count: todayReservations.length,
+          sub: todayReservations.length
+            ? `次の予約：${nextReservation ? hm(nextReservation.reservation_time) + " " + ((nextReservation.pet || {}).pet_name || "ペット") + "ちゃん" : "確認してください"}`
+            : "本日の未完了予約はありません。",
+          tab: "dashboard",
+          label: "予約を見る",
+          tone: todayReservations.length ? "" : "good"
+        },
+        {
+          title: "ホテルお預かり",
+          count: hotelCheckins.length,
+          sub: hotelCheckins.length
+            ? "本日チェックイン予定があります。"
+            : "本日のお預かり予定はありません。",
+          tab: "hotel",
+          label: "ホテルを見る",
+          tone: hotelCheckins.length ? "urgent" : "good"
+        },
+        {
+          title: "ホテルお迎え",
+          count: hotelCheckouts.length,
+          sub: hotelCheckouts.length
+            ? "本日チェックアウト予定があります。"
+            : "本日のお迎え予定はありません。",
+          tab: "hotel",
+          label: "ホテルを見る",
+          tone: hotelCheckouts.length ? "urgent" : "good"
+        },
+        {
+          title: "LINE案内",
+          count: pendingFollowups.length,
+          sub: pendingFollowups.length
+            ? "本日送る・確認するLINE案内があります。"
+            : "本日対応が必要なLINE案内はありません。",
+          tab: "followups",
+          label: "LINEを見る",
+          tone: pendingFollowups.length ? "" : "good"
+        },
+        {
+          title: "未確認ホテル申込",
+          count: requestedHotels.length,
+          sub: requestedHotels.length
+            ? "内容確認後、確定済みにしてください。"
+            : "未確認のホテル申込はありません。",
+          tab: "hotel",
+          label: "申込を見る",
+          tone: requestedHotels.length ? "urgent" : "good"
+        },
+        {
+          title: "電話・店頭予約",
+          count: "＋",
+          sub: "電話や店頭で受けた予約を登録できます。",
+          tab: "manual",
+          label: "電話受付へ",
+          tone: ""
+        }
+      ];
+
+      el.innerHTML = `
+        <div class="todo-grid">
+          ${tasks.map(task => `
+            <div class="todo-item ${task.tone || ""}">
+              <div>
+                <div class="todo-top">
+                  <div class="todo-title">${escapeHtml(task.title)}</div>
+                  <div class="todo-count">${escapeHtml(String(task.count))}</div>
+                </div>
+                <div class="todo-sub">${escapeHtml(task.sub)}</div>
+              </div>
+              <div class="todo-actions">
+                <button class="btn secondary" type="button" data-todo-tab="${escapeHtml(task.tab)}">${escapeHtml(task.label)}</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      el.querySelectorAll("[data-todo-tab]").forEach(btn => {
+        btn.addEventListener("click", () => activateTab(btn.dataset.todoTab));
+      });
     }
 
     async function loadManualServices(){
@@ -1505,7 +1699,9 @@
           to: $("hotelTo").value
         });
 
-        renderHotelApplications(res.applications || []);
+        state.hotelApplications = res.applications || [];
+        renderHotelApplications(state.hotelApplications);
+        renderTodayTasks();
 
       }catch(e){
         console.error(e);
@@ -1605,6 +1801,7 @@
 
         showOk("ホテル申込ステータスを更新しました。");
         await loadHotelApplications();
+        await loadSummary();
 
       }catch(e){
         console.error(e);
