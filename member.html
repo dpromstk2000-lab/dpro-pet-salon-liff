@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜ペット会員証</title>
+  <title>DPROペットサロン｜ペット会員証 前回内容・次回おすすめ日</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -253,6 +253,60 @@
       position:relative;
       z-index:1;
     }
+
+    .visit-highlight{
+      margin-top:12px;
+      border:1px solid #e2c4aa;
+      background:linear-gradient(135deg,#fff6ed,#fff);
+      border-radius:18px;
+      padding:12px;
+      position:relative;
+      z-index:1;
+    }
+    .visit-highlight h3{
+      margin:0 0 8px;
+      font-size:15px;
+      color:var(--main);
+      display:flex;
+      align-items:center;
+      gap:7px;
+    }
+    .visit-grid{display:grid;gap:8px}
+    @media(min-width:720px){.visit-grid{grid-template-columns:1fr 1fr}}
+    .visit-item{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:9px 10px;
+      font-size:13px;
+    }
+    .visit-item b{
+      display:block;
+      color:var(--main);
+      font-size:11px;
+      margin-bottom:3px;
+    }
+    .next-date{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:#8a5a3c;
+      color:#fff;
+      border-radius:999px;
+      padding:7px 11px;
+      font-weight:1000;
+      font-size:13px;
+      margin-top:8px;
+    }
+    .same-menu-link{
+      margin-top:10px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      position:relative;
+      z-index:1;
+    }
+
     .reservation{
       border:1px solid var(--line);
       background:#fff;
@@ -399,7 +453,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-5 member.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-6.3 member.html
     </div>
   </div>
 
@@ -425,7 +479,8 @@
       },
       customer: null,
       pets: [],
-      reservations: []
+      reservations: [],
+      latestVisitByPet: {}
     };
 
     const $ = (id) => document.getElementById(id);
@@ -511,6 +566,7 @@
         state.customer = res.customer;
         state.pets = res.pets || [];
         state.reservations = res.reservations || [];
+        state.latestVisitByPet = res.latest_visit_by_pet || {};
 
         $("customerState").textContent = "会員情報OK";
         if(state.customer.phone){
@@ -554,6 +610,8 @@
       }
 
       $("petsBox").innerHTML = state.pets.map(p => {
+        const latestVisit = state.latestVisitByPet[p.id] || null;
+
         const memoLines = [
           p.personality_notes ? `性格：${p.personality_notes}` : "",
           p.dislike_notes ? `苦手：${p.dislike_notes}` : "",
@@ -561,6 +619,30 @@
           p.favorite_style ? `希望スタイル：${p.favorite_style}` : "",
           p.last_style_note ? `前回メモ：${p.last_style_note}` : ""
         ].filter(Boolean);
+
+        const visitHtml = latestVisit ? `
+          <div class="visit-highlight">
+            <h3>✂️ 前回の内容・次回おすすめ</h3>
+            <div class="visit-grid">
+              <div class="visit-item"><b>前回来店日</b>${escapeHtml(latestVisit.visit_date || "-")}</div>
+              <div class="visit-item"><b>前回メニュー</b>${escapeHtml(latestVisit.menu_done || "未登録")}</div>
+              <div class="visit-item"><b>皮膚の状態</b>${escapeHtml(latestVisit.skin_condition || p.skin_condition || "未入力")}</div>
+              <div class="visit-item"><b>毛玉・被毛</b>${mattingLabel(latestVisit.matting_level)}${latestVisit.coat_condition ? " / " + escapeHtml(latestVisit.coat_condition) : ""}</div>
+            </div>
+            <div class="visit-item" style="margin-top:8px"><b>施術メモ</b>${escapeHtml(latestVisit.groomer_note || p.last_style_note || "未登録")}</div>
+            <div class="visit-item" style="margin-top:8px"><b>次回おすすめ理由</b>${escapeHtml(latestVisit.next_recommend_reason || "前回来店からのお手入れ目安")}</div>
+            ${latestVisit.next_recommend_date ? `<div class="next-date">次回おすすめ日：${escapeHtml(latestVisit.next_recommend_date)}</div>` : ""}
+            <div class="same-menu-link">
+              <a class="btn small" href="./index.html">前回内容を参考に予約する</a>
+              <button class="btn secondary small" type="button" data-copy-same-menu="${escapeHtml(p.pet_name || "")}" data-menu="${escapeHtml(latestVisit.menu_done || "")}" data-next="${escapeHtml(latestVisit.next_recommend_date || "")}">前回と同じ内容で相談コピー</button>
+            </div>
+          </div>
+        ` : `
+          <div class="visit-highlight">
+            <h3>✂️ 前回の内容・次回おすすめ</h3>
+            <div class="visit-item">まだ来店履歴はありません。施術完了後に、前回メニュー・施術メモ・次回おすすめ日が表示されます。</div>
+          </div>
+        `;
 
         return `
           <div class="member-card">
@@ -578,13 +660,36 @@
               <div class="info"><b>性別</b>${sexLabel(p.sex)} / ${p.neutered ? "避妊・去勢済み" : "避妊・去勢未確認"}</div>
               <div class="info"><b>ワクチン</b>${p.vaccine_confirmed ? "確認済み" : "未確認"}</div>
               <div class="info"><b>皮膚の状態</b>${escapeHtml(p.skin_condition || "未入力")}</div>
-              <div class="info"><b>被毛の状態</b>${escapeHtml(p.coat_condition || "未入力")}</div>
+              <div class="info"><b>被毛・毛玉</b>${latestVisit ? mattingLabel(latestVisit.matting_level) : escapeHtml(p.coat_condition || "未入力")}</div>
             </div>
 
-            <div class="memo">${memoLines.length ? escapeHtml(memoLines.join("\n")) : "メモはまだ登録されていません。"}</div>
+            <div class="memo">${memoLines.length ? escapeHtml(memoLines.join("\\n")) : "メモはまだ登録されていません。"}</div>
+
+            ${visitHtml}
           </div>
         `;
       }).join("");
+
+      document.querySelectorAll("[data-copy-same-menu]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const petName = btn.dataset.copySameMenu || "ペット";
+          const menu = btn.dataset.menu || "前回と同じ内容";
+          const next = btn.dataset.next || "";
+          const text = [
+            "前回と同じ内容で予約相談したいです。",
+            "",
+            `ペット名：${petName}`,
+            `希望メニュー：${menu}`,
+            next ? `次回おすすめ日：${next}` : "",
+            "",
+            "希望日時：",
+            "相談したいこと："
+          ].filter(Boolean).join("\\n");
+
+          await copyText(text);
+          showOk("前回と同じ内容の相談メッセージをコピーしました。LINE公式のトークに貼り付けて送信できます。");
+        });
+      });
     }
 
     function renderReservations(){
@@ -678,6 +783,15 @@
 
     function petIcon(species){
       return species === "cat" ? "🐱" : "🐶";
+    }
+
+    function mattingLabel(level){
+      return {
+        none:"毛玉なし",
+        light:"軽い毛玉",
+        middle:"中程度の毛玉",
+        heavy:"重い毛玉"
+      }[level] || "未入力";
     }
 
     function sexLabel(sex){
