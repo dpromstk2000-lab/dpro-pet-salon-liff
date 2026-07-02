@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 電話受付対応</title>
+  <title>DPROペットサロン｜オーナー管理画面 電話受付満枠制御</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -667,7 +667,7 @@
             <textarea id="manualRequestNote" placeholder="例：電話で受付。前回と同じ丸め。足先は苦手。"></textarea>
 
             <div class="notice" style="margin-top:12px">
-              電話受付・店頭受付は、その場で確認済みとして登録します。1日の予約上限・同じ時間の満枠チェックも反映されます。
+              電話受付・店頭受付は、その場で確認済みとして登録します。予約日は空き時間だけ選べるようにしています。1日の予約上限・同じ時間の満枠チェックも反映されます。
             </div>
 
             <div class="btns" style="margin-top:14px">
@@ -905,7 +905,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-8A owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-8B owner.html
     </div>
   </div>
 
@@ -1006,6 +1006,7 @@
       $("manualSearchBtn").addEventListener("click", searchManualCustomer);
       $("manualCreateBtn").addEventListener("click", createManualReservation);
       $("manualClearBtn").addEventListener("click", clearManualForm);
+      $("manualDate").addEventListener("change", loadManualAvailableTimes);
       $("loadDayBtn").addEventListener("click", loadDay);
       $("loadHotelBtn").addEventListener("click", loadHotelApplications);
       $("loadFollowupsBtn").addEventListener("click", loadFollowups);
@@ -1031,6 +1032,8 @@
 
       document.querySelectorAll(".tab").forEach(tab => {
         tab.addEventListener("click", () => {
+          showError("");
+          showOk("");
           document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
           document.querySelectorAll(".section").forEach(x => x.classList.remove("active"));
           tab.classList.add("active");
@@ -1234,7 +1237,7 @@
           ? services.map(s => `<option value="${escapeHtml(s.service_code)}">${escapeHtml(s.service_name)} / ${Number(s.base_price || 0).toLocaleString()}円〜</option>`).join("")
           : `<option value="">メニュー未登録</option>`;
 
-        renderManualTimeOptions();
+        await loadManualAvailableTimes();
         updateManualSummary();
       }catch(e){
         console.error(e);
@@ -1242,15 +1245,58 @@
       }
     }
 
-    function renderManualTimeOptions(){
-      const s = state.settings || {};
-      const open = hm(s.open_time || "10:00");
-      const close = hm(s.close_time || "18:00");
-      const slot = Number(s.reservation_slot_minutes || 30);
-      const times = buildTimesForOwner(open, close, slot);
-      $("manualTime").innerHTML = times.map(t => `<option value="${t}">${t}</option>`).join("");
-      if(times.includes("10:00")) $("manualTime").value = "10:00";
+    async function loadManualAvailableTimes(){
+      try{
+        const date = $("manualDate").value || todayYmd();
+        if(!date){
+          renderManualTimeOptions([]);
+          return;
+        }
+
+        const res = await apiGet("/api/public/available-times", { date });
+        renderManualTimeOptions(res.times || []);
+        updateManualSummary();
+
+      }catch(e){
+        console.error(e);
+        renderManualTimeOptions([]);
+        showError(e.message || "空き時間の取得に失敗しました。");
+      }
     }
+
+    function renderManualTimeOptions(times = null){
+      const s = state.settings || {};
+      const current = $("manualTime").value;
+
+      let list = Array.isArray(times) && times.length
+        ? times
+        : buildTimesForOwner(hm(s.open_time || "10:00"), hm(s.close_time || "18:00"), Number(s.reservation_slot_minutes || 30)).map(time => ({
+            time,
+            can_reserve: true,
+            disabled_reason: ""
+          }));
+
+      const available = list.filter(t => t.can_reserve);
+
+      if(available.length === 0){
+        $("manualTime").innerHTML = `<option value="">空き時間なし</option>`;
+        $("manualTime").disabled = true;
+        return;
+      }
+
+      $("manualTime").disabled = false;
+      $("manualTime").innerHTML = list.map(t => {
+        const disabled = !t.can_reserve;
+        const label = disabled
+          ? `${t.time}（${t.disabled_reason || "満枠"}）`
+          : `${t.time}（受付可）`;
+        return `<option value="${escapeHtml(t.time)}" ${disabled ? "disabled" : ""}>${escapeHtml(label)}</option>`;
+      }).join("");
+
+      const currentStillAvailable = available.some(t => t.time === current);
+      $("manualTime").value = currentStillAvailable ? current : available[0].time;
+    }
+
 
     async function searchManualCustomer(){
       try{
@@ -1369,7 +1415,9 @@
 
         const res = await apiPost("/api/admin/reservations/manual-create", payload);
 
+        showError("");
         showOk(res.message || "電話・店頭予約を登録しました。");
+        await loadManualAvailableTimes();
         await loadSummary();
         await loadDay();
 
@@ -1387,7 +1435,8 @@
       if(!p.phone) throw new Error("電話番号を入力してください。");
       if(!p.pet_name) throw new Error("ペット名を入力してください。");
       if(!p.reservation_date) throw new Error("予約日を選択してください。");
-      if(!p.reservation_time) throw new Error("予約時間を選択してください。");
+      if(!p.reservation_time) throw new Error("予約時間を選択してください。空き時間がない場合は別の日を選んでください。");
+      if($("manualTime").disabled) throw new Error("この日は空き時間がありません。別の日を選んでください。");
       if(!p.service_code) throw new Error("メニューを選択してください。");
     }
 
@@ -1398,6 +1447,7 @@
       $("manualSex").value = "unknown";
       $("manualReceptionType").value = "phone";
       $("manualSearchResult").innerHTML = "";
+      loadManualAvailableTimes();
       updateManualSummary();
     }
 
