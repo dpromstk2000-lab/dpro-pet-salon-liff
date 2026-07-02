@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面</title>
+  <title>DPROペットサロン｜オーナー管理画面 多頭予約対応</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -265,6 +265,73 @@
     .status.visited{background:#edf7ef;color:#2f7d55}
     .status.completed{background:#e9f7f0;color:#2f7d55}
     .status.cancelled,.status.no_show{background:#fff0f0;color:#b54747}
+
+    .multi-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#7a3f2f;
+      color:#fff;
+      font-size:11px;
+      font-weight:1000;
+      white-space:nowrap;
+      box-shadow:0 6px 14px rgba(122,63,47,.18);
+    }
+    .multi-badge.light{
+      background:#fff3e7;
+      color:#7a3f2f;
+      border:1px solid #e6c8b2;
+      box-shadow:none;
+    }
+    .res-card.multi{
+      border-color:#d6a47e;
+      background:
+        linear-gradient(90deg, rgba(255,247,239,.96), #fff 40%),
+        #fff;
+      box-shadow:0 12px 28px rgba(138,90,60,.10);
+      position:relative;
+      overflow:hidden;
+    }
+    .res-card.multi:before{
+      content:"多頭予約";
+      position:absolute;
+      right:-34px;
+      top:16px;
+      transform:rotate(35deg);
+      background:#8a5a3c;
+      color:#fff;
+      padding:4px 42px;
+      font-size:10px;
+      font-weight:1000;
+      letter-spacing:.08em;
+      opacity:.9;
+    }
+    .multi-summary{
+      border:1px solid #e6c8b2;
+      background:#fff6ed;
+      color:#6e4c3b;
+      border-radius:14px;
+      padding:9px 10px;
+      font-size:12px;
+      font-weight:800;
+      margin:8px 0 10px;
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      justify-content:space-between;
+      position:relative;
+      z-index:1;
+    }
+    .multi-summary span{
+      display:block;
+      color:#8a5a3c;
+      font-size:11px;
+      font-weight:1000;
+      margin-bottom:2px;
+    }
+
     .info-grid{display:grid;gap:8px;margin:10px 0}
     @media(min-width:720px){.info-grid{grid-template-columns:1fr 1fr}}
     .info{
@@ -580,7 +647,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-4 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-5.6 owner.html
     </div>
   </div>
 
@@ -843,21 +910,53 @@
       });
     }
 
+
+    function isMultiReservation(r){
+      return Number(r.reservation_group_size || 1) > 1;
+    }
+
+    function multiReservationLabel(r){
+      if(!isMultiReservation(r)) return "";
+      const index = Number(r.reservation_group_index || 1);
+      const size = Number(r.reservation_group_size || 1);
+      return `多頭予約 ${index}/${size}`;
+    }
+
+    function cleanMultiNote(note){
+      return String(note || "").replace(/^【多頭予約\s+\d+\/\d+】\s*/m, "").trim();
+    }
+
     function reservationCard(r){
       const c = r.customer || {};
       const p = r.pet || {};
       const status = r.status || "requested";
+      const isMulti = isMultiReservation(r);
+      const multiLabel = multiReservationLabel(r);
+      const requestNote = cleanMultiNote(r.request_note);
 
       return `
-        <div class="res-card">
+        <div class="res-card ${isMulti ? "multi" : ""}">
           <div class="res-top">
             <div>
               <div class="time">${escapeHtml(hm(r.reservation_time))}</div>
               <div class="name">${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん / ${escapeHtml(c.owner_name || "飼い主未登録")}</div>
               <div class="sub">${escapeHtml(r.service_name || "")}　${escapeHtml(r.reservation_date || "")}</div>
             </div>
-            <span class="status ${escapeHtml(status)}">${statusLabel(status)}</span>
+            <div style="display:flex;gap:6px;align-items:flex-end;flex-direction:column">
+              ${isMulti ? `<span class="multi-badge">${escapeHtml(multiLabel)}</span>` : ""}
+              <span class="status ${escapeHtml(status)}">${statusLabel(status)}</span>
+            </div>
           </div>
+
+          ${isMulti ? `
+            <div class="multi-summary">
+              <div>
+                <span>同じ飼い主さまのまとめ予約</span>
+                ${escapeHtml(c.owner_name || "飼い主")}さまの${Number(r.reservation_group_size || 1)}頭予約です。受付・会計時に同じグループとして確認してください。
+              </div>
+              <span class="multi-badge light">${escapeHtml(multiLabel)}</span>
+            </div>
+          ` : ""}
 
           <div class="info-grid">
             <div class="info"><b>ペット情報</b>${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg</div>
@@ -866,7 +965,7 @@
             <div class="info"><b>皮膚・健康</b>${escapeHtml([p.skin_condition, p.health_notes].filter(Boolean).join(" / ") || "未入力")}</div>
           </div>
 
-          ${r.request_note ? `<div class="message-box">${escapeHtml(r.request_note)}</div>` : ""}
+          ${requestNote ? `<div class="message-box">${escapeHtml(requestNote)}</div>` : ""}
 
           <div class="btns">
             <button class="btn blue small" data-action="confirmed" data-id="${escapeHtml(r.id)}">予約確定</button>
