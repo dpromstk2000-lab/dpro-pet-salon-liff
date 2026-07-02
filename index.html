@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜LINE予約・事前カルテ</title>
+  <title>DPROペットサロン｜多頭対応LINE予約・事前カルテ</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -18,6 +18,7 @@
       --soft2:#fff4ea;
       --danger:#b54747;
       --ok:#2f7d55;
+      --blue:#315f8f;
       --shadow:0 18px 45px rgba(70,42,25,.10);
       --radius:22px;
     }
@@ -32,7 +33,7 @@
       line-height:1.65;
     }
     button,input,select,textarea{font:inherit}
-    .wrap{max-width:980px;margin:0 auto;padding:18px 14px 46px}
+    .wrap{max-width:1050px;margin:0 auto;padding:18px 14px 46px}
     .hero{
       background:linear-gradient(135deg,#4b3328,#8a5a3c 55%,#c99a6b);
       color:#fff;
@@ -49,6 +50,7 @@
       right:-80px;top:-90px;
       background:rgba(255,255,255,.13);
     }
+    .hero-content{position:relative;z-index:1}
     .badge{
       display:inline-flex;gap:7px;align-items:center;
       padding:7px 11px;border-radius:999px;
@@ -98,14 +100,14 @@
       width:32px;height:32px;border-radius:50%;
       display:grid;place-items:center;
       color:#fff;background:var(--main);
-      font-weight:800;
+      font-weight:900;
       flex:none;
     }
     h2{font-size:18px;margin:0;line-height:1.35}
     .lead{font-size:13px;color:var(--muted);margin:4px 0 0}
     label{
       display:block;
-      font-weight:700;
+      font-weight:800;
       font-size:13px;
       margin:13px 0 6px;
     }
@@ -123,7 +125,7 @@
       border-color:var(--main2);
       box-shadow:0 0 0 4px rgba(185,128,85,.13);
     }
-    textarea{min-height:94px;resize:vertical}
+    textarea{min-height:90px;resize:vertical}
     .row{display:grid;gap:12px}
     @media(min-width:720px){.row.two{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:1fr 1fr 1fr}}
     .checks{display:grid;gap:8px}
@@ -137,7 +139,7 @@
       background:var(--soft2);
       border-radius:14px;
       cursor:pointer;
-      font-weight:600;
+      font-weight:700;
       font-size:13px;
     }
     .check input{width:auto;margin-top:4px}
@@ -161,18 +163,48 @@
       background:var(--soft);
       box-shadow:0 0 0 3px rgba(138,90,60,.12);
     }
-    .svc-name{font-weight:800}
+    .svc-name{font-weight:900}
     .svc-sub{font-size:12px;color:var(--muted);margin-top:3px}
-    .svc-price{font-size:12px;color:var(--main);font-weight:800;margin-top:5px}
+    .svc-price{font-size:12px;color:var(--main);font-weight:900;margin-top:5px}
     .day-list{grid-template-columns:repeat(2,1fr)}
     @media(min-width:720px){.day-list{grid-template-columns:repeat(4,1fr)}}
     .day-btn{padding:10px;text-align:center}
-    .day-date{font-weight:800}
+    .day-date{font-weight:900}
     .day-sub{font-size:11px;color:var(--muted)}
     .day-btn[disabled]{opacity:.48;cursor:not-allowed;box-shadow:none;transform:none;background:#f2f0ee}
     .time-list{grid-template-columns:repeat(3,1fr)}
     @media(min-width:720px){.time-list{grid-template-columns:repeat(5,1fr)}}
-    .time-btn{text-align:center;font-weight:800}
+    .time-btn{text-align:center;font-weight:900}
+    .pet-card{
+      border:1px solid var(--line);
+      background:
+        radial-gradient(circle at top right, rgba(185,128,85,.14), transparent 35%),
+        #fff;
+      border-radius:22px;
+      padding:16px;
+      margin-top:12px;
+    }
+    .pet-head{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:8px;
+    }
+    .pet-title{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      font-weight:1000;
+      color:var(--main);
+    }
+    .pet-no{
+      width:30px;height:30px;border-radius:999px;
+      display:grid;place-items:center;
+      color:#fff;background:var(--main);
+      font-size:13px;
+      flex:none;
+    }
     .actions{
       position:sticky;
       bottom:0;
@@ -183,7 +215,7 @@
       backdrop-filter:blur(12px);
       border-top:1px solid var(--line);
     }
-    .action-inner{max-width:980px;margin:0 auto;display:grid;gap:10px}
+    .action-inner{max-width:1050px;margin:0 auto;display:grid;gap:10px}
     @media(min-width:720px){.action-inner{grid-template-columns:1fr 1fr}}
     .btn{
       border:0;
@@ -194,6 +226,11 @@
       background:var(--main);
       color:#fff;
       box-shadow:0 12px 26px rgba(138,90,60,.22);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
     }
     .btn.secondary{
       background:#fff;
@@ -201,7 +238,16 @@
       border:1px solid var(--line);
       box-shadow:none;
     }
+    .btn.blue{background:var(--blue)}
+    .btn.danger{background:var(--danger)}
+    .btn.small{
+      padding:8px 10px;
+      border-radius:12px;
+      font-size:12px;
+      box-shadow:none;
+    }
     .btn[disabled]{opacity:.55;cursor:not-allowed}
+    .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .notice{
       padding:12px 13px;
       border-radius:16px;
@@ -216,7 +262,7 @@
       padding:13px;
       border-radius:16px;
       margin-top:12px;
-      font-weight:700;
+      font-weight:800;
       font-size:13px;
       white-space:pre-wrap;
     }
@@ -229,10 +275,10 @@
       border-radius:18px;
       padding:13px;
       font-size:13px;
+      white-space:pre-wrap;
     }
     .summary b{display:block;margin-bottom:5px;color:var(--main)}
     .hidden{display:none!important}
-    .small{font-size:12px;color:var(--muted)}
     .footer{
       text-align:center;
       color:var(--muted);
@@ -245,13 +291,15 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <span class="badge">🐾 LINE予約・事前カルテ</span>
-      <h1 id="shopName">DPROペットサロン</h1>
-      <p>予約と同時に、ペットの性格・苦手なこと・毛玉・皮膚の状態を事前に共有できます。</p>
-      <div class="status">
-        <span class="pill dark" id="apiState">API確認中</span>
-        <span class="pill dark" id="lineState">LINE確認中</span>
-        <span class="pill dark" id="openState">営業時間確認中</span>
+      <div class="hero-content">
+        <span class="badge">🐾 多頭対応 LINE予約・事前カルテ</span>
+        <h1 id="shopName">DPROペットサロン</h1>
+        <p>1回の入力で、同じ飼い主さまの複数ペットをまとめて予約できます。</p>
+        <div class="status">
+          <span class="pill dark" id="apiState">API確認中</span>
+          <span class="pill dark" id="lineState">LINE確認中</span>
+          <span class="pill dark" id="openState">営業時間確認中</span>
+        </div>
       </div>
     </section>
 
@@ -264,7 +312,7 @@
           <div class="num">1</div>
           <div>
             <h2>飼い主さま情報</h2>
-            <p class="lead">次回以降の予約をスムーズにするための基本情報です。</p>
+            <p class="lead">多頭予約でも飼い主情報は1回だけ入力します。</p>
           </div>
         </div>
 
@@ -289,55 +337,24 @@
             <input id="email" inputmode="email" autocomplete="email" placeholder="任意" />
           </div>
         </div>
-
-        <div class="notice">
-          LINE内で開いた場合は、LINEプロフィール名を自動取得します。LIFF ID未設定でも通常ブラウザでデモできます。
-        </div>
       </section>
 
       <section class="card">
         <div class="step-title">
           <div class="num">2</div>
           <div>
-            <h2>ペット情報</h2>
-            <p class="lead">犬種・性格・苦手なことを事前に共有できます。</p>
+            <h2>希望日時</h2>
+            <p class="lead">複数頭の場合も、まず同じ来店希望日・時間で受付します。</p>
           </div>
         </div>
 
-        <div class="row two">
-          <div>
-            <label>ペット名<span class="req">必須</span></label>
-            <input id="pet_name" placeholder="例：モコ" />
-          </div>
-          <div>
-            <label>犬種</label>
-            <input id="breed" placeholder="例：トイプードル" />
-          </div>
+        <label>希望日<span class="req">必須</span></label>
+        <div class="day-list" id="dayList">
+          <div class="notice">予約可能日を読み込み中です。</div>
         </div>
 
-        <div class="row three">
-          <div>
-            <label>年齢</label>
-            <input id="age_label" placeholder="例：3歳" />
-          </div>
-          <div>
-            <label>体重 kg</label>
-            <input id="weight" inputmode="decimal" placeholder="例：3.8" />
-          </div>
-          <div>
-            <label>性別</label>
-            <select id="sex">
-              <option value="unknown">未選択</option>
-              <option value="female">女の子</option>
-              <option value="male">男の子</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row two">
-          <label class="check"><input type="checkbox" id="neutered" /> 避妊・去勢済み</label>
-          <label class="check"><input type="checkbox" id="vaccine_confirmed" /> ワクチン確認済み</label>
-        </div>
+        <label>希望時間<span class="req">必須</span></label>
+        <div class="time-list" id="timeList"></div>
       </section>
     </div>
 
@@ -345,76 +362,20 @@
       <div class="step-title">
         <div class="num">3</div>
         <div>
-          <h2>本日の目的</h2>
-          <p class="lead">メニューを選ぶと、サロン側が必要時間を把握しやすくなります。</p>
-        </div>
-      </div>
-      <div class="service-list" id="serviceList">
-        <div class="notice">メニューを読み込み中です。</div>
-      </div>
-    </section>
-
-    <section class="card grid">
-      <div class="step-title">
-        <div class="num">4</div>
-        <div>
-          <h2>希望日時</h2>
-          <p class="lead">定休日・臨時休業・予約上限を反映します。</p>
+          <h2>ペット情報・メニュー</h2>
+          <p class="lead">最大3頭までまとめて登録できます。ペットごとにメニューを選べます。</p>
         </div>
       </div>
 
-      <label>希望日<span class="req">必須</span></label>
-      <div class="day-list" id="dayList">
-        <div class="notice">予約可能日を読み込み中です。</div>
+      <div id="petsArea"></div>
+
+      <div class="btns">
+        <button class="btn secondary" type="button" id="addPetBtn">＋ 2頭目を追加</button>
       </div>
 
-      <label>希望時間<span class="req">必須</span></label>
-      <div class="time-list" id="timeList"></div>
-    </section>
-
-    <section class="card">
-      <div class="step-title">
-        <div class="num">5</div>
-        <div>
-          <h2>次回提案につながる情報</h2>
-          <p class="lead">悩みを残すことで、次回案内やケア提案に活用しやすくなります。</p>
-        </div>
+      <div class="notice">
+        安全のため、予約データはペットごとに1件ずつ作成します。同じ飼い主・同じ希望日時の予約として管理画面に表示されます。
       </div>
-
-      <label>気になること</label>
-      <div class="checks" id="concernChecks">
-        <label class="check"><input type="checkbox" value="毛玉が気になる" /> 毛玉が気になる</label>
-        <label class="check"><input type="checkbox" value="抜け毛が気になる" /> 抜け毛が気になる</label>
-        <label class="check"><input type="checkbox" value="皮膚が弱い" /> 皮膚が弱い</label>
-        <label class="check"><input type="checkbox" value="においが気になる" /> においが気になる</label>
-        <label class="check"><input type="checkbox" value="耳が汚れやすい" /> 耳が汚れやすい</label>
-        <label class="check"><input type="checkbox" value="高齢犬なので負担が心配" /> 高齢犬なので負担が心配</label>
-      </div>
-
-      <div class="row two">
-        <div>
-          <label>性格・注意点</label>
-          <textarea id="personality_notes" placeholder="例：人懐っこい、少し緊張しやすい"></textarea>
-        </div>
-        <div>
-          <label>苦手なこと</label>
-          <textarea id="dislike_notes" placeholder="例：足先、耳掃除、ドライヤーが苦手"></textarea>
-        </div>
-      </div>
-
-      <div class="row two">
-        <div>
-          <label>健康・皮膚など</label>
-          <textarea id="health_notes" placeholder="例：皮膚が乾燥しやすい、投薬中など"></textarea>
-        </div>
-        <div>
-          <label>希望スタイル・ご要望</label>
-          <textarea id="favorite_style" placeholder="例：前回と同じ、丸め、短め、写真のように"></textarea>
-        </div>
-      </div>
-
-      <label>その他ご要望</label>
-      <textarea id="request_note" placeholder="予約前に伝えておきたいことがあれば入力してください"></textarea>
     </section>
 
     <section class="card">
@@ -425,17 +386,14 @@
           <p class="lead">内容を確認してから送信してください。</p>
         </div>
       </div>
-      <div class="summary" id="summaryBox">
-        <b>予約内容</b>
-        入力内容がここに表示されます。
-      </div>
+      <div class="summary" id="summaryBox">入力内容がここに表示されます。</div>
       <div class="notice">
         送信後、サロンで内容を確認してからLINEまたはお電話で連絡します。これは予約確定ではなく「予約希望の受付」です。
       </div>
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-3
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-5.5 multi-pet index.html
     </div>
   </div>
 
@@ -446,20 +404,107 @@
     </div>
   </div>
 
+  <template id="petTemplate">
+    <div class="pet-card" data-pet-card>
+      <div class="pet-head">
+        <div class="pet-title">
+          <span class="pet-no" data-pet-no>1</span>
+          <span data-pet-heading>1頭目の情報</span>
+        </div>
+        <button class="btn danger small hidden" type="button" data-remove-pet>削除</button>
+      </div>
+
+      <div class="row three">
+        <div>
+          <label>ペット名<span class="req">必須</span></label>
+          <input data-field="pet_name" placeholder="例：モコ" />
+        </div>
+        <div>
+          <label>犬種</label>
+          <input data-field="breed" placeholder="例：トイプードル" />
+        </div>
+        <div>
+          <label>年齢</label>
+          <input data-field="age_label" placeholder="例：3歳" />
+        </div>
+      </div>
+
+      <div class="row three">
+        <div>
+          <label>体重 kg</label>
+          <input data-field="weight" inputmode="decimal" placeholder="例：3.8" />
+        </div>
+        <div>
+          <label>性別</label>
+          <select data-field="sex">
+            <option value="unknown">未選択</option>
+            <option value="female">女の子</option>
+            <option value="male">男の子</option>
+          </select>
+        </div>
+        <div>
+          <label>メニュー<span class="req">必須</span></label>
+          <select data-field="service_code">
+            <option value="">読み込み中</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row two">
+        <label class="check"><input type="checkbox" data-field="neutered" /> 避妊・去勢済み</label>
+        <label class="check"><input type="checkbox" data-field="vaccine_confirmed" /> ワクチン確認済み</label>
+      </div>
+
+      <label>気になること</label>
+      <div class="checks">
+        <label class="check"><input type="checkbox" data-concern value="毛玉が気になる" /> 毛玉が気になる</label>
+        <label class="check"><input type="checkbox" data-concern value="抜け毛が気になる" /> 抜け毛が気になる</label>
+        <label class="check"><input type="checkbox" data-concern value="皮膚が弱い" /> 皮膚が弱い</label>
+        <label class="check"><input type="checkbox" data-concern value="においが気になる" /> においが気になる</label>
+        <label class="check"><input type="checkbox" data-concern value="耳が汚れやすい" /> 耳が汚れやすい</label>
+        <label class="check"><input type="checkbox" data-concern value="高齢犬なので負担が心配" /> 高齢犬なので負担が心配</label>
+      </div>
+
+      <div class="row two">
+        <div>
+          <label>性格・注意点</label>
+          <textarea data-field="personality_notes" placeholder="例：人懐っこい、少し緊張しやすい"></textarea>
+        </div>
+        <div>
+          <label>苦手なこと</label>
+          <textarea data-field="dislike_notes" placeholder="例：足先、耳掃除、ドライヤーが苦手"></textarea>
+        </div>
+      </div>
+
+      <div class="row two">
+        <div>
+          <label>健康・皮膚など</label>
+          <textarea data-field="health_notes" placeholder="例：皮膚が乾燥しやすい、投薬中など"></textarea>
+        </div>
+        <div>
+          <label>希望スタイル・ご要望</label>
+          <textarea data-field="favorite_style" placeholder="例：前回と同じ、丸め、短め、写真のように"></textarea>
+        </div>
+      </div>
+
+      <label>予約時のご要望</label>
+      <textarea data-field="request_note" placeholder="例：初めてなので様子を見ながらお願いします"></textarea>
+    </div>
+  </template>
+
   <script>
     // =========================================================
-    // STEP PETSALON-3
-    // index.html お客様用LIFF予約フォーム
+    // STEP PETSALON-5.5
+    // index.html 多頭飼い予約対応
     // =========================================================
 
     const CONFIG = {
       WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
       SHOP_CODE: "pet_salon_demo",
-
-      // LINE DevelopersでLIFF IDを作成したらここに入れてください。
-      // 未設定でも通常ブラウザでデモできます。
       LIFF_ID: ""
     };
+
+    const MAX_PETS = 3;
 
     const state = {
       profile: {
@@ -469,7 +514,6 @@
       settings: null,
       services: [],
       days: [],
-      selectedService: null,
       selectedDate: "",
       selectedTime: ""
     };
@@ -479,8 +523,8 @@
     document.addEventListener("DOMContentLoaded", async () => {
       $("refreshBtn").addEventListener("click", updateSummary);
       $("submitBtn").addEventListener("click", submitReservation);
+      $("addPetBtn").addEventListener("click", addPetCard);
 
-      bindSummaryEvents();
       await initLiff();
       await boot();
     });
@@ -522,18 +566,19 @@
 
         const servicesRes = await apiGet("/api/public/services");
         state.services = servicesRes.services || [];
-        renderServices();
 
         const daysRes = await apiGet("/api/public/available-days?days=28");
         state.days = daysRes.days || [];
-        renderDays();
 
+        renderDays();
         renderTimes();
+
+        addPetCard();
         updateSummary();
       }catch(e){
         console.error(e);
         $("apiState").textContent = "API接続エラー";
-        showError(e.message || "読み込みに失敗しました。Worker URLとSupabase環境変数を確認してください。");
+        showError(e.message || "読み込みに失敗しました。");
       }
     }
 
@@ -549,54 +594,71 @@
         $("owner_kana").value = c.owner_kana || "";
         $("phone").value = c.phone || "";
         $("email").value = c.email || "";
-
-        if(res.pets && res.pets.length > 0){
-          const p = res.pets[0];
-          $("pet_name").value = p.pet_name || "";
-          $("breed").value = p.breed || "";
-          $("age_label").value = p.age_label || "";
-          $("weight").value = p.weight || "";
-          $("sex").value = p.sex || "unknown";
-          $("neutered").checked = !!p.neutered;
-          $("vaccine_confirmed").checked = !!p.vaccine_confirmed;
-          $("personality_notes").value = p.personality_notes || "";
-          $("dislike_notes").value = p.dislike_notes || "";
-          $("health_notes").value = p.health_notes || "";
-          $("favorite_style").value = p.favorite_style || "";
-        }
-
-        updateSummary();
       }catch(e){
         console.warn(e);
       }
     }
 
-    function renderServices(){
-      const el = $("serviceList");
-      if(!state.services.length){
-        el.innerHTML = `<div class="notice">現在選択できるメニューがありません。</div>`;
+    function addPetCard(){
+      const count = document.querySelectorAll("[data-pet-card]").length;
+      if(count >= MAX_PETS){
+        showError(`まとめ予約は最大${MAX_PETS}頭までです。`);
         return;
       }
 
-      el.innerHTML = state.services.map(s => `
-        <button type="button" class="service-card" data-code="${escapeHtml(s.service_code)}">
-          <div class="svc-name">${escapeHtml(s.service_name)}</div>
-          <div class="svc-sub">${escapeHtml(s.description || "")}</div>
-          <div class="svc-price">
-            ${s.base_price ? `${Number(s.base_price).toLocaleString()}円〜` : "料金はサロン確認"} / 目安 ${s.base_minutes || 120}分
-          </div>
-        </button>
-      `).join("");
+      const tpl = $("petTemplate");
+      const node = tpl.content.firstElementChild.cloneNode(true);
+      $("petsArea").appendChild(node);
 
-      el.querySelectorAll(".service-card").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const code = btn.dataset.code;
-          state.selectedService = state.services.find(s => s.service_code === code) || null;
-          el.querySelectorAll(".service-card").forEach(b => b.classList.remove("selected"));
-          btn.classList.add("selected");
-          updateSummary();
-        });
+      fillServiceSelect(node);
+      refreshPetNumbers();
+
+      node.querySelector("[data-remove-pet]").addEventListener("click", () => {
+        node.remove();
+        refreshPetNumbers();
+        updateSummary();
       });
+
+      node.querySelectorAll("input,select,textarea").forEach(el => {
+        el.addEventListener("input", updateSummary);
+        el.addEventListener("change", updateSummary);
+      });
+
+      updateAddButton();
+      updateSummary();
+    }
+
+    function fillServiceSelect(card){
+      const select = card.querySelector('[data-field="service_code"]');
+      if(!state.services.length){
+        select.innerHTML = `<option value="">メニューなし</option>`;
+        return;
+      }
+
+      select.innerHTML = `<option value="">選択してください</option>` + state.services.map(s => {
+        const price = s.base_price ? ` / ${Number(s.base_price).toLocaleString()}円〜` : "";
+        return `<option value="${escapeHtml(s.service_code)}">${escapeHtml(s.service_name)}${price}</option>`;
+      }).join("");
+
+      const shampooCut = state.services.find(s => s.service_code === "shampoo_cut");
+      if(shampooCut) select.value = shampooCut.service_code;
+    }
+
+    function refreshPetNumbers(){
+      const cards = [...document.querySelectorAll("[data-pet-card]")];
+      cards.forEach((card, index) => {
+        const no = index + 1;
+        card.querySelector("[data-pet-no]").textContent = String(no);
+        card.querySelector("[data-pet-heading]").textContent = `${no}頭目の情報`;
+        card.querySelector("[data-remove-pet]").classList.toggle("hidden", cards.length === 1);
+      });
+      updateAddButton();
+    }
+
+    function updateAddButton(){
+      const count = document.querySelectorAll("[data-pet-card]").length;
+      $("addPetBtn").disabled = count >= MAX_PETS;
+      $("addPetBtn").textContent = count >= MAX_PETS ? `最大${MAX_PETS}頭まで追加済み` : `＋ ${count + 1}頭目を追加`;
     }
 
     function renderDays(){
@@ -628,9 +690,7 @@
       });
 
       const first = el.querySelector(".day-btn:not([disabled])");
-      if(first && !state.selectedDate){
-        first.click();
-      }
+      if(first && !state.selectedDate) first.click();
     }
 
     function renderTimes(){
@@ -646,9 +706,7 @@
       const slot = Number(settings.reservation_slot_minutes || 30);
       const times = buildTimes(open, close, slot);
 
-      el.innerHTML = times.map(t => `
-        <button type="button" class="time-btn" data-time="${t}">${t}</button>
-      `).join("");
+      el.innerHTML = times.map(t => `<button type="button" class="time-btn" data-time="${t}">${t}</button>`).join("");
 
       el.querySelectorAll(".time-btn").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -660,52 +718,70 @@
       });
 
       const first = el.querySelector(".time-btn");
-      if(first && !state.selectedTime){
-        first.click();
-      }
+      if(first && !state.selectedTime) first.click();
     }
 
-    function buildTimes(open, close, slot){
-      const start = toMinutes(open);
-      const end = toMinutes(close);
-      const arr = [];
-      for(let m = start; m < end; m += slot){
-        arr.push(fromMinutes(m));
-      }
-      return arr;
-    }
+    function collectPets(){
+      return [...document.querySelectorAll("[data-pet-card]")].map((card, index) => {
+        const get = (field) => {
+          const el = card.querySelector(`[data-field="${field}"]`);
+          if(!el) return "";
+          if(el.type === "checkbox") return el.checked;
+          return el.value.trim();
+        };
 
-    function toMinutes(hm){
-      const [h,m] = String(hm).slice(0,5).split(":").map(Number);
-      return h * 60 + (m || 0);
-    }
+        const concerns = [...card.querySelectorAll("[data-concern]:checked")].map(x => x.value);
+        const serviceCode = get("service_code");
+        const service = state.services.find(s => s.service_code === serviceCode) || null;
 
-    function fromMinutes(min){
-      const h = Math.floor(min / 60);
-      const m = min % 60;
-      return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+        return {
+          index: index + 1,
+          pet_name: get("pet_name"),
+          species: "dog",
+          breed: get("breed"),
+          age_label: get("age_label"),
+          weight: get("weight"),
+          sex: get("sex") || "unknown",
+          neutered: get("neutered"),
+          vaccine_confirmed: get("vaccine_confirmed"),
+          service_code: serviceCode,
+          service_name: service ? service.service_name : "",
+          options: concerns,
+          personality_notes: get("personality_notes"),
+          dislike_notes: get("dislike_notes"),
+          health_notes: [
+            get("health_notes"),
+            concerns.length ? `気になること：${concerns.join("、")}` : ""
+          ].filter(Boolean).join("\n"),
+          coat_condition: concerns.includes("毛玉が気になる") ? "毛玉が気になる" : "",
+          skin_condition: concerns.includes("皮膚が弱い") ? "皮膚が弱い" : "",
+          favorite_style: get("favorite_style"),
+          request_note: get("request_note")
+        };
+      });
     }
 
     function updateSummary(){
-      const concerns = checkedValues("concernChecks");
+      const pets = collectPets();
       const lines = [
-        `<b>予約内容</b>`,
-        `飼い主：${escapeHtml($("owner_name").value || "未入力")}`,
-        `電話番号：${escapeHtml($("phone").value || "未入力")}`,
-        `ペット：${escapeHtml($("pet_name").value || "未入力")} / ${escapeHtml($("breed").value || "犬種未入力")}`,
-        `メニュー：${escapeHtml(state.selectedService ? state.selectedService.service_name : "未選択")}`,
-        `希望日時：${escapeHtml(state.selectedDate || "未選択")} ${escapeHtml(state.selectedTime || "")}`,
-        concerns.length ? `気になること：${escapeHtml(concerns.join("、"))}` : `気になること：未選択`,
-        `ご要望：${escapeHtml($("request_note").value || "なし")}`
+        "【予約内容】",
+        `飼い主：${$("owner_name").value || "未入力"}`,
+        `電話番号：${$("phone").value || "未入力"}`,
+        `希望日時：${state.selectedDate || "未選択"} ${state.selectedTime || ""}`,
+        `予約頭数：${pets.length}頭`,
+        ""
       ];
-      $("summaryBox").innerHTML = lines.join("<br>");
-    }
 
-    function bindSummaryEvents(){
-      document.querySelectorAll("input,select,textarea").forEach(el => {
-        el.addEventListener("input", updateSummary);
-        el.addEventListener("change", updateSummary);
+      pets.forEach(p => {
+        lines.push(`【${p.index}頭目】${p.pet_name || "ペット名未入力"}`);
+        lines.push(`犬種：${p.breed || "未入力"} / ${p.age_label || "年齢未入力"} / ${p.weight || "-"}kg`);
+        lines.push(`メニュー：${p.service_name || "未選択"}`);
+        if(p.options.length) lines.push(`気になること：${p.options.join("、")}`);
+        if(p.request_note) lines.push(`要望：${p.request_note}`);
+        lines.push("");
       });
+
+      $("summaryBox").textContent = lines.join("\n");
     }
 
     async function submitReservation(){
@@ -716,19 +792,21 @@
 
         const ownerName = $("owner_name").value.trim();
         const phone = $("phone").value.trim();
-        const petName = $("pet_name").value.trim();
+        const pets = collectPets();
 
         if(!ownerName) throw new Error("飼い主さま氏名を入力してください。");
         if(!phone) throw new Error("電話番号を入力してください。");
-        if(!petName) throw new Error("ペット名を入力してください。");
-        if(!state.selectedService) throw new Error("メニューを選択してください。");
         if(!state.selectedDate) throw new Error("希望日を選択してください。");
         if(!state.selectedTime) throw new Error("希望時間を選択してください。");
+        if(!pets.length) throw new Error("ペット情報を入力してください。");
+
+        pets.forEach((p, i) => {
+          if(!p.pet_name) throw new Error(`${i + 1}頭目のペット名を入力してください。`);
+          if(!p.service_code) throw new Error(`${i + 1}頭目のメニューを選択してください。`);
+        });
 
         $("submitBtn").disabled = true;
         $("submitBtn").textContent = "送信中...";
-
-        const concerns = checkedValues("concernChecks");
 
         const body = {
           shop_code: CONFIG.SHOP_CODE,
@@ -740,36 +818,18 @@
           phone,
           email: $("email").value.trim(),
 
-          pet_name: petName,
-          species: "dog",
-          breed: $("breed").value.trim(),
-          age_label: $("age_label").value.trim(),
-          weight: $("weight").value.trim(),
-          sex: $("sex").value,
-          neutered: $("neutered").checked,
-          vaccine_confirmed: $("vaccine_confirmed").checked,
-
-          personality_notes: $("personality_notes").value.trim(),
-          dislike_notes: $("dislike_notes").value.trim(),
-          health_notes: [
-            $("health_notes").value.trim(),
-            concerns.length ? `気になること：${concerns.join("、")}` : ""
-          ].filter(Boolean).join("\n"),
-          coat_condition: concerns.includes("毛玉が気になる") ? "毛玉が気になる" : "",
-          skin_condition: concerns.includes("皮膚が弱い") ? "皮膚が弱い" : "",
-          favorite_style: $("favorite_style").value.trim(),
-
-          service_code: state.selectedService.service_code,
           reservation_date: state.selectedDate,
           reservation_time: state.selectedTime,
-          options: concerns,
-          request_note: $("request_note").value.trim()
+
+          pets
         };
 
         const res = await apiPost("/api/reservations/create", body);
 
         showOk([
           "予約希望を受け付けました。",
+          "",
+          `${res.reservations_count || pets.length}頭分の予約希望を作成しました。`,
           "",
           res.line_message || "",
           "",
@@ -778,9 +838,6 @@
 
         window.scrollTo({ top: 0, behavior: "smooth" });
 
-        if(window.liff && CONFIG.LIFF_ID && liff.isInClient()){
-          // LIFF内の場合も自動クローズはせず、完了内容を見せる。
-        }
       }catch(e){
         showError(e.message || "送信に失敗しました。");
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -814,8 +871,23 @@
       return json;
     }
 
-    function checkedValues(groupId){
-      return [...$(groupId).querySelectorAll("input[type=checkbox]:checked")].map(x => x.value);
+    function buildTimes(open, close, slot){
+      const start = toMinutes(open);
+      const end = toMinutes(close);
+      const arr = [];
+      for(let m = start; m < end; m += slot) arr.push(fromMinutes(m));
+      return arr;
+    }
+
+    function toMinutes(hm){
+      const [h,m] = String(hm).slice(0,5).split(":").map(Number);
+      return h * 60 + (m || 0);
+    }
+
+    function fromMinutes(min){
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
     }
 
     function showError(msg){
@@ -823,6 +895,7 @@
       if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
       el.textContent = msg;
       el.classList.add("show");
+      $("okBox").classList.remove("show");
     }
 
     function showOk(msg){
@@ -830,6 +903,7 @@
       if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
       el.textContent = msg;
       el.classList.add("show");
+      $("errorBox").classList.remove("show");
     }
 
     function formatDateShort(ymd){
