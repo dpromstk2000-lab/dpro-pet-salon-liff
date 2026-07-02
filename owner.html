@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 ペットホテル対応</title>
+  <title>DPROペットサロン｜オーナー管理画面 電話受付対応</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -470,6 +470,22 @@
     .hidden{display:none!important}
     .copy-note{font-size:12px;color:var(--muted)}
       .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;filter:grayscale(.2)}
+  
+    .search-result{
+      background:#fff8f0;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      margin-top:12px;
+      font-size:13px;
+      line-height:1.65;
+    }
+    .pet-select-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
   </style>
 </head>
 <body>
@@ -495,6 +511,7 @@
 
       <div class="tabs">
         <button class="tab active" data-tab="dashboard">今日の管理</button>
+        <button class="tab" data-tab="manual">電話受付</button>
         <button class="tab" data-tab="day">日別予約</button>
         <button class="tab" data-tab="hotel">ホテル申込</button>
         <button class="tab" data-tab="followups">LINE案内</button>
@@ -558,6 +575,116 @@
             </div>
           </div>
           <div id="nextReservations"></div>
+        </div>
+      </section>
+
+      <section class="section" id="tab-manual">
+        <div class="grid sidebar">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>電話受付・店頭予約登録</h2>
+                <p class="lead">電話・店頭で受けた予約を、LINE予約と同じ一覧に登録します。</p>
+              </div>
+            </div>
+
+            <div class="row two">
+              <div>
+                <label>受付区分</label>
+                <select id="manualReceptionType">
+                  <option value="phone">電話受付</option>
+                  <option value="store">店頭受付</option>
+                </select>
+              </div>
+              <div>
+                <label>電話番号<span style="color:#b94444"> 必須</span></label>
+                <div style="display:flex;gap:8px">
+                  <input id="manualPhone" placeholder="例：090-0000-0000" inputmode="tel" />
+                  <button class="btn secondary small" type="button" id="manualSearchBtn">検索</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="manualSearchResult"></div>
+
+            <div class="row two">
+              <div>
+                <label>飼い主名<span style="color:#b94444"> 必須</span></label>
+                <input id="manualOwnerName" placeholder="例：佐藤 花子" />
+              </div>
+              <div>
+                <label>ふりがな</label>
+                <input id="manualOwnerKana" placeholder="例：さとう はなこ" />
+              </div>
+            </div>
+
+            <div class="row two">
+              <div>
+                <label>ペット名<span style="color:#b94444"> 必須</span></label>
+                <input id="manualPetName" placeholder="例：モコ" />
+              </div>
+              <div>
+                <label>犬種</label>
+                <input id="manualBreed" placeholder="例：トイプードル" />
+              </div>
+            </div>
+
+            <div class="row three">
+              <div>
+                <label>年齢</label>
+                <input id="manualAgeLabel" placeholder="例：3歳" />
+              </div>
+              <div>
+                <label>体重 kg</label>
+                <input id="manualWeight" placeholder="例：3.8" inputmode="decimal" />
+              </div>
+              <div>
+                <label>性別</label>
+                <select id="manualSex">
+                  <option value="unknown">未選択</option>
+                  <option value="male">男の子</option>
+                  <option value="female">女の子</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row three">
+              <div>
+                <label>予約日<span style="color:#b94444"> 必須</span></label>
+                <input id="manualDate" type="date" />
+              </div>
+              <div>
+                <label>予約時間<span style="color:#b94444"> 必須</span></label>
+                <select id="manualTime"></select>
+              </div>
+              <div>
+                <label>メニュー<span style="color:#b94444"> 必須</span></label>
+                <select id="manualService"></select>
+              </div>
+            </div>
+
+            <label>予約メモ</label>
+            <textarea id="manualRequestNote" placeholder="例：電話で受付。前回と同じ丸め。足先は苦手。"></textarea>
+
+            <div class="notice" style="margin-top:12px">
+              電話受付・店頭受付は、その場で確認済みとして登録します。1日の予約上限・同じ時間の満枠チェックも反映されます。
+            </div>
+
+            <div class="btns" style="margin-top:14px">
+              <button class="btn" type="button" id="manualCreateBtn">電話・店頭予約を登録</button>
+              <button class="btn secondary" type="button" id="manualClearBtn">入力をクリア</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>登録前確認</h2>
+                <p class="lead">電話口で読み上げ確認しやすい内容です。</p>
+              </div>
+            </div>
+            <div class="summary" id="manualSummary"></div>
+          </div>
         </div>
       </section>
 
@@ -778,7 +905,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-7B owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-8 owner.html
     </div>
   </div>
 
@@ -863,8 +990,10 @@
       setDefaultDates();
 
       await loadSettings();
+      await loadManualServices();
       await loadSummary();
       await loadHotelApplications();
+      updateManualSummary();
     });
 
     function bindEvents(){
@@ -874,6 +1003,9 @@
       });
 
       $("demoPrepareBtn").addEventListener("click", prepareDemo);
+      $("manualSearchBtn").addEventListener("click", searchManualCustomer);
+      $("manualCreateBtn").addEventListener("click", createManualReservation);
+      $("manualClearBtn").addEventListener("click", clearManualForm);
       $("loadDayBtn").addEventListener("click", loadDay);
       $("loadHotelBtn").addEventListener("click", loadHotelApplications);
       $("loadFollowupsBtn").addEventListener("click", loadFollowups);
@@ -890,6 +1022,11 @@
 
       ["adminCode","workerUrl","shopCode"].forEach(id => {
         $(id).addEventListener("change", saveInputs);
+      });
+
+      document.querySelectorAll("#tab-manual input,#tab-manual textarea,#tab-manual select").forEach(el => {
+        el.addEventListener("input", updateManualSummary);
+        el.addEventListener("change", updateManualSummary);
       });
 
       document.querySelectorAll(".tab").forEach(tab => {
@@ -920,6 +1057,7 @@
       $("followFrom").value = addDays(today, -30);
       $("followTo").value = addDays(today, 30);
       $("closedDate").value = today;
+      $("manualDate").value = today;
       $("hotelFrom").value = addDays(today, -7);
       $("hotelTo").value = addDays(today, 90);
     }
@@ -1086,6 +1224,203 @@
         console.error(e);
         showError(e.message || "管理画面データの取得に失敗しました。");
       }
+    }
+
+    async function loadManualServices(){
+      try{
+        const res = await apiGet("/api/public/services", {});
+        const services = res.services || [];
+        $("manualService").innerHTML = services.length
+          ? services.map(s => `<option value="${escapeHtml(s.service_code)}">${escapeHtml(s.service_name)} / ${Number(s.base_price || 0).toLocaleString()}円〜</option>`).join("")
+          : `<option value="">メニュー未登録</option>`;
+
+        renderManualTimeOptions();
+        updateManualSummary();
+      }catch(e){
+        console.error(e);
+        $("manualService").innerHTML = `<option value="">メニュー取得失敗</option>`;
+      }
+    }
+
+    function renderManualTimeOptions(){
+      const s = state.settings || {};
+      const open = hm(s.open_time || "10:00");
+      const close = hm(s.close_time || "18:00");
+      const slot = Number(s.reservation_slot_minutes || 30);
+      const times = buildTimesForOwner(open, close, slot);
+      $("manualTime").innerHTML = times.map(t => `<option value="${t}">${t}</option>`).join("");
+      if(times.includes("10:00")) $("manualTime").value = "10:00";
+    }
+
+    async function searchManualCustomer(){
+      try{
+        showError("");
+        const phone = $("manualPhone").value.trim();
+        if(!phone) throw new Error("電話番号を入力してください。");
+
+        const res = await apiGet("/api/public/customer", { phone });
+
+        if(!res.found){
+          $("manualSearchResult").innerHTML = `<div class="search-result">既存のお客様は見つかりませんでした。このまま新規登録できます。</div>`;
+          updateManualSummary();
+          return;
+        }
+
+        const c = res.customer || {};
+        $("manualOwnerName").value = c.owner_name || "";
+        $("manualOwnerKana").value = c.owner_kana || "";
+
+        const pets = res.pets || [];
+        const petButtons = pets.length
+          ? `<div class="pet-select-row">${pets.map(p => `
+              <button class="btn secondary small" type="button"
+                data-manual-pet='${escapeAttr(JSON.stringify(p))}'>
+                ${escapeHtml(p.pet_name || "ペット")}ちゃんを選択
+              </button>
+            `).join("")}</div>`
+          : `<div style="margin-top:8px">登録済みペットはありません。</div>`;
+
+        $("manualSearchResult").innerHTML = `
+          <div class="search-result">
+            <b>既存のお客様が見つかりました。</b><br>
+            ${escapeHtml(c.owner_name || "")}さま / ${escapeHtml(c.phone || "")}<br>
+            ${petButtons}
+          </div>
+        `;
+
+        document.querySelectorAll("[data-manual-pet]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const p = JSON.parse(btn.dataset.manualPet || "{}");
+            fillManualPet(p);
+          });
+        });
+
+        updateManualSummary();
+
+      }catch(e){
+        console.error(e);
+        showError(e.message || "既存顧客検索に失敗しました。");
+      }
+    }
+
+    function fillManualPet(p){
+      $("manualPetName").value = p.pet_name || "";
+      $("manualBreed").value = p.breed || "";
+      $("manualAgeLabel").value = p.age_label || "";
+      $("manualWeight").value = p.weight || "";
+      $("manualSex").value = p.sex || "unknown";
+      $("manualRequestNote").value = [
+        p.favorite_style ? `前回/希望スタイル：${p.favorite_style}` : "",
+        p.personality_notes ? `性格：${p.personality_notes}` : "",
+        p.health_notes ? `健康メモ：${p.health_notes}` : ""
+      ].filter(Boolean).join("\\n");
+      updateManualSummary();
+    }
+
+    function buildManualPayload(){
+      return {
+        admin_code: adminCode(),
+        shop_code: shopCode(),
+        reception_type: $("manualReceptionType").value,
+        owner_name: $("manualOwnerName").value.trim(),
+        owner_kana: $("manualOwnerKana").value.trim(),
+        phone: $("manualPhone").value.trim(),
+        pet_name: $("manualPetName").value.trim(),
+        breed: $("manualBreed").value.trim(),
+        age_label: $("manualAgeLabel").value.trim(),
+        weight: $("manualWeight").value.trim(),
+        sex: $("manualSex").value,
+        reservation_date: $("manualDate").value,
+        reservation_time: $("manualTime").value,
+        service_code: $("manualService").value,
+        request_note: $("manualRequestNote").value.trim()
+      };
+    }
+
+    function updateManualSummary(){
+      if(!$("manualSummary")) return;
+      const p = buildManualPayload();
+      const receptionLabel = p.reception_type === "store" ? "店頭受付" : "電話受付";
+      const serviceText = $("manualService")?.selectedOptions?.[0]?.textContent || "未選択";
+
+      $("manualSummary").textContent = [
+        `【${receptionLabel}】`,
+        `飼い主さま：${p.owner_name || "未入力"}`,
+        `電話番号：${p.phone || "未入力"}`,
+        `ペット：${p.pet_name || "未入力"}ちゃん / ${p.breed || "犬種未入力"}`,
+        `日時：${p.reservation_date || "未選択"} ${p.reservation_time || ""}`,
+        `メニュー：${serviceText}`,
+        `メモ：${p.request_note || "なし"}`,
+        "",
+        "この内容で予約一覧に「確定済み」として登録します。"
+      ].join("\\n");
+    }
+
+    async function createManualReservation(){
+      try{
+        showError("");
+        showOk("");
+
+        const payload = buildManualPayload();
+        validateManualPayload(payload);
+
+        $("manualCreateBtn").disabled = true;
+        $("manualCreateBtn").textContent = "登録中...";
+
+        const res = await apiPost("/api/admin/reservations/manual-create", payload);
+
+        showOk(res.message || "電話・店頭予約を登録しました。");
+        await loadSummary();
+        await loadDay();
+
+      }catch(e){
+        console.error(e);
+        showError(e.message || "電話・店頭予約の登録に失敗しました。");
+      }finally{
+        $("manualCreateBtn").disabled = false;
+        $("manualCreateBtn").textContent = "電話・店頭予約を登録";
+      }
+    }
+
+    function validateManualPayload(p){
+      if(!p.owner_name) throw new Error("飼い主名を入力してください。");
+      if(!p.phone) throw new Error("電話番号を入力してください。");
+      if(!p.pet_name) throw new Error("ペット名を入力してください。");
+      if(!p.reservation_date) throw new Error("予約日を選択してください。");
+      if(!p.reservation_time) throw new Error("予約時間を選択してください。");
+      if(!p.service_code) throw new Error("メニューを選択してください。");
+    }
+
+    function clearManualForm(){
+      ["manualOwnerName","manualOwnerKana","manualPhone","manualPetName","manualBreed","manualAgeLabel","manualWeight","manualRequestNote"].forEach(id => {
+        $(id).value = "";
+      });
+      $("manualSex").value = "unknown";
+      $("manualReceptionType").value = "phone";
+      $("manualSearchResult").innerHTML = "";
+      updateManualSummary();
+    }
+
+    function buildTimesForOwner(open, close, slotMinutes){
+      const start = timeToMinutes(open || "10:00");
+      const end = timeToMinutes(close || "18:00");
+      const slot = Number(slotMinutes || 30);
+      const result = [];
+      for(let m=start; m<end; m+=slot){
+        result.push(minutesToTime(m));
+      }
+      return result;
+    }
+
+    function timeToMinutes(value){
+      const [h,m] = hm(value).split(":").map(Number);
+      return (h || 0) * 60 + (m || 0);
+    }
+
+    function minutesToTime(value){
+      const h = Math.floor(value / 60);
+      const m = value % 60;
+      return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
     }
 
     async function loadDay(){
