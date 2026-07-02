@@ -905,7 +905,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-8 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-8A owner.html
     </div>
   </div>
 
@@ -1313,7 +1313,7 @@
         p.favorite_style ? `前回/希望スタイル：${p.favorite_style}` : "",
         p.personality_notes ? `性格：${p.personality_notes}` : "",
         p.health_notes ? `健康メモ：${p.health_notes}` : ""
-      ].filter(Boolean).join("\\n");
+      ].filter(Boolean).join("\n");
       updateManualSummary();
     }
 
@@ -1353,7 +1353,7 @@
         `メモ：${p.request_note || "なし"}`,
         "",
         "この内容で予約一覧に「確定済み」として登録します。"
-      ].join("\\n");
+      ].join("\n");
     }
 
     async function createManualReservation(){
