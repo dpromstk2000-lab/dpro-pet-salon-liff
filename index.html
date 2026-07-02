@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>DPROペットサロン｜LINE予約・事前カルテ</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root{
+      --bg:#fffaf4;
+      --card:#ffffff;
+      --ink:#2f2722;
+      --muted:#7d6f66;
+      --line:#eadfd5;
+      --main:#8a5a3c;
+      --main2:#b98055;
+      --soft:#f6eadf;
+      --soft2:#fff4ea;
+      --danger:#b54747;
+      --ok:#2f7d55;
+      --shadow:0 18px 45px rgba(70,42,25,.10);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(185,128,85,.18), transparent 34%),
+        linear-gradient(180deg,#fffaf4 0%,#fff 45%,#fffaf4 100%);
+      line-height:1.65;
+    }
+    button,input,select,textarea{font:inherit}
+    .wrap{max-width:980px;margin:0 auto;padding:18px 14px 46px}
+    .hero{
+      background:linear-gradient(135deg,#4b3328,#8a5a3c 55%,#c99a6b);
+      color:#fff;
+      border-radius:28px;
+      padding:24px 18px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .hero:after{
+      content:"";
+      position:absolute;
+      width:240px;height:240px;border-radius:999px;
+      right:-80px;top:-90px;
+      background:rgba(255,255,255,.13);
+    }
+    .badge{
+      display:inline-flex;gap:7px;align-items:center;
+      padding:7px 11px;border-radius:999px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.25);
+      font-size:12px;
+      letter-spacing:.04em;
+    }
+    h1{margin:12px 0 7px;font-size:25px;line-height:1.25}
+    .hero p{margin:0;color:rgba(255,255,255,.88);font-size:14px}
+    .status{
+      margin-top:12px;
+      display:flex;gap:8px;flex-wrap:wrap;
+      font-size:12px;
+    }
+    .pill{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--muted);
+      padding:7px 10px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .pill.dark{
+      color:#fff;
+      border-color:rgba(255,255,255,.25);
+      background:rgba(255,255,255,.12);
+    }
+    .grid{display:grid;gap:14px;margin-top:14px}
+    @media(min-width:880px){.grid.two{grid-template-columns:1fr 1fr}}
+    .card{
+      background:rgba(255,255,255,.92);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:0 10px 28px rgba(70,42,25,.07);
+    }
+    .step-title{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin:0 0 12px;
+    }
+    .num{
+      width:32px;height:32px;border-radius:50%;
+      display:grid;place-items:center;
+      color:#fff;background:var(--main);
+      font-weight:800;
+      flex:none;
+    }
+    h2{font-size:18px;margin:0;line-height:1.35}
+    .lead{font-size:13px;color:var(--muted);margin:4px 0 0}
+    label{
+      display:block;
+      font-weight:700;
+      font-size:13px;
+      margin:13px 0 6px;
+    }
+    .req{color:var(--danger);font-size:12px;margin-left:4px}
+    input,select,textarea{
+      width:100%;
+      border:1px solid #ddd2c9;
+      background:#fff;
+      border-radius:14px;
+      padding:12px 12px;
+      outline:none;
+      color:var(--ink);
+    }
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--main2);
+      box-shadow:0 0 0 4px rgba(185,128,85,.13);
+    }
+    textarea{min-height:94px;resize:vertical}
+    .row{display:grid;gap:12px}
+    @media(min-width:720px){.row.two{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:1fr 1fr 1fr}}
+    .checks{display:grid;gap:8px}
+    @media(min-width:720px){.checks{grid-template-columns:1fr 1fr}}
+    .check{
+      display:flex;
+      gap:9px;
+      align-items:flex-start;
+      padding:10px;
+      border:1px solid var(--line);
+      background:var(--soft2);
+      border-radius:14px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:13px;
+    }
+    .check input{width:auto;margin-top:4px}
+    .service-list,.day-list,.time-list{
+      display:grid;
+      gap:9px;
+    }
+    .service-card,.day-btn,.time-btn{
+      width:100%;
+      text-align:left;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:16px;
+      padding:12px;
+      cursor:pointer;
+      transition:.15s ease;
+    }
+    .service-card:hover,.day-btn:hover,.time-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(70,42,25,.08)}
+    .service-card.selected,.day-btn.selected,.time-btn.selected{
+      border-color:var(--main);
+      background:var(--soft);
+      box-shadow:0 0 0 3px rgba(138,90,60,.12);
+    }
+    .svc-name{font-weight:800}
+    .svc-sub{font-size:12px;color:var(--muted);margin-top:3px}
+    .svc-price{font-size:12px;color:var(--main);font-weight:800;margin-top:5px}
+    .day-list{grid-template-columns:repeat(2,1fr)}
+    @media(min-width:720px){.day-list{grid-template-columns:repeat(4,1fr)}}
+    .day-btn{padding:10px;text-align:center}
+    .day-date{font-weight:800}
+    .day-sub{font-size:11px;color:var(--muted)}
+    .day-btn[disabled]{opacity:.48;cursor:not-allowed;box-shadow:none;transform:none;background:#f2f0ee}
+    .time-list{grid-template-columns:repeat(3,1fr)}
+    @media(min-width:720px){.time-list{grid-template-columns:repeat(5,1fr)}}
+    .time-btn{text-align:center;font-weight:800}
+    .actions{
+      position:sticky;
+      bottom:0;
+      z-index:5;
+      margin:18px -14px -46px;
+      padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+      background:rgba(255,250,244,.92);
+      backdrop-filter:blur(12px);
+      border-top:1px solid var(--line);
+    }
+    .action-inner{max-width:980px;margin:0 auto;display:grid;gap:10px}
+    @media(min-width:720px){.action-inner{grid-template-columns:1fr 1fr}}
+    .btn{
+      border:0;
+      border-radius:16px;
+      padding:14px 16px;
+      font-weight:900;
+      cursor:pointer;
+      background:var(--main);
+      color:#fff;
+      box-shadow:0 12px 26px rgba(138,90,60,.22);
+    }
+    .btn.secondary{
+      background:#fff;
+      color:var(--main);
+      border:1px solid var(--line);
+      box-shadow:none;
+    }
+    .btn[disabled]{opacity:.55;cursor:not-allowed}
+    .notice{
+      padding:12px 13px;
+      border-radius:16px;
+      background:var(--soft2);
+      border:1px solid var(--line);
+      color:var(--muted);
+      font-size:13px;
+      margin-top:12px;
+    }
+    .alert{
+      display:none;
+      padding:13px;
+      border-radius:16px;
+      margin-top:12px;
+      font-weight:700;
+      font-size:13px;
+      white-space:pre-wrap;
+    }
+    .alert.show{display:block}
+    .alert.err{background:#fff1f1;color:var(--danger);border:1px solid #f0caca}
+    .alert.ok{background:#eefaf3;color:var(--ok);border:1px solid #ccebd9}
+    .summary{
+      background:#fff;
+      border:1px dashed #d9c7b8;
+      border-radius:18px;
+      padding:13px;
+      font-size:13px;
+    }
+    .summary b{display:block;margin-bottom:5px;color:var(--main)}
+    .hidden{display:none!important}
+    .small{font-size:12px;color:var(--muted)}
+    .footer{
+      text-align:center;
+      color:var(--muted);
+      font-size:11px;
+      margin-top:18px;
+      padding-bottom:74px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <span class="badge">🐾 LINE予約・事前カルテ</span>
+      <h1 id="shopName">DPROペットサロン</h1>
+      <p>予約と同時に、ペットの性格・苦手なこと・毛玉・皮膚の状態を事前に共有できます。</p>
+      <div class="status">
+        <span class="pill dark" id="apiState">API確認中</span>
+        <span class="pill dark" id="lineState">LINE確認中</span>
+        <span class="pill dark" id="openState">営業時間確認中</span>
+      </div>
+    </section>
+
+    <div class="alert err" id="errorBox"></div>
+    <div class="alert ok" id="okBox"></div>
+
+    <div class="grid two">
+      <section class="card">
+        <div class="step-title">
+          <div class="num">1</div>
+          <div>
+            <h2>飼い主さま情報</h2>
+            <p class="lead">次回以降の予約をスムーズにするための基本情報です。</p>
+          </div>
+        </div>
+
+        <div class="row two">
+          <div>
+            <label>飼い主さま氏名<span class="req">必須</span></label>
+            <input id="owner_name" autocomplete="name" placeholder="例：佐藤 花子" />
+          </div>
+          <div>
+            <label>ふりがな</label>
+            <input id="owner_kana" placeholder="例：サトウ ハナコ" />
+          </div>
+        </div>
+
+        <div class="row two">
+          <div>
+            <label>電話番号<span class="req">必須</span></label>
+            <input id="phone" inputmode="tel" autocomplete="tel" placeholder="例：090-0000-0000" />
+          </div>
+          <div>
+            <label>メールアドレス</label>
+            <input id="email" inputmode="email" autocomplete="email" placeholder="任意" />
+          </div>
+        </div>
+
+        <div class="notice">
+          LINE内で開いた場合は、LINEプロフィール名を自動取得します。LIFF ID未設定でも通常ブラウザでデモできます。
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="step-title">
+          <div class="num">2</div>
+          <div>
+            <h2>ペット情報</h2>
+            <p class="lead">犬種・性格・苦手なことを事前に共有できます。</p>
+          </div>
+        </div>
+
+        <div class="row two">
+          <div>
+            <label>ペット名<span class="req">必須</span></label>
+            <input id="pet_name" placeholder="例：モコ" />
+          </div>
+          <div>
+            <label>犬種</label>
+            <input id="breed" placeholder="例：トイプードル" />
+          </div>
+        </div>
+
+        <div class="row three">
+          <div>
+            <label>年齢</label>
+            <input id="age_label" placeholder="例：3歳" />
+          </div>
+          <div>
+            <label>体重 kg</label>
+            <input id="weight" inputmode="decimal" placeholder="例：3.8" />
+          </div>
+          <div>
+            <label>性別</label>
+            <select id="sex">
+              <option value="unknown">未選択</option>
+              <option value="female">女の子</option>
+              <option value="male">男の子</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row two">
+          <label class="check"><input type="checkbox" id="neutered" /> 避妊・去勢済み</label>
+          <label class="check"><input type="checkbox" id="vaccine_confirmed" /> ワクチン確認済み</label>
+        </div>
+      </section>
+    </div>
+
+    <section class="card grid">
+      <div class="step-title">
+        <div class="num">3</div>
+        <div>
+          <h2>本日の目的</h2>
+          <p class="lead">メニューを選ぶと、サロン側が必要時間を把握しやすくなります。</p>
+        </div>
+      </div>
+      <div class="service-list" id="serviceList">
+        <div class="notice">メニューを読み込み中です。</div>
+      </div>
+    </section>
+
+    <section class="card grid">
+      <div class="step-title">
+        <div class="num">4</div>
+        <div>
+          <h2>希望日時</h2>
+          <p class="lead">定休日・臨時休業・予約上限を反映します。</p>
+        </div>
+      </div>
+
+      <label>希望日<span class="req">必須</span></label>
+      <div class="day-list" id="dayList">
+        <div class="notice">予約可能日を読み込み中です。</div>
+      </div>
+
+      <label>希望時間<span class="req">必須</span></label>
+      <div class="time-list" id="timeList"></div>
+    </section>
+
+    <section class="card">
+      <div class="step-title">
+        <div class="num">5</div>
+        <div>
+          <h2>次回提案につながる情報</h2>
+          <p class="lead">悩みを残すことで、次回案内やケア提案に活用しやすくなります。</p>
+        </div>
+      </div>
+
+      <label>気になること</label>
+      <div class="checks" id="concernChecks">
+        <label class="check"><input type="checkbox" value="毛玉が気になる" /> 毛玉が気になる</label>
+        <label class="check"><input type="checkbox" value="抜け毛が気になる" /> 抜け毛が気になる</label>
+        <label class="check"><input type="checkbox" value="皮膚が弱い" /> 皮膚が弱い</label>
+        <label class="check"><input type="checkbox" value="においが気になる" /> においが気になる</label>
+        <label class="check"><input type="checkbox" value="耳が汚れやすい" /> 耳が汚れやすい</label>
+        <label class="check"><input type="checkbox" value="高齢犬なので負担が心配" /> 高齢犬なので負担が心配</label>
+      </div>
+
+      <div class="row two">
+        <div>
+          <label>性格・注意点</label>
+          <textarea id="personality_notes" placeholder="例：人懐っこい、少し緊張しやすい"></textarea>
+        </div>
+        <div>
+          <label>苦手なこと</label>
+          <textarea id="dislike_notes" placeholder="例：足先、耳掃除、ドライヤーが苦手"></textarea>
+        </div>
+      </div>
+
+      <div class="row two">
+        <div>
+          <label>健康・皮膚など</label>
+          <textarea id="health_notes" placeholder="例：皮膚が乾燥しやすい、投薬中など"></textarea>
+        </div>
+        <div>
+          <label>希望スタイル・ご要望</label>
+          <textarea id="favorite_style" placeholder="例：前回と同じ、丸め、短め、写真のように"></textarea>
+        </div>
+      </div>
+
+      <label>その他ご要望</label>
+      <textarea id="request_note" placeholder="予約前に伝えておきたいことがあれば入力してください"></textarea>
+    </section>
+
+    <section class="card">
+      <div class="step-title">
+        <div class="num">✓</div>
+        <div>
+          <h2>送信前確認</h2>
+          <p class="lead">内容を確認してから送信してください。</p>
+        </div>
+      </div>
+      <div class="summary" id="summaryBox">
+        <b>予約内容</b>
+        入力内容がここに表示されます。
+      </div>
+      <div class="notice">
+        送信後、サロンで内容を確認してからLINEまたはお電話で連絡します。これは予約確定ではなく「予約希望の受付」です。
+      </div>
+    </section>
+
+    <div class="footer">
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-3
+    </div>
+  </div>
+
+  <div class="actions">
+    <div class="action-inner">
+      <button class="btn secondary" type="button" id="refreshBtn">内容を再確認</button>
+      <button class="btn" type="button" id="submitBtn">予約希望を送信する</button>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================
+    // STEP PETSALON-3
+    // index.html お客様用LIFF予約フォーム
+    // =========================================================
+
+    const CONFIG = {
+      WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
+      SHOP_CODE: "pet_salon_demo",
+
+      // LINE DevelopersでLIFF IDを作成したらここに入れてください。
+      // 未設定でも通常ブラウザでデモできます。
+      LIFF_ID: ""
+    };
+
+    const state = {
+      profile: {
+        line_user_id: "",
+        line_display_name: ""
+      },
+      settings: null,
+      services: [],
+      days: [],
+      selectedService: null,
+      selectedDate: "",
+      selectedTime: ""
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      $("refreshBtn").addEventListener("click", updateSummary);
+      $("submitBtn").addEventListener("click", submitReservation);
+
+      bindSummaryEvents();
+      await initLiff();
+      await boot();
+    });
+
+    async function initLiff(){
+      try{
+        if(!CONFIG.LIFF_ID){
+          $("lineState").textContent = "通常ブラウザ表示";
+          return;
+        }
+
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+
+        if(!liff.isLoggedIn()){
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        state.profile.line_user_id = profile.userId || "";
+        state.profile.line_display_name = profile.displayName || "";
+        $("lineState").textContent = `LINE連携：${state.profile.line_display_name || "取得OK"}`;
+
+        await loadExistingCustomer();
+      }catch(e){
+        console.warn(e);
+        $("lineState").textContent = "LINE未連携";
+      }
+    }
+
+    async function boot(){
+      try{
+        showError("");
+        const status = await apiGet("/api/public/status");
+        state.settings = status;
+        $("apiState").textContent = "API接続OK";
+        $("shopName").textContent = status.shop_name || "DPROペットサロン";
+        $("openState").textContent = `営業時間 ${status.open_time}〜${status.close_time}`;
+
+        const servicesRes = await apiGet("/api/public/services");
+        state.services = servicesRes.services || [];
+        renderServices();
+
+        const daysRes = await apiGet("/api/public/available-days?days=28");
+        state.days = daysRes.days || [];
+        renderDays();
+
+        renderTimes();
+        updateSummary();
+      }catch(e){
+        console.error(e);
+        $("apiState").textContent = "API接続エラー";
+        showError(e.message || "読み込みに失敗しました。Worker URLとSupabase環境変数を確認してください。");
+      }
+    }
+
+    async function loadExistingCustomer(){
+      if(!state.profile.line_user_id) return;
+
+      try{
+        const res = await apiGet(`/api/public/customer?line_user_id=${encodeURIComponent(state.profile.line_user_id)}`);
+        if(!res.found) return;
+
+        const c = res.customer;
+        $("owner_name").value = c.owner_name || "";
+        $("owner_kana").value = c.owner_kana || "";
+        $("phone").value = c.phone || "";
+        $("email").value = c.email || "";
+
+        if(res.pets && res.pets.length > 0){
+          const p = res.pets[0];
+          $("pet_name").value = p.pet_name || "";
+          $("breed").value = p.breed || "";
+          $("age_label").value = p.age_label || "";
+          $("weight").value = p.weight || "";
+          $("sex").value = p.sex || "unknown";
+          $("neutered").checked = !!p.neutered;
+          $("vaccine_confirmed").checked = !!p.vaccine_confirmed;
+          $("personality_notes").value = p.personality_notes || "";
+          $("dislike_notes").value = p.dislike_notes || "";
+          $("health_notes").value = p.health_notes || "";
+          $("favorite_style").value = p.favorite_style || "";
+        }
+
+        updateSummary();
+      }catch(e){
+        console.warn(e);
+      }
+    }
+
+    function renderServices(){
+      const el = $("serviceList");
+      if(!state.services.length){
+        el.innerHTML = `<div class="notice">現在選択できるメニューがありません。</div>`;
+        return;
+      }
+
+      el.innerHTML = state.services.map(s => `
+        <button type="button" class="service-card" data-code="${escapeHtml(s.service_code)}">
+          <div class="svc-name">${escapeHtml(s.service_name)}</div>
+          <div class="svc-sub">${escapeHtml(s.description || "")}</div>
+          <div class="svc-price">
+            ${s.base_price ? `${Number(s.base_price).toLocaleString()}円〜` : "料金はサロン確認"} / 目安 ${s.base_minutes || 120}分
+          </div>
+        </button>
+      `).join("");
+
+      el.querySelectorAll(".service-card").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const code = btn.dataset.code;
+          state.selectedService = state.services.find(s => s.service_code === code) || null;
+          el.querySelectorAll(".service-card").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          updateSummary();
+        });
+      });
+    }
+
+    function renderDays(){
+      const el = $("dayList");
+      if(!state.days.length){
+        el.innerHTML = `<div class="notice">予約可能日を取得できませんでした。</div>`;
+        return;
+      }
+
+      el.innerHTML = state.days.slice(0, 28).map(d => {
+        const disabled = !d.can_reserve;
+        return `
+          <button type="button" class="day-btn" data-date="${escapeHtml(d.date)}" ${disabled ? "disabled" : ""}>
+            <div class="day-date">${formatDateShort(d.date)}（${escapeHtml(d.weekday_label)}）</div>
+            <div class="day-sub">${disabled ? escapeHtml(d.closed_reason || (d.is_full ? "満席" : "受付不可")) : `残り${d.remaining}`}</div>
+          </button>
+        `;
+      }).join("");
+
+      el.querySelectorAll(".day-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if(btn.disabled) return;
+          state.selectedDate = btn.dataset.date;
+          el.querySelectorAll(".day-btn").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          renderTimes();
+          updateSummary();
+        });
+      });
+
+      const first = el.querySelector(".day-btn:not([disabled])");
+      if(first && !state.selectedDate){
+        first.click();
+      }
+    }
+
+    function renderTimes(){
+      const el = $("timeList");
+      const settings = state.settings;
+      if(!settings){
+        el.innerHTML = "";
+        return;
+      }
+
+      const open = settings.open_time || "10:00";
+      const close = settings.close_time || "18:00";
+      const slot = Number(settings.reservation_slot_minutes || 30);
+      const times = buildTimes(open, close, slot);
+
+      el.innerHTML = times.map(t => `
+        <button type="button" class="time-btn" data-time="${t}">${t}</button>
+      `).join("");
+
+      el.querySelectorAll(".time-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.selectedTime = btn.dataset.time;
+          el.querySelectorAll(".time-btn").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          updateSummary();
+        });
+      });
+
+      const first = el.querySelector(".time-btn");
+      if(first && !state.selectedTime){
+        first.click();
+      }
+    }
+
+    function buildTimes(open, close, slot){
+      const start = toMinutes(open);
+      const end = toMinutes(close);
+      const arr = [];
+      for(let m = start; m < end; m += slot){
+        arr.push(fromMinutes(m));
+      }
+      return arr;
+    }
+
+    function toMinutes(hm){
+      const [h,m] = String(hm).slice(0,5).split(":").map(Number);
+      return h * 60 + (m || 0);
+    }
+
+    function fromMinutes(min){
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+    }
+
+    function updateSummary(){
+      const concerns = checkedValues("concernChecks");
+      const lines = [
+        `<b>予約内容</b>`,
+        `飼い主：${escapeHtml($("owner_name").value || "未入力")}`,
+        `電話番号：${escapeHtml($("phone").value || "未入力")}`,
+        `ペット：${escapeHtml($("pet_name").value || "未入力")} / ${escapeHtml($("breed").value || "犬種未入力")}`,
+        `メニュー：${escapeHtml(state.selectedService ? state.selectedService.service_name : "未選択")}`,
+        `希望日時：${escapeHtml(state.selectedDate || "未選択")} ${escapeHtml(state.selectedTime || "")}`,
+        concerns.length ? `気になること：${escapeHtml(concerns.join("、"))}` : `気になること：未選択`,
+        `ご要望：${escapeHtml($("request_note").value || "なし")}`
+      ];
+      $("summaryBox").innerHTML = lines.join("<br>");
+    }
+
+    function bindSummaryEvents(){
+      document.querySelectorAll("input,select,textarea").forEach(el => {
+        el.addEventListener("input", updateSummary);
+        el.addEventListener("change", updateSummary);
+      });
+    }
+
+    async function submitReservation(){
+      try{
+        showError("");
+        showOk("");
+        updateSummary();
+
+        const ownerName = $("owner_name").value.trim();
+        const phone = $("phone").value.trim();
+        const petName = $("pet_name").value.trim();
+
+        if(!ownerName) throw new Error("飼い主さま氏名を入力してください。");
+        if(!phone) throw new Error("電話番号を入力してください。");
+        if(!petName) throw new Error("ペット名を入力してください。");
+        if(!state.selectedService) throw new Error("メニューを選択してください。");
+        if(!state.selectedDate) throw new Error("希望日を選択してください。");
+        if(!state.selectedTime) throw new Error("希望時間を選択してください。");
+
+        $("submitBtn").disabled = true;
+        $("submitBtn").textContent = "送信中...";
+
+        const concerns = checkedValues("concernChecks");
+
+        const body = {
+          shop_code: CONFIG.SHOP_CODE,
+          line_user_id: state.profile.line_user_id,
+          line_display_name: state.profile.line_display_name,
+
+          owner_name: ownerName,
+          owner_kana: $("owner_kana").value.trim(),
+          phone,
+          email: $("email").value.trim(),
+
+          pet_name: petName,
+          species: "dog",
+          breed: $("breed").value.trim(),
+          age_label: $("age_label").value.trim(),
+          weight: $("weight").value.trim(),
+          sex: $("sex").value,
+          neutered: $("neutered").checked,
+          vaccine_confirmed: $("vaccine_confirmed").checked,
+
+          personality_notes: $("personality_notes").value.trim(),
+          dislike_notes: $("dislike_notes").value.trim(),
+          health_notes: [
+            $("health_notes").value.trim(),
+            concerns.length ? `気になること：${concerns.join("、")}` : ""
+          ].filter(Boolean).join("\n"),
+          coat_condition: concerns.includes("毛玉が気になる") ? "毛玉が気になる" : "",
+          skin_condition: concerns.includes("皮膚が弱い") ? "皮膚が弱い" : "",
+          favorite_style: $("favorite_style").value.trim(),
+
+          service_code: state.selectedService.service_code,
+          reservation_date: state.selectedDate,
+          reservation_time: state.selectedTime,
+          options: concerns,
+          request_note: $("request_note").value.trim()
+        };
+
+        const res = await apiPost("/api/reservations/create", body);
+
+        showOk([
+          "予約希望を受け付けました。",
+          "",
+          res.line_message || "",
+          "",
+          "この画面を閉じて、LINEに戻ってください。"
+        ].join("\n"));
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        if(window.liff && CONFIG.LIFF_ID && liff.isInClient()){
+          // LIFF内の場合も自動クローズはせず、完了内容を見せる。
+        }
+      }catch(e){
+        showError(e.message || "送信に失敗しました。");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }finally{
+        $("submitBtn").disabled = false;
+        $("submitBtn").textContent = "予約希望を送信する";
+      }
+    }
+
+    async function apiGet(path){
+      const url = `${CONFIG.WORKER_BASE_URL}${path}${path.includes("?") ? "&" : "?"}shop_code=${encodeURIComponent(CONFIG.SHOP_CODE)}`;
+      const res = await fetch(url);
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false){
+        throw new Error(json && json.error ? json.error : `APIエラー ${res.status}`);
+      }
+      return json;
+    }
+
+    async function apiPost(path, body){
+      const res = await fetch(`${CONFIG.WORKER_BASE_URL}${path}`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false){
+        const msg = json && json.error ? json.error : `APIエラー ${res.status}`;
+        throw new Error(msg);
+      }
+      return json;
+    }
+
+    function checkedValues(groupId){
+      return [...$(groupId).querySelectorAll("input[type=checkbox]:checked")].map(x => x.value);
+    }
+
+    function showError(msg){
+      const el = $("errorBox");
+      if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
+      el.textContent = msg;
+      el.classList.add("show");
+    }
+
+    function showOk(msg){
+      const el = $("okBox");
+      if(!msg){ el.classList.remove("show"); el.textContent = ""; return; }
+      el.textContent = msg;
+      el.classList.add("show");
+    }
+
+    function formatDateShort(ymd){
+      const [y,m,d] = ymd.split("-");
+      return `${Number(m)}/${Number(d)}`;
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "").replace(/[&<>"']/g, s => ({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#39;"
+      }[s]));
+    }
+  </script>
+</body>
+</html>
