@@ -316,7 +316,7 @@
       <div class="summary" id="summaryBox">予約を選択すると内容が表示されます。</div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-6.4 manage.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-6.4A manage.html</div>
   </div>
 
   <script>
@@ -497,7 +497,7 @@
         "",
         "【キャンセル理由】",
         $("cancelReason").value || "未入力"
-      ].filter(Boolean).join("\\n");
+      ].filter(Boolean).join("\n");
     }
 
     function renderDays(){
@@ -578,7 +578,7 @@
           reason: $("changeReason").value.trim()
         });
 
-        showOk(["予約変更希望を受け付けました。", "", res.line_message || "", "", "サロン確認後、LINEまたはお電話でご連絡します。"].join("\\n"));
+        showOk(["予約変更希望を受け付けました。", "", res.line_message || "", "", "サロン確認後、LINEまたはお電話でご連絡します。"].join("\n"));
         await reloadCurrentCustomer();
       }catch(e){
         showError(e.message || "予約変更希望の送信に失敗しました。");
@@ -610,7 +610,7 @@
           reason: $("cancelReason").value.trim()
         });
 
-        showOk(["キャンセル希望を受け付けました。", "", res.line_message || "", "", "必要に応じて、サロンからLINEまたはお電話でご連絡します。"].join("\\n"));
+        showOk(["キャンセル希望を受け付けました。", "", res.line_message || "", "", "必要に応じて、サロンからLINEまたはお電話でご連絡します。"].join("\n"));
         await reloadCurrentCustomer();
       }catch(e){
         showError(e.message || "キャンセル希望の送信に失敗しました。");
