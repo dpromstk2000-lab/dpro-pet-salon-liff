@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 多頭予約対応</title>
+  <title>DPROペットサロン｜オーナー管理画面 完了履歴分離</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -332,6 +332,59 @@
       margin-bottom:2px;
     }
 
+
+    .history-wrap{
+      margin-top:14px;
+      border:1px solid #eadfd5;
+      background:#fffaf6;
+      border-radius:18px;
+      overflow:hidden;
+    }
+    .history-wrap summary{
+      cursor:pointer;
+      padding:12px 13px;
+      font-weight:1000;
+      color:#8a5a3c;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      list-style:none;
+    }
+    .history-wrap summary::-webkit-details-marker{display:none}
+    .history-count{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:26px;
+      height:22px;
+      padding:0 8px;
+      border-radius:999px;
+      background:#8a5a3c;
+      color:#fff;
+      font-size:12px;
+      font-weight:1000;
+    }
+    .history-body{
+      border-top:1px solid #eadfd5;
+      padding:10px;
+      display:grid;
+      gap:8px;
+    }
+    .res-card.history{
+      opacity:.86;
+      background:#fbf8f5;
+      box-shadow:none;
+    }
+    .res-card.history .time{
+      color:#7d6f66;
+    }
+    .history-note{
+      color:#7d6f66;
+      font-size:12px;
+      padding:0 13px 12px;
+    }
+
     .info-grid{display:grid;gap:8px;margin:10px 0}
     @media(min-width:720px){.info-grid{grid-template-columns:1fr 1fr}}
     .info{
@@ -647,7 +700,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-5.6 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-6.1 owner.html
     </div>
   </div>
 
@@ -827,15 +880,21 @@
         state.summary = res;
 
         $("shopName").textContent = `${res.shop_name || "DPROペットサロン"} 管理画面`;
-        $("kpiToday").textContent = res.counts?.today_reservations ?? 0;
-        $("kpiNext").textContent = res.counts?.next_business_reservations ?? 0;
+
+        const todayReservations = res.today_reservations || [];
+        const nextReservations = res.next_business_reservations || [];
+        const todayActive = todayReservations.filter(isActiveReservation);
+        const nextActive = nextReservations.filter(isActiveReservation);
+
+        $("kpiToday").textContent = todayActive.length;
+        $("kpiNext").textContent = nextActive.length;
         $("kpiFollow").textContent = res.counts?.pending_followups ?? 0;
 
-        $("todayLabel").textContent = `対象日：${res.today}`;
-        $("nextDayLabel").textContent = `対象日：${res.next_business_date}`;
+        $("todayLabel").textContent = `対象日：${res.today} / 未完了 ${todayActive.length}件`;
+        $("nextDayLabel").textContent = `対象日：${res.next_business_date} / 未完了 ${nextActive.length}件`;
 
-        renderReservations("todayReservations", res.today_reservations || []);
-        renderReservations("nextReservations", res.next_business_reservations || []);
+        renderReservations("todayReservations", todayReservations);
+        renderReservations("nextReservations", nextReservations);
         renderFollowups("pendingFollowups", res.pending_followups || [], true);
 
       }catch(e){
@@ -892,7 +951,29 @@
         return;
       }
 
-      el.innerHTML = reservations.map(r => reservationCard(r)).join("");
+      const active = reservations.filter(isActiveReservation);
+      const history = reservations.filter(isHistoryReservation);
+
+      const activeHtml = active.length
+        ? active.map(r => reservationCard(r, true, false)).join("")
+        : `<div class="empty">未完了の予約はありません。</div>`;
+
+      const historyHtml = history.length
+        ? `
+          <details class="history-wrap">
+            <summary>
+              <span>完了・取消・不在履歴を見る</span>
+              <span class="history-count">${history.length}</span>
+            </summary>
+            <div class="history-note">完了済み・キャンセル・不在は通常の予約一覧から分離しています。</div>
+            <div class="history-body">
+              ${history.map(r => reservationCard(r, false, true)).join("")}
+            </div>
+          </details>
+        `
+        : "";
+
+      el.innerHTML = activeHtml + historyHtml;
 
       el.querySelectorAll("[data-action]").forEach(btn => {
         btn.addEventListener("click", async () => {
@@ -911,6 +992,15 @@
     }
 
 
+    function isActiveReservation(r){
+      return ["requested", "confirmed", "visited"].includes(r.status || "requested");
+    }
+
+    function isHistoryReservation(r){
+      return ["completed", "cancelled", "no_show"].includes(r.status || "");
+    }
+
+
     function isMultiReservation(r){
       return Number(r.reservation_group_size || 1) > 1;
     }
@@ -926,7 +1016,7 @@
       return String(note || "").replace(/^【多頭予約\s+\d+\/\d+】\s*/m, "").trim();
     }
 
-    function reservationCard(r){
+    function reservationCard(r, showActions = true, isHistory = false){
       const c = r.customer || {};
       const p = r.pet || {};
       const status = r.status || "requested";
@@ -935,7 +1025,7 @@
       const requestNote = cleanMultiNote(r.request_note);
 
       return `
-        <div class="res-card ${isMulti ? "multi" : ""}">
+        <div class="res-card ${isMulti ? "multi" : ""} ${isHistory ? "history" : ""}">
           <div class="res-top">
             <div>
               <div class="time">${escapeHtml(hm(r.reservation_time))}</div>
@@ -967,13 +1057,17 @@
 
           ${requestNote ? `<div class="message-box">${escapeHtml(requestNote)}</div>` : ""}
 
-          <div class="btns">
-            <button class="btn blue small" data-action="confirmed" data-id="${escapeHtml(r.id)}">予約確定</button>
-            <button class="btn ok small" data-action="visited" data-id="${escapeHtml(r.id)}">来店済み</button>
-            <button class="btn small" data-action="complete" data-id="${escapeHtml(r.id)}">施術完了・次回案内</button>
-            <button class="btn danger small" data-action="cancelled" data-id="${escapeHtml(r.id)}">キャンセル</button>
-            <button class="btn secondary small" data-action="no_show" data-id="${escapeHtml(r.id)}">不在</button>
-          </div>
+          ${showActions ? `
+            <div class="btns">
+              <button class="btn blue small" data-action="confirmed" data-id="${escapeHtml(r.id)}">予約確定</button>
+              <button class="btn ok small" data-action="visited" data-id="${escapeHtml(r.id)}">来店済み</button>
+              <button class="btn small" data-action="complete" data-id="${escapeHtml(r.id)}">施術完了・次回案内</button>
+              <button class="btn danger small" data-action="cancelled" data-id="${escapeHtml(r.id)}">キャンセル</button>
+              <button class="btn secondary small" data-action="no_show" data-id="${escapeHtml(r.id)}">不在</button>
+            </div>
+          ` : `
+            <div class="notice" style="margin-top:10px">この予約は履歴扱いです。通常の本日対応リストからは分離されています。</div>
+          `}
         </div>
       `;
     }
