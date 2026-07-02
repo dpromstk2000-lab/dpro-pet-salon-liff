@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 営業デモ準備強化</title>
+  <title>DPROペットサロン｜オーナー管理画面 顧客検索強化</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -554,6 +554,65 @@
       .todo-grid{grid-template-columns:1fr}
     }
 
+  
+    .search-card{
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:white;
+      padding:14px;
+      margin-bottom:12px;
+    }
+    .search-card-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    .search-name{
+      font-size:18px;
+      font-weight:1000;
+      color:#5b3526;
+    }
+    .search-meta{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+      margin-top:4px;
+    }
+    .pet-chip-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .pet-chip{
+      border:1px solid var(--line);
+      background:#fff4ec;
+      border-radius:14px;
+      padding:9px 10px;
+      font-size:12px;
+      line-height:1.55;
+      min-width:180px;
+    }
+    .mini-list{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+    .mini-box{
+      border:1px solid var(--line);
+      background:#fffaf6;
+      border-radius:12px;
+      padding:9px;
+      font-size:12px;
+      line-height:1.55;
+    }
+    @media(max-width:900px){
+      .mini-list{grid-template-columns:1fr}
+    }
+
   </style>
 </head>
 <body>
@@ -580,6 +639,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="dashboard">今日の管理</button>
         <button class="tab" data-tab="manual">電話受付</button>
+        <button class="tab" data-tab="customerSearch">顧客検索</button>
         <button class="tab" data-tab="day">日別予約</button>
         <button class="tab" data-tab="hotel">ホテル申込</button>
         <button class="tab" data-tab="followups">LINE案内</button>
@@ -764,6 +824,34 @@
             </div>
             <div class="summary" id="manualSummary"></div>
           </div>
+        </div>
+      </section>
+
+      <section class="section" id="tab-customerSearch">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>顧客検索・ペット検索</h2>
+              <p class="lead">電話番号・飼い主名・ペット名・犬種で探せます。電話受付への反映もできます。</p>
+            </div>
+          </div>
+
+          <div class="row two">
+            <div>
+              <label>検索キーワード</label>
+              <input id="customerSearchQuery" placeholder="例：090-2222 / 佐藤 / モコ / 柴犬" />
+            </div>
+            <div style="align-self:end">
+              <button class="btn" type="button" id="customerSearchBtn">検索する</button>
+              <button class="btn secondary" type="button" id="recentCustomersBtn">最近のお客様</button>
+            </div>
+          </div>
+
+          <div class="notice" style="margin-top:12px">
+            電話番号はハイフンあり・なし両方をある程度拾えるようにしています。検索結果からペットを選ぶと、電話受付タブへ反映できます。
+          </div>
+
+          <div id="customerSearchResults" style="margin-top:14px"></div>
         </div>
       </section>
 
@@ -984,7 +1072,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-13 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-14 owner.html
     </div>
   </div>
 
@@ -1092,6 +1180,11 @@
       $("manualCreateBtn").addEventListener("click", createManualReservation);
       $("manualClearBtn").addEventListener("click", clearManualForm);
       $("manualDate").addEventListener("change", loadManualAvailableTimes);
+      $("customerSearchBtn").addEventListener("click", searchCustomers);
+      $("recentCustomersBtn").addEventListener("click", () => searchCustomers(true));
+      $("customerSearchQuery").addEventListener("keydown", (e) => {
+        if(e.key === "Enter") searchCustomers();
+      });
       $("loadDayBtn").addEventListener("click", loadDay);
       $("loadHotelBtn").addEventListener("click", loadHotelApplications);
       $("loadFollowupsBtn").addEventListener("click", loadFollowups);
@@ -1665,6 +1758,135 @@
       const h = Math.floor(value / 60);
       const m = value % 60;
       return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+    }
+
+    async function searchCustomers(recent = false){
+      try{
+        showError("");
+        showOk("");
+        saveInputs();
+
+        const q = recent ? "" : $("customerSearchQuery").value.trim();
+        const res = await apiGet("/api/admin/customers/search", {
+          admin_code: adminCode(),
+          q,
+          limit: 30
+        });
+
+        renderCustomerSearchResults(res.customers || [], q);
+
+      }catch(e){
+        console.error(e);
+        showError(e.message || "顧客検索に失敗しました。");
+      }
+    }
+
+    function renderCustomerSearchResults(customers, q){
+      const el = $("customerSearchResults");
+
+      if(!customers.length){
+        el.innerHTML = `<div class="empty">${q ? "該当するお客様は見つかりませんでした。" : "最近のお客様はありません。"}</div>`;
+        return;
+      }
+
+      el.innerHTML = customers.map(customerSearchCard).join("");
+
+      el.querySelectorAll("[data-fill-manual]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const data = JSON.parse(btn.dataset.fillManual || "{}");
+          fillManualFromSearch(data.customer || {}, data.pet || {});
+        });
+      });
+    }
+
+    function customerSearchCard(c){
+      const pets = Array.isArray(c.pets) ? c.pets : [];
+      const reservations = Array.isArray(c.active_reservations) ? c.active_reservations : [];
+      const visits = Array.isArray(c.recent_visits) ? c.recent_visits : [];
+      const hotels = Array.isArray(c.active_hotels) ? c.active_hotels : [];
+
+      const petChips = pets.length ? pets.map(p => {
+        const latest = (c.latest_visit_by_pet || {})[p.id] || null;
+        const data = escapeAttr(JSON.stringify({ customer: c, pet: p }));
+        return `
+          <div class="pet-chip">
+            <b>${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん</b><br>
+            ${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg<br>
+            前回来店：${escapeHtml(latest?.visit_date || "未登録")}<br>
+            次回目安：${escapeHtml(latest?.next_recommend_date || "未登録")}
+            <div style="margin-top:8px">
+              <button class="btn secondary small" type="button" data-fill-manual="${data}">電話受付に反映</button>
+            </div>
+          </div>
+        `;
+      }).join("") : `<div class="empty">登録済みペットはありません。</div>`;
+
+      const reservationList = reservations.length ? reservations.slice(0, 3).map(r => `
+        <div class="mini-box">
+          <b>予約</b>${escapeHtml(r.reservation_date || "")} ${escapeHtml(hm(r.reservation_time || ""))}<br>
+          ${escapeHtml(r.pet?.pet_name || "ペット")}ちゃん / ${escapeHtml(r.service_name || "")}<br>
+          ${escapeHtml(statusLabel(r.status || "requested"))}
+        </div>
+      `).join("") : `<div class="mini-box"><b>予約</b>現在の予約はありません。</div>`;
+
+      const visitList = visits.length ? visits.slice(0, 3).map(v => `
+        <div class="mini-box">
+          <b>来店履歴</b>${escapeHtml(v.visit_date || "")}<br>
+          ${escapeHtml(v.menu_done || "メニュー未登録")}<br>
+          次回目安：${escapeHtml(v.next_recommend_date || "未登録")}
+        </div>
+      `).join("") : `<div class="mini-box"><b>来店履歴</b>履歴はまだありません。</div>`;
+
+      const hotelList = hotels.length ? hotels.slice(0, 2).map(h => `
+        <div class="mini-box">
+          <b>ホテル</b>${escapeHtml(h.checkin_date || "")}〜${escapeHtml(h.checkout_date || "")}<br>
+          ${escapeHtml(hotelStatusLabel(h.status || "requested"))}
+        </div>
+      `).join("") : "";
+
+      return `
+        <div class="search-card">
+          <div class="search-card-top">
+            <div>
+              <div class="search-name">${escapeHtml(c.owner_name || "飼い主名未登録")}さま</div>
+              <div class="search-meta">
+                電話：${escapeHtml(c.phone || "未登録")} / LINE名：${escapeHtml(c.line_display_name || "-")}<br>
+                ステータス：${escapeHtml(c.customer_status || "未設定")} / メモ：${escapeHtml(c.memo || "なし")}
+              </div>
+            </div>
+            <button class="btn small" type="button" data-fill-manual="${escapeAttr(JSON.stringify({ customer: c, pet: pets[0] || {} }))}">電話受付へ</button>
+          </div>
+
+          <h3>登録ペット</h3>
+          <div class="pet-chip-row">${petChips}</div>
+
+          <div class="mini-list">
+            ${reservationList}
+            ${visitList}
+            ${hotelList}
+          </div>
+        </div>
+      `;
+    }
+
+    function fillManualFromSearch(customer, pet){
+      $("manualPhone").value = customer.phone || "";
+      $("manualOwnerName").value = customer.owner_name || "";
+      $("manualOwnerKana").value = customer.owner_kana || "";
+      $("manualPetName").value = pet.pet_name || "";
+      $("manualBreed").value = pet.breed || "";
+      $("manualAgeLabel").value = pet.age_label || "";
+      $("manualWeight").value = pet.weight || "";
+      $("manualSex").value = pet.sex || "unknown";
+      $("manualRequestNote").value = [
+        pet.favorite_style ? `前回/希望スタイル：${pet.favorite_style}` : "",
+        pet.personality_notes ? `性格：${pet.personality_notes}` : "",
+        pet.health_notes ? `健康メモ：${pet.health_notes}` : ""
+      ].filter(Boolean).join("\\n");
+
+      updateManualSummary();
+      activateTab("manual");
+      showOk("顧客情報を電話受付に反映しました。");
     }
 
     async function loadDay(){
