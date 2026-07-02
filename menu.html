@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>DPROペットサロン｜LINEメニュー</title>
+  <style>
+    :root{
+      --bg:#fbf6ef;
+      --card:#fffdf9;
+      --main:#8f5d3d;
+      --main2:#b98055;
+      --text:#2d2119;
+      --muted:#7f6d61;
+      --line:#ead9ca;
+      --soft:#fff1e5;
+      --ok:#21836a;
+      --blue:#23699a;
+      --danger:#b94444;
+      --shadow:0 18px 45px rgba(86,55,35,.10);
+      --radius:20px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+      background:linear-gradient(180deg,#fffaf4 0%,var(--bg) 100%);
+      color:var(--text);
+      padding:16px 12px 34px;
+    }
+    .wrap{max-width:760px;margin:0 auto}
+    .hero{
+      background:linear-gradient(135deg,#6d422d,#b77c51);
+      color:white;
+      border-radius:26px;
+      padding:24px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+      margin-bottom:14px;
+    }
+    .hero:after{
+      content:"";
+      width:210px;height:210px;
+      border-radius:50%;
+      background:rgba(255,255,255,.13);
+      position:absolute;right:-58px;top:-86px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.25);
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:12px;
+      font-weight:900;
+      margin-bottom:12px;
+      position:relative;
+      z-index:1;
+    }
+    h1{font-size:25px;margin:0 0 8px;position:relative;z-index:1}
+    p{margin:0}
+    .lead{font-size:13px;color:var(--muted);line-height:1.7}
+    .hero .lead{color:rgba(255,255,255,.86);position:relative;z-index:1}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
+      margin-bottom:14px;
+    }
+    h2{font-size:18px;margin:0 0 6px}
+    h3{font-size:15px;margin:0 0 8px}
+    .menu-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:14px;
+    }
+    .menu-btn{
+      min-height:128px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:12px;
+      background:white;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      color:var(--text);
+      text-decoration:none;
+      box-shadow:0 10px 25px rgba(86,55,35,.07);
+      transition:.15s ease;
+    }
+    .menu-btn:active{transform:scale(.985)}
+    .menu-btn.primary{
+      background:linear-gradient(135deg,#fff4ea,#fffdf9);
+      border-color:#dfbea0;
+    }
+    .icon{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:var(--soft);
+      color:var(--main);
+      font-size:22px;
+    }
+    .title{
+      font-size:17px;
+      font-weight:1000;
+      letter-spacing:.01em;
+    }
+    .desc{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.55;
+    }
+    .notice{
+      background:var(--soft);
+      border:1px solid var(--line);
+      border-radius:15px;
+      padding:13px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.7;
+    }
+    .btns{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+    .btn{
+      border:0;
+      border-radius:12px;
+      padding:12px 16px;
+      font-weight:900;
+      cursor:pointer;
+      color:white;
+      background:var(--main);
+      box-shadow:0 8px 18px rgba(143,93,61,.18);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+    }
+    .btn.secondary{
+      background:white;
+      color:var(--main);
+      border:1px solid var(--line);
+      box-shadow:none;
+    }
+    .alert{
+      display:none;
+      border-radius:14px;
+      padding:12px;
+      margin:12px 0;
+      font-size:13px;
+      font-weight:900;
+      background:#eefaf5;
+      color:#17664f;
+      border:1px solid #c8eadb;
+    }
+    .footer{text-align:center;color:#aa9a90;font-size:11px;margin:24px 0}
+    @media(max-width:640px){
+      .menu-grid{grid-template-columns:1fr}
+      body{padding:12px 10px 28px}
+      .hero{padding:21px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="pill">🐾 STEP PETSALON-11 / LINE入口</div>
+      <h1>DPROペットサロン</h1>
+      <p class="lead">予約・会員証・変更キャンセル・ホテル申込を、ここから迷わず開けます。</p>
+    </section>
+
+    <div class="alert" id="okBox"></div>
+
+    <section class="card">
+      <h2>LINEメニュー</h2>
+      <p class="lead">お客様がよく使う入口だけをまとめています。</p>
+
+      <div class="menu-grid">
+        <a class="menu-btn primary" href="./index.html">
+          <div class="icon">📅</div>
+          <div>
+            <div class="title">予約する</div>
+            <div class="desc">トリミング・シャンプーの予約希望を送れます。</div>
+          </div>
+        </a>
+
+        <a class="menu-btn primary" href="./member.html">
+          <div class="icon">🎫</div>
+          <div>
+            <div class="title">会員証を見る</div>
+            <div class="desc">ペット情報・前回内容・次回おすすめ日を確認できます。</div>
+          </div>
+        </a>
+
+        <a class="menu-btn" href="./manage.html">
+          <div class="icon">🔁</div>
+          <div>
+            <div class="title">予約変更・キャンセル</div>
+            <div class="desc">現在の予約を確認して、変更希望やキャンセル希望を送れます。</div>
+          </div>
+        </a>
+
+        <a class="menu-btn" href="./hotel.html">
+          <div class="icon">🏨</div>
+          <div>
+            <div class="title">ペットホテル申込</div>
+            <div class="desc">宿泊日・ごはん・お薬・緊急連絡先を事前に送れます。</div>
+          </div>
+        </a>
+
+        <button class="menu-btn" type="button" id="copyConsultBtn">
+          <div class="icon">💬</div>
+          <div>
+            <div class="title">お店に相談</div>
+            <div class="desc">相談用メッセージをコピーして、LINEトークに貼り付けできます。</div>
+          </div>
+        </button>
+
+        <a class="menu-btn" href="./owner-ipad.html">
+          <div class="icon">📱</div>
+          <div>
+            <div class="title">現場用画面</div>
+            <div class="desc">スタッフ・受付用。必要な店舗だけ使います。</div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>相談メッセージ</h2>
+      <p class="lead">「お店に相談」を押すと、下の文面をコピーします。</p>
+      <div class="notice" id="consultText">
+ペットサロンに相談したいです。
+
+【飼い主名】
+【ペット名】
+【相談内容】
+例：予約前にメニューを相談したい / 皮膚が弱いので相談したい / ホテル利用について聞きたい
+      </div>
+      <div class="btns">
+        <button class="btn" type="button" id="copyConsultBtn2">相談文面をコピー</button>
+        <a class="btn secondary" href="./member.html">会員証へ戻る</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>LINEリッチメニュー設定用URL</h2>
+      <p class="lead">LINE公式アカウントのリッチメニューには、下の5つを設定します。</p>
+      <div class="notice">
+予約する：<br>
+https://dpromstk2000-lab.github.io/dpro-pet-salon-liff/index.html<br><br>
+会員証を見る：<br>
+https://dpromstk2000-lab.github.io/dpro-pet-salon-liff/member.html<br><br>
+予約変更・キャンセル：<br>
+https://dpromstk2000-lab.github.io/dpro-pet-salon-liff/manage.html<br><br>
+ペットホテル申込：<br>
+https://dpromstk2000-lab.github.io/dpro-pet-salon-liff/hotel.html<br><br>
+メニューTOP：<br>
+https://dpromstk2000-lab.github.io/dpro-pet-salon-liff/menu.html
+      </div>
+    </section>
+
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-11 menu.html</div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      $("copyConsultBtn").addEventListener("click", copyConsult);
+      $("copyConsultBtn2").addEventListener("click", copyConsult);
+    });
+
+    async function copyConsult(){
+      const text = $("consultText").textContent.trim();
+      try{
+        await navigator.clipboard.writeText(text);
+        showOk("相談メッセージをコピーしました。LINEトークに貼り付けて送ってください。");
+      }catch(e){
+        showOk("コピーできない場合は、下の相談メッセージを長押ししてコピーしてください。");
+      }
+    }
+
+    function showOk(msg){
+      const el = $("okBox");
+      el.textContent = msg;
+      el.style.display = "block";
+      window.scrollTo({ top:0, behavior:"smooth" });
+    }
+  </script>
+</body>
+</html>
