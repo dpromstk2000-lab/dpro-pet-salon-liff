@@ -864,6 +864,19 @@
         };
 
         const res = await apiPost("/api/reservations/create", body);
+        saveCustomerCache({
+          source: "reservation",
+          customer: res.customer || {
+            owner_name: body.owner_name,
+            owner_kana: body.owner_kana,
+            phone: body.phone,
+            email: body.email,
+            line_user_id: body.line_user_id,
+            line_display_name: body.line_display_name
+          },
+          pets: res.pets || body.pets || [],
+          profile: state.profile
+        });
 
         showOk([
           "予約希望を受け付けました。",
@@ -883,6 +896,28 @@
       }finally{
         $("submitBtn").disabled = false;
         $("submitBtn").textContent = "予約希望を送信する";
+      }
+    }
+
+
+    function cacheKey(){
+      return `dpro_pet_salon_customer_cache_${CONFIG.SHOP_CODE}`;
+    }
+
+    function saveCustomerCache(data){
+      try{
+        const customer = data.customer || {};
+        const pets = Array.isArray(data.pets) ? data.pets : [];
+        if(!customer.owner_name && !customer.phone && pets.length === 0) return;
+        localStorage.setItem(cacheKey(), JSON.stringify({
+          saved_at: new Date().toISOString(),
+          source: data.source || "reservation",
+          profile: data.profile || {},
+          customer,
+          pets
+        }));
+      }catch(e){
+        console.warn(e);
       }
     }
 
