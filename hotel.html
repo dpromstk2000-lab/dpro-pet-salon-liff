@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <title>DPROペットサロン｜ペットホテル申込</title>
   <style>
     :root{
@@ -172,9 +173,51 @@
       z-index:10;
     }
     .bottom-inner{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+    .resume-box{
+      border:1px solid #d8eadf;
+      background:linear-gradient(135deg,#eefaf5,#fffdf9);
+      border-radius:16px;
+      padding:13px;
+      margin:12px 0;
+      color:#195f4c;
+      font-size:13px;
+      line-height:1.65;
+    }
+    .resume-title{font-weight:1000;color:#17664f;margin-bottom:4px}
+    .phone-search{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:9px;
+      align-items:end;
+      margin:12px 0 4px;
+    }
+    .registered-pets{
+      display:none;
+      background:#f3fbf7;
+      border:1px solid #cce9db;
+      border-radius:16px;
+      padding:13px;
+      margin-bottom:12px;
+    }
+    .pet-chip-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .pet-chip-saved{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:1px solid #cce9db;
+      background:white;
+      color:#17664f;
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:12px;
+      font-weight:900;
+    }
+    .muted-small{font-size:12px;color:var(--muted);line-height:1.55}
     @media(max-width:760px){
       .grid,.grid.three{grid-template-columns:1fr}
       .checks{grid-template-columns:1fr}
+      .phone-search{grid-template-columns:1fr}
       body{padding:12px 10px 112px}
       .hero{padding:20px}
       .bottom-inner{grid-template-columns:1fr}
@@ -189,6 +232,7 @@
       <p class="lead">宿泊日・ごはん・お薬・緊急連絡先・確認事項を、ホテル申込として事前に送れます。</p>
       <div class="chips">
         <span class="chip" id="apiState">API確認中</span>
+        <span class="chip" id="lineState">LINE確認中</span>
         <span class="chip">ホテルは仮申込</span>
         <span class="chip">電話確認後に確定</span>
       </div>
@@ -204,6 +248,20 @@
           <h2>飼い主さま情報</h2>
           <p class="lead">LINE内では自動取得、通常ブラウザでは電話番号で確認できます。</p>
         </div>
+      </div>
+
+      <div class="notice" id="customerHint">
+        以前にトリミング予約や会員登録をしている場合は、登録済みの飼い主さま情報・ペット情報を自動で呼び出します。
+      </div>
+
+      <div class="resume-box" id="registeredBox" style="display:none"></div>
+
+      <div class="phone-search">
+        <div>
+          <label>登録済み情報を電話番号で呼び出す</label>
+          <input id="phoneSearch" placeholder="例：090-0000-0000" inputmode="tel" />
+        </div>
+        <button class="btn secondary" type="button" id="phoneSearchBtn">登録情報を確認</button>
       </div>
 
       <div class="grid">
@@ -266,6 +324,8 @@
           <p class="lead">最大頭数は店舗設定の「多頭予約の同時受付」に合わせます。</p>
         </div>
       </div>
+
+      <div class="registered-pets" id="registeredPetsBox"></div>
 
       <div id="petList"></div>
 
@@ -344,7 +404,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-7 hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18B hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -362,9 +422,16 @@
     };
 
     const state = {
+      profile: {
+        line_user_id: "",
+        line_display_name: ""
+      },
       settings: null,
       maxPets: 3,
-      petCount: 1
+      petCount: 1,
+      customer: null,
+      pets: [],
+      loadedFrom: ""
     };
 
     const $ = id => document.getElementById(id);
@@ -375,6 +442,7 @@
       setDefaultDates();
       renderPets();
       updateSummary();
+      await initLiff();
       await boot();
     });
 
@@ -382,6 +450,7 @@
       $("addPetBtn").addEventListener("click", addPet);
       $("reviewBtn").addEventListener("click", updateSummary);
       $("submitBtn").addEventListener("click", submitHotelApplication);
+      $("phoneSearchBtn").addEventListener("click", searchCustomerByPhone);
 
       document.addEventListener("input", e => {
         if(e.target.matches("input,textarea,select")) updateSummary();
@@ -389,6 +458,30 @@
       document.addEventListener("change", e => {
         if(e.target.matches("input,textarea,select")) updateSummary();
       });
+    }
+
+    async function initLiff(){
+      try{
+        if(!CONFIG.LIFF_ID){
+          $("lineState").textContent = "通常ブラウザ表示";
+          return;
+        }
+
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+
+        if(!liff.isLoggedIn()){
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        state.profile.line_user_id = profile.userId || "";
+        state.profile.line_display_name = profile.displayName || "";
+        $("lineState").textContent = `LINE連携：${state.profile.line_display_name || "取得OK"}`;
+      }catch(e){
+        console.warn(e);
+        $("lineState").textContent = "LINE未連携";
+      }
     }
 
     async function boot(){
@@ -399,12 +492,171 @@
         $("shopName").textContent = status.shop_name || "DPROペットサロン";
         $("apiState").textContent = "API接続OK";
         renderPets();
+        await tryAutoLoadExistingCustomer();
         updateSummary();
       }catch(e){
         console.error(e);
         $("apiState").textContent = "API未確認";
         showError(e.message || "API確認に失敗しました。");
       }
+    }
+
+    async function tryAutoLoadExistingCustomer(){
+      showRegisteredBox("", false);
+
+      if(state.profile.line_user_id){
+        const found = await loadCustomer({ line_user_id: state.profile.line_user_id }, "LINE登録情報");
+        if(found) return;
+      }
+
+      const url = new URL(window.location.href);
+      const phoneFromUrl = (url.searchParams.get("phone") || "").trim();
+      if(phoneFromUrl){
+        $("phoneSearch").value = phoneFromUrl;
+        const found = await loadCustomer({ phone: phoneFromUrl }, "電話番号検索");
+        if(found) return;
+      }
+
+      const cache = readCustomerCache();
+      if(cache){
+        applyCachedCustomer(cache);
+        return;
+      }
+
+      showRegisteredBox("初めての方はそのまま入力してください。以前に予約した方は、電話番号で登録情報を呼び出せます。", true);
+    }
+
+    async function searchCustomerByPhone(){
+      const phone = ($("phoneSearch").value || $("phone").value || "").trim();
+      if(!phone){
+        showError("電話番号を入力してください。");
+        return;
+      }
+      $("phoneSearch").value = phone;
+      const found = await loadCustomer({ phone }, "電話番号検索");
+      if(!found){
+        showError("登録情報が見つかりませんでした。初めての方はそのまま入力してください。");
+      }
+    }
+
+    async function loadCustomer(params, sourceLabel){
+      try{
+        showError("");
+        const query = new URLSearchParams(params).toString();
+        const res = await apiGet(`/api/public/customer?${query}`);
+        if(!res.found){
+          return false;
+        }
+
+        state.customer = res.customer || null;
+        state.pets = res.pets || [];
+        state.loadedFrom = sourceLabel || "登録情報";
+        applyExistingCustomer(state.customer, state.pets, state.loadedFrom);
+        saveCustomerCache({
+          source: sourceLabel || "public_customer",
+          customer: state.customer,
+          pets: state.pets,
+          profile: state.profile
+        });
+        return true;
+      }catch(e){
+        console.warn(e);
+        return false;
+      }
+    }
+
+    function applyExistingCustomer(customer, pets, sourceLabel){
+      if(!customer) return;
+
+      $("ownerName").value = customer.owner_name || "";
+      $("ownerKana").value = customer.owner_kana || "";
+      $("phone").value = customer.phone || "";
+      $("phoneSearch").value = customer.phone || "";
+      $("email").value = customer.email || "";
+
+      if(!state.profile.line_user_id && customer.line_user_id){
+        state.profile.line_user_id = customer.line_user_id || "";
+      }
+      if(!state.profile.line_display_name && customer.line_display_name){
+        state.profile.line_display_name = customer.line_display_name || "";
+      }
+
+      const mappedPets = (pets || []).slice(0, state.maxPets).map(mapExistingPetToHotelPet);
+      if(mappedPets.length){
+        state.petCount = mappedPets.length;
+        renderPets(mappedPets);
+      }
+
+      renderRegisteredPetsBox(customer, pets || [], sourceLabel);
+      showRegisteredBox([
+        `登録済み情報を呼び出しました（${sourceLabel || "登録情報"}）。`,
+        `飼い主さま：${customer.owner_name || "-"}`,
+        `電話番号：${customer.phone || "-"}`,
+        (pets && pets.length) ? `登録ペット：${pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、")}` : "登録ペット：なし"
+      ].join("\n"), false);
+      updateSummary();
+    }
+
+    function applyCachedCustomer(cache){
+      const customer = cache.customer || {};
+      const pets = Array.isArray(cache.pets) ? cache.pets : [];
+      state.customer = customer;
+      state.pets = pets;
+      state.loadedFrom = "前回入力情報";
+
+      if(cache.profile){
+        state.profile.line_user_id = state.profile.line_user_id || cache.profile.line_user_id || "";
+        state.profile.line_display_name = state.profile.line_display_name || cache.profile.line_display_name || "";
+      }
+
+      applyExistingCustomer(customer, pets, "前回入力情報");
+    }
+
+    function mapExistingPetToHotelPet(p){
+      return {
+        pet_name: p.pet_name || "",
+        breed: p.breed || "",
+        age_label: p.age_label || "",
+        weight: p.weight || "",
+        sex: p.sex || "unknown",
+        neutered: p.neutered === true ? "true" : (p.neutered === false ? "false" : ""),
+        meal_amount: p.meal_amount || "",
+        medicine_detail: p.medicine_detail || "",
+        allergy_detail: p.allergy_detail || "",
+        health_detail: p.health_notes || p.health_detail || p.skin_condition || "",
+        caution_note: [p.personality_notes, p.dislike_notes].filter(Boolean).join(" / ")
+      };
+    }
+
+    function renderRegisteredPetsBox(customer, pets, sourceLabel){
+      const box = $("registeredPetsBox");
+      if(!pets || !pets.length){
+        box.style.display = "none";
+        box.innerHTML = "";
+        return;
+      }
+
+      box.style.display = "block";
+      box.innerHTML = `
+        <div class="resume-title">登録済みペット情報を反映済み</div>
+        <div class="muted-small">${escapeHtml(sourceLabel || "登録情報")}から、ホテル申込のペット欄へ自動入力しました。宿泊時だけ必要なごはん・お薬・当日の体調は確認してください。</div>
+        <div class="pet-chip-list">
+          ${pets.map(p => `<span class="pet-chip-saved">🐾 ${escapeHtml(p.pet_name || "ペット")}ちゃん${p.breed ? ` / ${escapeHtml(p.breed)}` : ""}</span>`).join("")}
+        </div>
+      `;
+    }
+
+    function showRegisteredBox(message, isNoticeOnly){
+      const box = $("registeredBox");
+      if(!message){
+        box.style.display = "none";
+        box.textContent = "";
+        return;
+      }
+      box.style.display = "block";
+      box.style.background = isNoticeOnly ? "#fffaf4" : "linear-gradient(135deg,#eefaf5,#fffdf9)";
+      box.style.borderColor = isNoticeOnly ? "var(--line)" : "#cce9db";
+      box.textContent = message;
     }
 
     function setDefaultDates(){
@@ -541,6 +793,8 @@
     function buildPayload(){
       return {
         shop_code: CONFIG.SHOP_CODE,
+        line_user_id: state.profile.line_user_id,
+        line_display_name: state.profile.line_display_name,
         owner_name: $("ownerName").value.trim(),
         owner_kana: $("ownerKana").value.trim(),
         phone: $("phone").value.trim(),
@@ -609,6 +863,19 @@
         $("submitBtn").textContent = "送信中...";
 
         const res = await apiPost("/api/hotel/applications/create", payload);
+        saveCustomerCache({
+          source: "hotel_application",
+          customer: res.customer || {
+            owner_name: payload.owner_name,
+            owner_kana: payload.owner_kana,
+            phone: payload.phone,
+            email: payload.email,
+            line_user_id: payload.line_user_id,
+            line_display_name: payload.line_display_name
+          },
+          pets: payload.pets,
+          profile: state.profile
+        });
 
         showOk("ペットホテル申込を受け付けました。サロン確認後、LINEまたは電話でご連絡します。");
         window.scrollTo({ top:0, behavior:"smooth" });
@@ -674,6 +941,41 @@
       if(!msg){ el.style.display = "none"; el.textContent = ""; return; }
       el.textContent = msg;
       el.style.display = "block";
+    }
+
+
+    function cacheKey(){
+      return `dpro_pet_salon_customer_cache_${CONFIG.SHOP_CODE}`;
+    }
+
+    function readCustomerCache(){
+      try{
+        const raw = localStorage.getItem(cacheKey());
+        if(!raw) return null;
+        const data = JSON.parse(raw);
+        if(!data || !data.customer) return null;
+        return data;
+      }catch(e){
+        console.warn(e);
+        return null;
+      }
+    }
+
+    function saveCustomerCache(data){
+      try{
+        const customer = data.customer || {};
+        const pets = Array.isArray(data.pets) ? data.pets : [];
+        if(!customer.owner_name && !customer.phone && pets.length === 0) return;
+        localStorage.setItem(cacheKey(), JSON.stringify({
+          saved_at: new Date().toISOString(),
+          source: data.source || "unknown",
+          profile: data.profile || {},
+          customer,
+          pets
+        }));
+      }catch(e){
+        console.warn(e);
+      }
     }
 
     function option(value, label, current){
