@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- STEP PETSALON-18D: チェックアウト日はチェックイン日より前を選べないように修正 -->
+<!-- STEP PETSALON-18E: ホテル申込の日付を選択肢式に変更し、チェックアウト前日選択をUI上で不可にする -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
@@ -243,6 +243,17 @@
       font-weight:900;
     }
     .muted-small{font-size:12px;color:var(--muted);line-height:1.55}
+    .date-help{margin-top:6px;font-size:11px;color:var(--muted);line-height:1.55}
+    .date-select{
+      appearance:none;
+      -webkit-appearance:none;
+      background-image:linear-gradient(45deg,transparent 50%,var(--main) 50%),linear-gradient(135deg,var(--main) 50%,transparent 50%);
+      background-position:calc(100% - 18px) calc(50% - 3px),calc(100% - 12px) calc(50% - 3px);
+      background-size:6px 6px,6px 6px;
+      background-repeat:no-repeat;
+      padding-right:38px;
+      font-weight:900;
+    }
     @media(max-width:760px){
       .grid,.grid.three{grid-template-columns:1fr}
       .checks{grid-template-columns:1fr}
@@ -256,7 +267,7 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-18D / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-18E / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
       <p class="lead">宿泊日・ごはん・お薬・緊急連絡先・確認事項を、ホテル申込として事前に送れます。</p>
       <div class="chips">
@@ -336,7 +347,9 @@
       <div class="grid">
         <div>
           <label>チェックイン日<span class="req">必須</span></label>
-          <input id="checkinDate" type="date" />
+          <select id="checkinDateSelect" class="date-select"></select>
+          <input id="checkinDate" type="hidden" />
+          <div class="date-help">今日以降の日付だけを表示します。</div>
         </div>
         <div>
           <label>チェックイン時間<span class="req">必須</span></label>
@@ -344,7 +357,9 @@
         </div>
         <div>
           <label>チェックアウト日<span class="req">必須</span></label>
-          <input id="checkoutDate" type="date" />
+          <select id="checkoutDateSelect" class="date-select"></select>
+          <input id="checkoutDate" type="hidden" />
+          <div class="date-help">チェックイン日より前の日付は選択肢に出ません。</div>
         </div>
         <div>
           <label>チェックアウト時間<span class="req">必須</span></label>
@@ -444,7 +459,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18C hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18E hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -498,13 +513,16 @@
       $("clearRegisteredHotelBtn").addEventListener("click", clearRegisteredForHotel);
       $("goReservationBtn").addEventListener("click", goReservationWithRegisteredCustomer);
 
-      // STEP PETSALON-18D:
-      // チェックイン日を変更したら、チェックアウト日の最小日付を必ずチェックイン日以降にする。
-      $("checkinDate").addEventListener("change", () => {
-        syncCheckoutDateWithCheckin(true);
+      // STEP PETSALON-18E:
+      // ブラウザ標準のdate入力では端末によって過去日が見えてしまうため、
+      // 実際に選べる日付だけをselectに出す。
+      $("checkinDateSelect").addEventListener("change", () => {
+        $("checkinDate").value = $("checkinDateSelect").value;
+        refreshCheckoutDateOptions(true);
         updateSummary();
       });
-      $("checkoutDate").addEventListener("change", () => {
+      $("checkoutDateSelect").addEventListener("change", () => {
+        $("checkoutDate").value = $("checkoutDateSelect").value;
         syncCheckoutDateWithCheckin(true);
         updateSummary();
       });
@@ -786,20 +804,79 @@
       const today = todayYmd();
       $("checkinDate").value = today;
       $("checkoutDate").value = addDays(today, 1);
-      $("checkinDate").min = today;
+      fillHotelDateSelects();
       syncCheckoutDateWithCheckin(false);
+    }
+
+    function fillHotelDateSelects(){
+      const today = todayYmd();
+      fillDateSelect({
+        selectId: "checkinDateSelect",
+        startDate: today,
+        days: 60,
+        selectedDate: $("checkinDate").value || today
+      });
+      $("checkinDate").value = $("checkinDateSelect").value || today;
+      refreshCheckoutDateOptions(false);
+    }
+
+    function refreshCheckoutDateOptions(showNotice){
+      const today = todayYmd();
+      const checkin = $("checkinDate").value || today;
+      const previousCheckout = $("checkoutDate").value || addDays(checkin, 1);
+      const adjusted = previousCheckout < checkin ? checkin : previousCheckout;
+
+      fillDateSelect({
+        selectId: "checkoutDateSelect",
+        startDate: checkin,
+        days: 61,
+        selectedDate: adjusted
+      });
+
+      $("checkoutDate").value = $("checkoutDateSelect").value || checkin;
+
+      if(showNotice && previousCheckout < checkin){
+        showOk("チェックアウト日はチェックイン日以降から選ぶ形にしました。");
+      }
+    }
+
+    function fillDateSelect({ selectId, startDate, days, selectedDate }){
+      const select = $(selectId);
+      if(!select) return;
+
+      const options = [];
+      for(let i = 0; i < days; i++){
+        const date = addDays(startDate, i);
+        options.push(`<option value="${date}">${formatDateOption(date)}</option>`);
+      }
+      select.innerHTML = options.join("");
+
+      const endDate = addDays(startDate, days - 1);
+      const safeSelected = selectedDate && selectedDate >= startDate && selectedDate <= endDate
+        ? selectedDate
+        : startDate;
+      select.value = safeSelected;
+    }
+
+    function formatDateOption(ymd){
+      const today = todayYmd();
+      const tomorrow = addDays(today, 1);
+      const d = new Date(`${ymd}T00:00:00+09:00`);
+      const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+      const label = `${ymd}（${weekdays[d.getDay()]}）`;
+      if(ymd === today) return `${label} 今日`;
+      if(ymd === tomorrow) return `${label} 明日`;
+      return label;
     }
 
     function syncCheckoutDateWithCheckin(showNotice){
       const today = todayYmd();
       const checkin = $("checkinDate").value || today;
-      const checkout = $("checkoutDate").value;
+      const checkout = $("checkoutDate").value || checkin;
 
-      // チェックアウト日は、チェックイン日より前を選べないようにする。
-      $("checkoutDate").min = checkin;
-
-      if(!checkout || checkout < checkin){
+      if(checkout < checkin){
         $("checkoutDate").value = checkin;
+        if($("checkoutDateSelect")) $("checkoutDateSelect").value = checkin;
         if(showNotice){
           showOk("チェックアウト日はチェックイン日以降に自動調整しました。");
         }
@@ -930,6 +1007,8 @@
     }
 
     function buildPayload(){
+      if($("checkinDateSelect")) $("checkinDate").value = $("checkinDateSelect").value || $("checkinDate").value;
+      if($("checkoutDateSelect")) $("checkoutDate").value = $("checkoutDateSelect").value || $("checkoutDate").value;
       return {
         shop_code: CONFIG.SHOP_CODE,
         line_user_id: state.ignoreLineProfileForSubmit ? "" : state.profile.line_user_id,
