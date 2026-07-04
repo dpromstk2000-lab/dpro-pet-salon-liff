@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-19H: 予約・ホテル受付の過去日／過去時間防止 完全版 -->
+<!-- STEP PETSALON-19I: ホテル申込の入力項目・表示項目整理 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19H</title>
+  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19I</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -1191,7 +1191,7 @@
 
           <div class="btns" style="margin-top:14px">
             <button class="btn" type="button" id="loadHotelBtn">ホテル申込を更新</button>
-            <button class="btn secondary" type="button" onclick="window.open('./hotel.html?v=19e','_blank')">ホテル申込画面を開く</button>
+            <button class="btn secondary" type="button" onclick="window.open('./hotel.html?v=19i','_blank')">ホテル申込画面を開く</button>
           </div>
 
           <div id="hotelActionFeedback" class="action-feedback" style="display:none;margin-top:14px"></div>
@@ -1199,7 +1199,7 @@
           <details class="history-wrap" style="margin-top:14px" open>
             <summary>
               <span>ホテル電話・店頭受付</span>
-              <span class="history-count">19G</span>
+              <span class="history-count">19I</span>
             </summary>
             <div style="padding:0 12px 12px">
               <div class="notice" style="margin-bottom:12px">
@@ -1246,8 +1246,18 @@
                 <div><label>お薬</label><input id="hotelManualMedicine" placeholder="例：なし / 朝1錠" /></div>
                 <div><label>アレルギー</label><input id="hotelManualAllergy" placeholder="例：なし / 鶏肉" /></div>
               </div>
-              <label>健康状態・注意事項</label>
-              <textarea id="hotelManualHealth" placeholder="例：食欲あり。大きな音が苦手。"></textarea>
+              <div class="row two">
+                <div>
+                  <label>健康状態</label>
+                  <textarea id="hotelManualHealth" placeholder="例：食欲あり。現在は良好。"></textarea>
+                </div>
+                <div>
+                  <label>性格・過ごし方</label>
+                  <textarea id="hotelManualPersonality" placeholder="例：寂しがり。夜は人の気配があると安心。"></textarea>
+                </div>
+              </div>
+              <label>その他希望・注意事項</label>
+              <textarea id="hotelManualRequest" placeholder="例：できれば静かな場所でお願いします。"></textarea>
               <div class="notice" style="margin-top:10px">
                 <b>ホテル受付チェック</b><br>
                 電話・店頭受付では、確認できた項目にチェックを入れてから登録します。
@@ -1483,7 +1493,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19H owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19I owner.html
     </div>
   </div>
 
@@ -1616,7 +1626,7 @@
       if($("hotelManualSearchBtn")) $("hotelManualSearchBtn").addEventListener("click", searchHotelManualCustomer);
       if($("hotelManualCreateBtn")) $("hotelManualCreateBtn").addEventListener("click", createManualHotelApplication);
       if($("hotelManualClearBtn")) $("hotelManualClearBtn").addEventListener("click", clearHotelManualForm);
-      ["hotelManualPhone","hotelManualOwnerName","hotelManualPetName","hotelManualStatus","hotelManualCheckinTime","hotelManualCheckoutTime","hotelManualMeal","hotelManualMedicine","hotelManualHealth"].forEach(id => {
+      ["hotelManualPhone","hotelManualOwnerName","hotelManualPetName","hotelManualStatus","hotelManualCheckinTime","hotelManualCheckoutTime","hotelManualMeal","hotelManualMedicine","hotelManualAllergy","hotelManualHealth","hotelManualPersonality","hotelManualRequest"].forEach(id => {
         if($(id)) $(id).addEventListener("input", updateHotelManualSummary);
         if($(id)) $(id).addEventListener("change", updateHotelManualSummary);
       });
@@ -2810,11 +2820,12 @@
       $("hotelManualEmergencyPhone").value = customer.phone || $("hotelManualEmergencyPhone").value;
       $("hotelManualPetName").value = pet.pet_name || "";
       $("hotelManualBreed").value = pet.breed || "";
-      $("hotelManualHealth").value = [
-        pet.health_notes ? `健康：${pet.health_notes}` : "",
-        pet.personality_notes ? `性格：${pet.personality_notes}` : "",
+      $("hotelManualHealth").value = pet.health_notes || "";
+      if($("hotelManualPersonality")) $("hotelManualPersonality").value = [
+        pet.personality_notes ? `${pet.personality_notes}` : "",
         pet.dislike_notes ? `苦手：${pet.dislike_notes}` : ""
       ].filter(Boolean).join("\n");
+      if($("hotelManualRequest")) $("hotelManualRequest").value = "";
       updateHotelManualPetDuplicateHint();
       updateHotelManualSummary();
       showOk("ホテル電話受付に顧客情報を反映しました。");
@@ -2839,7 +2850,12 @@
           vaccine_confirmed: $("hotelManualVaccine") ? $("hotelManualVaccine").checked : true,
           rabies_confirmed: $("hotelManualRabies") ? $("hotelManualRabies").checked : true,
           terms_accepted: true,
-          request_note: buildHotelManualChecklistNote(),
+          meal_note: $("hotelManualMeal").value.trim(),
+          medicine_note: $("hotelManualMedicine").value.trim(),
+          allergy_note: $("hotelManualAllergy").value.trim(),
+          health_note: $("hotelManualHealth").value.trim(),
+          personality_note: $("hotelManualPersonality") ? $("hotelManualPersonality").value.trim() : "",
+          request_note: buildHotelManualRequestNote(),
           pets: [{
             pet_id: $("hotelManualPetId") ? $("hotelManualPetId").value : "",
             pet_name: $("hotelManualPetName").value.trim(),
@@ -2848,7 +2864,7 @@
             medicine_detail: $("hotelManualMedicine").value.trim(),
             allergy_detail: $("hotelManualAllergy").value.trim(),
             health_detail: $("hotelManualHealth").value.trim(),
-            caution_note: $("hotelManualHealth").value.trim()
+            caution_note: $("hotelManualPersonality") ? $("hotelManualPersonality").value.trim() : ""
           }]
         };
         const now = nowJstParts();
@@ -2880,7 +2896,7 @@
     function clearHotelManualForm(showMessage = true){
       state.hotelManualCustomerPets = [];
       if($("hotelManualPetId")) $("hotelManualPetId").value = "";
-      ["hotelManualOwnerName","hotelManualLineName","hotelManualPhone","hotelManualPetName","hotelManualBreed","hotelManualEmergencyPhone","hotelManualMeal","hotelManualMedicine","hotelManualAllergy","hotelManualHealth"].forEach(id => { if($(id)) $(id).value = ""; });
+      ["hotelManualOwnerName","hotelManualLineName","hotelManualPhone","hotelManualPetName","hotelManualBreed","hotelManualEmergencyPhone","hotelManualMeal","hotelManualMedicine","hotelManualAllergy","hotelManualHealth","hotelManualPersonality","hotelManualRequest"].forEach(id => { if($(id)) $(id).value = ""; });
       if($("hotelManualCheckinDate")) $("hotelManualCheckinDate").value = todayYmd();
       if($("hotelManualCheckoutDate")) $("hotelManualCheckoutDate").value = addDays(todayYmd(), 1);
       if($("hotelManualStatus")) $("hotelManualStatus").value = "confirmed";
@@ -2900,6 +2916,12 @@
       return ["【ホテル電話受付チェック】", ...checks].join("\n");
     }
 
+    function buildHotelManualRequestNote(){
+      const request = $("hotelManualRequest") ? $("hotelManualRequest").value.trim() : "";
+      const checklist = buildHotelManualChecklistNote();
+      return [request, checklist].filter(Boolean).join("\n\n");
+    }
+
     function updateHotelManualSummary(){
       if(!$("hotelManualSummary")) return;
       $("hotelManualSummary").textContent = [
@@ -2907,6 +2929,10 @@
         `飼い主：${$("hotelManualOwnerName")?.value || "未入力"}`,
         `ペット：${$("hotelManualPetName")?.value || "未入力"}`,
         `宿泊：${$("hotelManualCheckinDate")?.value || "未入力"} ${$("hotelManualCheckinTime")?.value || ""} 〜 ${$("hotelManualCheckoutDate")?.value || "未入力"} ${$("hotelManualCheckoutTime")?.value || ""}`,
+        `ごはん：${$("hotelManualMeal")?.value || "未入力"}`,
+        `お薬：${$("hotelManualMedicine")?.value || "未入力"}`,
+        `性格：${$("hotelManualPersonality")?.value || "未入力"}`,
+        `その他希望：${$("hotelManualRequest")?.value || "なし"}`,
         `確認：${buildHotelManualChecklistNote().replace("【ホテル電話受付チェック】\n", "") || "未確認"}`
       ].join(" / ");
     }
@@ -3083,6 +3109,35 @@
       return bk.localeCompare(ak);
     }
 
+    function firstHotelValue(...values){
+      for(const value of values){
+        const text = String(value ?? "").trim();
+        if(text && !["未入力", "なし・未入力", "undefined", "null"].includes(text)) return text;
+      }
+      return "";
+    }
+
+    function hotelLine(label, value){
+      const text = firstHotelValue(value);
+      return text ? `<b>${label}：</b>${escapeHtml(text)}<br>` : "";
+    }
+
+    function hotelVisibleRequestNote(note){
+      const text = String(note || "").replace(/【ホテル電話受付チェック】[\s\S]*$/m, "").trim();
+      return text;
+    }
+
+    function hotelPetNoteHtml(p, app){
+      const lines = [
+        hotelLine("ごはん", p.meal_amount || app.meal_note),
+        hotelLine("お薬", p.medicine_detail || app.medicine_note),
+        hotelLine("アレルギー", p.allergy_detail || app.allergy_note),
+        hotelLine("健康状態", p.health_detail || app.health_note),
+        hotelLine("性格・過ごし方", p.caution_note || app.personality_note)
+      ].filter(Boolean).join("");
+      return lines || `<span class="muted">ホテル宿泊メモは未入力です。</span><br>`;
+    }
+
     function hotelApplicationCard(app){
       const pets = Array.isArray(app.pets) ? app.pets : [];
       const petNames = pets.length ? pets.map(p => `${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん`).join("、") : "ペット情報なし";
@@ -3097,11 +3152,15 @@
         <div class="info">
           <b>${i + 1}頭目：${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん</b>
           ${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg<br>
-          ごはん：${escapeHtml(p.meal_amount || "未入力")}<br>
-          お薬：${escapeHtml(p.medicine_detail || "未入力")}<br>
-          注意：${escapeHtml(p.caution_note || "未入力")}
+          ${hotelPetNoteHtml(p, app)}
         </div>
       `).join("") : `<div class="info">ペット情報がありません。</div>`;
+      const appRequestNote = hotelVisibleRequestNote(app.request_note);
+      const appNoteLines = [
+        hotelLine("その他希望", appRequestNote),
+        hotelLine("お迎えメモ", app.pickup_note)
+      ].filter(Boolean).join("");
+      const appNoteHtml = appNoteLines ? `<div class="note">${appNoteLines}</div>` : "";
 
       return `
         <div class="res-card">
@@ -3125,14 +3184,7 @@
             ${petDetail}
           </div>
 
-          <div class="note">
-            <b>ごはん：</b>${escapeHtml(app.meal_note || "未入力")}<br>
-            <b>お薬：</b>${escapeHtml(app.medicine_note || "未入力")}<br>
-            <b>アレルギー：</b>${escapeHtml(app.allergy_note || "未入力")}<br>
-            <b>健康状態：</b>${escapeHtml(app.health_note || "未入力")}<br>
-            <b>性格・過ごし方：</b>${escapeHtml(app.personality_note || "未入力")}<br>
-            <b>その他希望：</b>${escapeHtml(app.request_note || "未入力")}
-          </div>
+          ${appNoteHtml}
 
           <div class="notice" style="margin-top:12px">
             <b>ホテル確認チェック</b><br>
