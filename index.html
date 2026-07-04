@@ -532,7 +532,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18M index.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19J index.html
     </div>
   </div>
 
@@ -635,7 +635,7 @@
 
   <script>
     // =========================================================
-    // STEP PETSALON-18M
+    // STEP PETSALON-19J
     // index.html 会員証へ戻る導線を常時表示・予約完了後も明確化
     // =========================================================
 
@@ -716,7 +716,7 @@
         $("shopName").textContent = status.shop_name || "DPROペットサロン";
         $("openState").textContent = `営業時間 ${status.open_time}〜${status.close_time} / 1日${status.max_reservations_per_day || 4}件まで`;
 
-        const servicesRes = await apiGet("/api/public/services");
+        const servicesRes = await apiGet("/api/public/services?category=salon");
         state.services = servicesRes.services || [];
 
         const daysRes = await apiGet("/api/public/available-days?days=28");
