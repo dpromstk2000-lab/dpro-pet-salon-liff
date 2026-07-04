@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-19B: 本番運用・営業デモ統合ブラッシュアップ -->
+<!-- STEP PETSALON-19C: 顧客検索からサロン予約・ホテル受付へ進める導線整理 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19B</title>
+  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19C</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -1093,7 +1093,7 @@
           <div class="card-head">
             <div>
               <h2>顧客検索・ペット検索</h2>
-              <p class="lead">電話番号・飼い主名・ペット名・犬種で探せます。電話受付への反映もできます。</p>
+              <p class="lead">電話番号・飼い主名・LINE名・ペット名・犬種で探せます。検索結果からサロン電話予約・ホテル電話受付へ進めます。</p>
             </div>
           </div>
 
@@ -1109,7 +1109,7 @@
           </div>
 
           <div class="notice" style="margin-top:12px">
-            電話番号はハイフンあり・なし両方をある程度拾えるようにしています。検索結果からペットを選ぶと、電話受付タブへ反映できます。
+            電話番号はハイフンあり・なし両方をある程度拾えるようにしています。検索結果から「サロン電話予約」または「ホテル電話受付」へ進めます。LINE名・飼い主名・電話番号もコピーできます。
           </div>
 
           <div id="customerSearchResults" style="margin-top:14px"></div>
@@ -1167,7 +1167,7 @@
           <details class="history-wrap" style="margin-top:14px" open>
             <summary>
               <span>ホテル電話・店頭受付</span>
-              <span class="history-count">19B</span>
+              <span class="history-count">19C</span>
             </summary>
             <div style="padding:0 12px 12px">
               <div class="notice" style="margin-bottom:12px">
@@ -1422,7 +1422,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19B owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19C owner.html
     </div>
   </div>
 
@@ -2387,6 +2387,17 @@
           fillManualFromSearch(data.customer || {}, data.pet || {});
         });
       });
+
+      el.querySelectorAll("[data-fill-hotel-manual]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const data = JSON.parse(btn.dataset.fillHotelManual || "{}");
+          fillHotelManualCustomer(data.customer || {}, data.pet || {});
+          activateTab("hotel");
+          showOk("顧客検索からホテル電話受付に反映しました。");
+        });
+      });
+
+      bindCopyButtons(el);
     }
 
     function customerSearchCard(c){
@@ -2404,8 +2415,9 @@
             ${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg<br>
             前回来店：${escapeHtml(latest?.visit_date || "未登録")}<br>
             次回目安：${escapeHtml(latest?.next_recommend_date || "未登録")}
-            <div style="margin-top:8px">
-              <button class="btn secondary small" type="button" data-fill-manual="${data}">電話受付に反映</button>
+            <div class="btns" style="margin-top:8px">
+              <button class="btn secondary small" type="button" data-fill-manual="${data}">サロン電話予約へ</button>
+              <button class="btn secondary small" type="button" data-fill-hotel-manual="${data}">ホテル受付へ</button>
             </div>
           </div>
         `;
@@ -2444,7 +2456,12 @@
                 ステータス：${escapeHtml(c.customer_status || "未設定")} / メモ：${escapeHtml(c.memo || "なし")}
               </div>
             </div>
-            <button class="btn small" type="button" data-fill-manual="${escapeAttr(JSON.stringify({ customer: c, pet: pets[0] || {} }))}">電話受付へ</button>
+            <div class="btns" style="justify-content:flex-end;max-width:360px">
+              <button class="btn small" type="button" data-fill-manual="${escapeAttr(JSON.stringify({ customer: c, pet: pets[0] || {} }))}">サロン電話予約へ</button>
+              <button class="btn secondary small" type="button" data-fill-hotel-manual="${escapeAttr(JSON.stringify({ customer: c, pet: pets[0] || {} }))}">ホテル受付へ</button>
+              <button class="btn secondary small" type="button" data-copy-direct="${escapeAttr(c.line_display_name || c.owner_name || '')}">LINE名コピー</button>
+              <button class="btn secondary small" type="button" data-copy-direct="${escapeAttr(c.phone || '')}">電話番号コピー</button>
+            </div>
           </div>
 
           <h3>登録ペット</h3>
