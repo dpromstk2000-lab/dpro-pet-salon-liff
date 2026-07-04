@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- STEP PETSALON-18D: チェックアウト日はチェックイン日より前を選べないように修正 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
@@ -255,7 +256,7 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 大枠STEP 3 / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-18D / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
       <p class="lead">宿泊日・ごはん・お薬・緊急連絡先・確認事項を、ホテル申込として事前に送れます。</p>
       <div class="chips">
@@ -470,7 +471,10 @@
       petCount: 1,
       customer: null,
       pets: [],
-      loadedFrom: ""
+      loadedFrom: "",
+      activeReservations: [],
+      confirmedReuse: true,
+      ignoreLineProfileForSubmit: false
     };
 
     const $ = id => document.getElementById(id);
@@ -493,6 +497,17 @@
       $("useRegisteredHotelBtn").addEventListener("click", confirmRegisteredForHotel);
       $("clearRegisteredHotelBtn").addEventListener("click", clearRegisteredForHotel);
       $("goReservationBtn").addEventListener("click", goReservationWithRegisteredCustomer);
+
+      // STEP PETSALON-18D:
+      // チェックイン日を変更したら、チェックアウト日の最小日付を必ずチェックイン日以降にする。
+      $("checkinDate").addEventListener("change", () => {
+        syncCheckoutDateWithCheckin(true);
+        updateSummary();
+      });
+      $("checkoutDate").addEventListener("change", () => {
+        syncCheckoutDateWithCheckin(true);
+        updateSummary();
+      });
 
       document.addEventListener("input", e => {
         if(e.target.matches("input,textarea,select")) updateSummary();
@@ -639,6 +654,9 @@
         `電話番号：${customer.phone || "-"}`,
         (pets && pets.length) ? `登録ペット：${pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、")}` : "登録ペット：なし"
       ].join("\n"), false);
+
+      // STEP PETSALON-18Cの確認導線を確実に表示する。
+      renderRegisteredConfirmForHotel(customer, pets || [], sourceLabel, reservations || []);
       updateSummary();
     }
 
@@ -769,7 +787,23 @@
       $("checkinDate").value = today;
       $("checkoutDate").value = addDays(today, 1);
       $("checkinDate").min = today;
-      $("checkoutDate").min = today;
+      syncCheckoutDateWithCheckin(false);
+    }
+
+    function syncCheckoutDateWithCheckin(showNotice){
+      const today = todayYmd();
+      const checkin = $("checkinDate").value || today;
+      const checkout = $("checkoutDate").value;
+
+      // チェックアウト日は、チェックイン日より前を選べないようにする。
+      $("checkoutDate").min = checkin;
+
+      if(!checkout || checkout < checkin){
+        $("checkoutDate").value = checkin;
+        if(showNotice){
+          showOk("チェックアウト日はチェックイン日以降に自動調整しました。");
+        }
+      }
     }
 
     function fillTimeOptions(){
@@ -959,6 +993,7 @@
       try{
         showError("");
         showOk("");
+        syncCheckoutDateWithCheckin(false);
         updateSummary();
 
         const payload = buildPayload();
