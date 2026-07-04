@@ -1,4 +1,4 @@
-<!-- STEP PETSALON-19E: 会員証の次回おすすめ表示・予約/ホテルポリシー強化 -->
+<!-- STEP PETSALON-19I: 会員証の次回おすすめ表示・予約/ホテルポリシー強化 -->
 <!doctype html>
 <html lang="ja">
 <head>
@@ -777,13 +777,13 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19E member.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19I member.html
     </div>
   </div>
 
   <script>
     // =========================================================
-    // STEP PETSALON-19E
+    // STEP PETSALON-19I
     // member.html 会員証の次回おすすめ表示・予約/ホテルポリシー強化
     // =========================================================
 
@@ -1466,6 +1466,23 @@ function findReservationById(id){
       ].join("\n");
     }
 
+    function firstHotelValue(...values){
+      for(const value of values){
+        const text = String(value ?? "").trim();
+        if(text && !["未入力", "なし・未入力", "undefined", "null"].includes(text)) return text;
+      }
+      return "";
+    }
+
+    function hotelMemberLine(label, value){
+      const text = firstHotelValue(value);
+      return text ? `${label}：${text}` : "";
+    }
+
+    function hotelVisibleRequestNote(note){
+      return String(note || "").replace(/【ホテル電話受付チェック】[\s\S]*$/m, "").trim();
+    }
+
     function renderHotels(){
       if(!$("hotelsBox")) return;
       let hotels = Array.isArray(state.activeHotels) ? state.activeHotels : [];
@@ -1480,21 +1497,25 @@ function findReservationById(id){
       $("hotelsBox").innerHTML = hotels.map(h => {
         const pets = Array.isArray(h.pets) ? h.pets : [];
         const petNames = pets.length ? pets.map(p => `${escapeHtml(p.pet_name || "ペット")}ちゃん`).join("、") : "対象ペット未取得";
+        const requestNote = hotelVisibleRequestNote(h.request_note);
         const noteLines = [
           h.emergency_contact_phone ? `緊急連絡先：${h.emergency_contact_phone}` : "",
-          h.request_note ? `連絡事項：${h.request_note}` : ""
+          requestNote ? `連絡事項：${requestNote}` : ""
         ].filter(Boolean);
 
         const petDetails = pets.length ? `
           <div class="memo">${escapeHtml(pets.map(p => {
+            const detailLines = [
+              hotelMemberLine("ごはん", p.meal_amount || h.meal_note),
+              hotelMemberLine("お薬", p.medicine_detail || h.medicine_note),
+              hotelMemberLine("アレルギー", p.allergy_detail || h.allergy_note),
+              hotelMemberLine("健康状態", p.health_detail || h.health_note),
+              hotelMemberLine("性格・過ごし方", p.caution_note || h.personality_note)
+            ].filter(Boolean);
             const lines = [
               `${p.pet_name || "ペット"}ちゃん`,
-              p.meal_amount ? `ごはん：${p.meal_amount}` : "ごはん：未入力",
-              p.medicine_detail ? `お薬：${p.medicine_detail}` : "お薬：なし・未入力",
-              p.allergy_detail ? `アレルギー：${p.allergy_detail}` : "アレルギー：なし・未入力",
-              p.health_detail ? `健康状態：${p.health_detail}` : "",
-              p.caution_note ? `注意：${p.caution_note}` : ""
-            ].filter(Boolean);
+              ...(detailLines.length ? detailLines : ["ホテル宿泊メモは未入力です"])
+            ];
             return lines.join("\n");
           }).join("\n\n"))}</div>
         ` : "";
