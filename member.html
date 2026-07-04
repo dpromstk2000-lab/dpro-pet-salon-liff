@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜ペット会員証 前回内容・次回おすすめ日</title>
+  <title>DPROペットサロン｜ペット会員証・予約・ホテル申込確認</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -339,6 +339,31 @@
     .status-label.requested{background:#fff6dc;color:#8b6100}
     .status-label.confirmed{background:#eaf3ff;color:#315f8f}
     .status-label.visited{background:#edf7ef;color:#2f7d55}
+    .hotel-reservation{
+      border:1px solid #d7e7d9;
+      background:linear-gradient(135deg,#f1fbf4,#fff);
+      border-radius:18px;
+      padding:13px;
+      margin-top:10px;
+    }
+    .hotel-status{
+      border-radius:999px;
+      padding:5px 9px;
+      font-size:11px;
+      font-weight:900;
+      background:#eefaf3;
+      color:#2f7d55;
+      white-space:nowrap;
+    }
+    .hotel-status.requested{background:#fff6dc;color:#8b6100}
+    .hotel-status.confirmed{background:#eaf3ff;color:#315f8f}
+    .hotel-status.checked_in{background:#eefaf3;color:#2f7d55}
+    .hotel-status.checked_out{background:#f1ebe5;color:#8a5a3c}
+    .hotel-meta{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:4px;
+    }
     .empty{
       text-align:center;
       color:var(--muted);
@@ -436,6 +461,18 @@
       </div>
     </section>
 
+    <section class="card grid">
+      <div class="card-head">
+        <div>
+          <h2>現在のペットホテル申込</h2>
+          <p class="lead">ホテル申込・お預かり予定を確認できます。</p>
+        </div>
+      </div>
+      <div id="hotelsBox">
+        <div class="empty">現在のホテル申込はまだ表示されていません。</div>
+      </div>
+    </section>
+
     <section class="card">
       <div class="card-head">
         <div>
@@ -455,14 +492,14 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-7 member.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18I member.html
     </div>
   </div>
 
   <script>
     // =========================================================
-    // STEP PETSALON-5
-    // member.html ペット会員証
+    // STEP PETSALON-18I
+    // member.html ペット会員証・現在予約・ホテル申込表示
     // =========================================================
 
     const CONFIG = {
@@ -482,6 +519,7 @@
       customer: null,
       pets: [],
       reservations: [],
+      activeHotels: [],
       latestVisitByPet: {}
     };
 
@@ -559,6 +597,7 @@
           state.customer = null;
           state.pets = [];
           state.reservations = [];
+          state.activeHotels = [];
           $("customerState").textContent = "登録なし";
           renderEmpty();
           showError("登録情報が見つかりませんでした。先に予約フォームから登録してください。");
@@ -568,6 +607,7 @@
         state.customer = res.customer;
         state.pets = res.pets || [];
         state.reservations = res.reservations || [];
+        state.activeHotels = res.active_hotels || [];
         state.latestVisitByPet = res.latest_visit_by_pet || {};
 
         $("customerState").textContent = "会員情報OK";
@@ -578,6 +618,7 @@
         renderCustomer();
         renderPets();
         renderReservations();
+        renderHotels();
 
       }catch(e){
         console.error(e);
@@ -589,6 +630,7 @@
       $("customerBox").innerHTML = `<div class="empty">登録情報が見つかりません。</div>`;
       $("petsBox").innerHTML = `<div class="empty">ペット情報はありません。</div>`;
       $("reservationsBox").innerHTML = `<div class="empty">現在の予約はありません。</div>`;
+      if($("hotelsBox")) $("hotelsBox").innerHTML = `<div class="empty">現在のホテル申込はありません。</div>`;
     }
 
     function renderCustomer(){
@@ -717,6 +759,71 @@
       }).join("");
     }
 
+    function renderHotels(){
+      if(!$("hotelsBox")) return;
+      const hotels = Array.isArray(state.activeHotels) ? state.activeHotels : [];
+      if(!hotels.length){
+        $("hotelsBox").innerHTML = `<div class="empty">現在のホテル申込はありません。ホテル申込をするとここに表示されます。</div>`;
+        return;
+      }
+
+      $("hotelsBox").innerHTML = hotels.map(h => {
+        const pets = Array.isArray(h.pets) ? h.pets : [];
+        const petNames = pets.length ? pets.map(p => `${escapeHtml(p.pet_name || "ペット")}ちゃん`).join("、") : "対象ペット未取得";
+        const noteLines = [
+          h.emergency_contact_phone ? `緊急連絡先：${h.emergency_contact_phone}` : "",
+          h.request_note ? `連絡事項：${h.request_note}` : ""
+        ].filter(Boolean);
+
+        return `
+          <div class="hotel-reservation">
+            <div class="reservation-top">
+              <div>
+                <div class="date">${escapeHtml(h.checkin_date || "")} ${escapeHtml(hm(h.checkin_time))}<br>〜 ${escapeHtml(h.checkout_date || "")} ${escapeHtml(hm(h.checkout_time))}</div>
+                <div class="hotel-meta">${petNames}</div>
+              </div>
+              <span class="hotel-status ${escapeHtml(h.status || "requested")}">${hotelStatusLabel(h.status)}</span>
+            </div>
+            ${noteLines.length ? `<div class="memo">${escapeHtml(noteLines.join("\n"))}</div>` : ""}
+            <div class="btns">
+              <a class="btn secondary small" href="./hotel.html">ホテル申込画面を開く</a>
+              <button class="btn secondary small" type="button" data-copy-hotel="${escapeHtml(h.id || "")}" data-hotel-text="${escapeAttr(buildHotelConsultText(h, petNames))}">変更・キャンセル相談をコピー</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.querySelectorAll("[data-copy-hotel]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          await copyText(btn.dataset.hotelText || "");
+          showOk("ホテル申込の相談メッセージをコピーしました。LINE公式のトークに貼り付けて送信できます。");
+        });
+      });
+    }
+
+    function buildHotelConsultText(h, petNames){
+      return [
+        "ペットホテル申込について相談したいです。",
+        "",
+        `対象：${petNames || "ペット"}`,
+        `お預かり：${h.checkin_date || ""} ${hm(h.checkin_time)}`,
+        `お迎え：${h.checkout_date || ""} ${hm(h.checkout_time)}`,
+        `状態：${hotelStatusLabel(h.status)}`,
+        "",
+        "相談内容："
+      ].join("\n");
+    }
+
+    function hotelStatusLabel(status){
+      return {
+        requested:"申込受付中",
+        confirmed:"確定済み",
+        checked_in:"お預かり中",
+        checked_out:"お迎え済み",
+        cancelled:"キャンセル"
+      }[status] || status || "申込受付中";
+    }
+
     async function copyConsultMessage(){
       const c = state.customer || {};
       const p = state.pets?.[0] || {};
@@ -824,6 +931,10 @@
         cancelled:"キャンセル",
         no_show:"不在"
       }[status] || status || "-";
+    }
+
+    function escapeAttr(str){
+      return escapeHtml(str).replace(/`/g, "&#96;");
     }
 
     function escapeHtml(str){
