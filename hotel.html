@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- STEP PETSALON-18E: ホテル申込の日付を選択肢式に変更し、チェックアウト前日選択をUI上で不可にする -->
+<!-- STEP PETSALON-18H: ホテル申込専用項目をペットごとに整理し、ごはん・お薬・アレルギー・健康状態の共通重複欄を削除 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
@@ -282,9 +282,9 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-18F / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-18H / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
-      <p class="lead">宿泊日・ごはん・お薬・緊急連絡先・確認事項を、ホテル申込として事前に送れます。</p>
+      <p class="lead">ホテル申込専用の画面です。通常のトリミング予約では不要な、ごはん・お薬・アレルギー・健康状態だけを宿泊用として確認します。</p>
       <div class="chips">
         <span class="chip" id="apiState">API確認中</span>
         <span class="chip" id="lineState">LINE確認中</span>
@@ -391,7 +391,7 @@
         <div class="num">3</div>
         <div>
           <h2>お預かりするペット</h2>
-          <p class="lead">最大頭数は店舗設定の「多頭予約の同時受付」に合わせます。</p>
+          <p class="lead">登録済みのペット情報を使い、ホテル宿泊時だけ必要な確認事項をペットごとに入力します。</p>
         </div>
       </div>
 
@@ -407,31 +407,6 @@
     <section class="card">
       <div class="section-title">
         <div class="num">4</div>
-        <div>
-          <h2>ごはん・お薬・健康状態</h2>
-          <p class="lead">ホテルは安全面が重要なので、食事・投薬・アレルギーを事前に確認します。</p>
-        </div>
-      </div>
-
-      <label>ごはんについて</label>
-      <textarea id="mealNote" placeholder="例：朝晩2回、持参フード。1回30g。おやつ少なめ。"></textarea>
-
-      <label>お薬について</label>
-      <textarea id="medicineNote" placeholder="例：朝食後に1錠。飲ませ方の注意など。"></textarea>
-
-      <label>アレルギー・苦手なもの</label>
-      <textarea id="allergyNote" placeholder="例：鶏肉アレルギー、雷が苦手、他の犬が苦手など。"></textarea>
-
-      <label>健康状態・注意点</label>
-      <textarea id="healthNote" placeholder="例：高齢犬、持病、最近の体調、咳、下痢、皮膚状態など。"></textarea>
-
-      <label>性格・過ごし方</label>
-      <textarea id="personalityNote" placeholder="例：人懐っこい、寂しがり、ケージが苦手、散歩好きなど。"></textarea>
-    </section>
-
-    <section class="card">
-      <div class="section-title">
-        <div class="num">5</div>
         <div>
           <h2>緊急連絡先・確認事項</h2>
           <p class="lead">ホテル申込は仮受付です。サロン確認後、LINEまたは電話で確定します。</p>
@@ -474,7 +449,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18F hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18H hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -528,7 +503,7 @@
       $("clearRegisteredHotelBtn").addEventListener("click", clearRegisteredForHotel);
       $("goReservationBtn").addEventListener("click", goReservationWithRegisteredCustomer);
 
-      // STEP PETSALON-18E:
+      // STEP PETSALON-18H:
       // ブラウザ標準のdate入力では端末によって過去日が見えてしまうため、
       // 実際に選べる日付だけをselectに出す。
       $("checkinDateSelect").addEventListener("change", () => {
@@ -795,7 +770,7 @@
       box.style.display = "block";
       box.innerHTML = `
         <div class="resume-title">登録済みペット情報を反映済み</div>
-        <div class="muted-small">${escapeHtml(sourceLabel || "登録情報")}から、ホテル申込のペット欄へ自動入力しました。宿泊時だけ必要なごはん・お薬・当日の体調は確認してください。</div>
+        <div class="muted-small">${escapeHtml(sourceLabel || "登録情報")}から、ホテル申込のペット欄へ自動入力しました。通常予約では不要な、ホテル宿泊時だけ必要なごはん・お薬・アレルギー・健康状態を確認してください。</div>
         <div class="pet-chip-list">
           ${pets.map(p => `<span class="pet-chip-saved">🐾 ${escapeHtml(p.pet_name || "ペット")}ちゃん${p.breed ? ` / ${escapeHtml(p.breed)}` : ""}</span>`).join("")}
         </div>
@@ -974,27 +949,31 @@
               </div>
             </div>
 
+            <div class="notice" style="margin:14px 0 12px">
+              ここから下は、通常のトリミング予約ではなく、ペットホテル宿泊時だけ確認する内容です。
+            </div>
+
             <div class="grid">
               <div>
-                <label>この子のごはん量</label>
-                <input data-pet-field="meal_amount" value="${escapeAttr(v.meal_amount || "")}" placeholder="例：朝晩30gずつ" />
+                <label>宿泊中のごはん量</label>
+                <input data-pet-field="meal_amount" value="${escapeAttr(v.meal_amount || "")}" placeholder="例：朝晩30gずつ / 持参フードあり" />
               </div>
               <div>
-                <label>この子のお薬</label>
-                <input data-pet-field="medicine_detail" value="${escapeAttr(v.medicine_detail || "")}" placeholder="例：朝1錠 / なし" />
+                <label>宿泊中のお薬</label>
+                <input data-pet-field="medicine_detail" value="${escapeAttr(v.medicine_detail || "")}" placeholder="例：なし / 朝1錠" />
               </div>
               <div>
-                <label>この子のアレルギー</label>
-                <input data-pet-field="allergy_detail" value="${escapeAttr(v.allergy_detail || "")}" placeholder="例：鶏肉 / なし" />
+                <label>アレルギー・食べられないもの</label>
+                <input data-pet-field="allergy_detail" value="${escapeAttr(v.allergy_detail || "")}" placeholder="例：なし / 鶏肉NG" />
               </div>
               <div>
-                <label>健康状態</label>
+                <label>宿泊前の健康状態</label>
                 <input data-pet-field="health_detail" value="${escapeAttr(v.health_detail || "")}" placeholder="例：良好 / 皮膚が弱い" />
               </div>
             </div>
 
-            <label>注意点</label>
-            <textarea data-pet-field="caution_note" placeholder="例：他の犬が苦手、ケージが少し苦手">${escapeHtml(v.caution_note || "")}</textarea>
+            <label>宿泊中の注意点</label>
+            <textarea data-pet-field="caution_note" placeholder="例：他の犬が苦手、ケージが少し苦手、寂しがり">${escapeHtml(v.caution_note || "")}</textarea>
           </div>
         `;
       }
@@ -1037,11 +1016,11 @@
         checkout_date: $("checkoutDate").value,
         checkout_time: $("checkoutTime").value,
         pickup_note: $("pickupNote").value.trim(),
-        meal_note: $("mealNote").value.trim(),
-        medicine_note: $("medicineNote").value.trim(),
-        allergy_note: $("allergyNote").value.trim(),
-        health_note: $("healthNote").value.trim(),
-        personality_note: $("personalityNote").value.trim(),
+        meal_note: "",
+        medicine_note: "",
+        allergy_note: "",
+        health_note: "",
+        personality_note: "",
         emergency_contact_name: $("emergencyName").value.trim(),
         emergency_contact_phone: $("emergencyPhone").value.trim(),
         vaccine_confirmed: $("vaccineConfirmed").checked,
@@ -1060,6 +1039,8 @@
           `犬種：${pet.breed || "未入力"} / 年齢：${pet.age_label || "未入力"} / 体重：${pet.weight || "未入力"}kg`,
           `ごはん：${pet.meal_amount || "未入力"}`,
           `お薬：${pet.medicine_detail || "未入力"}`,
+          `アレルギー：${pet.allergy_detail || "未入力"}`,
+          `健康状態：${pet.health_detail || "未入力"}`,
           `注意：${pet.caution_note || "未入力"}`
         ].join("\n");
       }).join("\n\n");
@@ -1074,9 +1055,6 @@
         "",
         pets || "ペット情報：未入力",
         "",
-        `ごはん全体メモ：${p.meal_note || "未入力"}`,
-        `お薬全体メモ：${p.medicine_note || "未入力"}`,
-        `健康メモ：${p.health_note || "未入力"}`,
         `その他希望：${p.request_note || "未入力"}`,
         "",
         `確認事項：${p.terms_accepted ? "同意済み" : "未同意"}`
