@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- STEP PETSALON-20A: 既存ホテル申込ガード・多頭飼い選択導線改善 -->
+<!-- STEP PETSALON-20B: 現在ホテル申込表示・重複判定統一 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-20A</title>
+  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-20B</title>
   <style>
     :root{
       --bg:#fbf6ef;
@@ -336,9 +336,9 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-20A / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-20B / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
-      <p class="lead">ホテル申込専用の画面です。登録済み情報がある場合は、現在の申込を確認してから「別日程で新規申込」または「変更・追加相談」を選びます。同じペット・同じ期間の重複申込はできません。</p>
+      <p class="lead">ホテル申込専用の画面です。登録済み情報がある場合は、現在の申込を確認してから「別日程で新規申込」または「変更・追加相談」を選びます。現在のホテル申込を確実に確認し、同じ期間の重複申込はできません。</p>
       <div class="notice" style="margin-top:12px"><b>ホテルは定員があります</b><br>ご希望日が定員に達している場合は、別日をご案内します。当日は普段のごはん・必要なお薬・リード・ワクチン証明書などをご持参ください。</div>
       <div class="notice" id="hotelPriceBox" style="margin-top:10px;display:none"></div>
       <div class="chips">
@@ -514,7 +514,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-20A hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-20B hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -551,6 +551,18 @@
     };
 
     const $ = id => document.getElementById(id);
+
+    // STEP PETSALON-20B:
+    // owner.html と hotel.html で「現在のホテル申込」の判定を揃える。
+    // 表示対象：申込受付中・確認待ち・確認済み・確定済み・お預かり中。
+    // 非表示対象：完了・お迎え済み・キャンセル・取消。
+    function isActiveHotelApplicationStatus(status){
+      const s = String(status || "requested").trim();
+      const inactive = ["checked_out", "cancelled", "completed", "no_show", "完了", "キャンセル", "取消", "お迎え済み"];
+      if(inactive.includes(s)) return false;
+      const active = ["requested", "confirmed", "checked_in", "申込受付中", "確認待ち", "確認済み", "確定済み", "お預かり中", "その場で申込済み"];
+      return active.includes(s) || !s;
+    }
 
     document.addEventListener("DOMContentLoaded", async () => {
       bindEvents();
@@ -688,13 +700,20 @@
       const phoneFromUrl = (url.searchParams.get("phone") || "").trim();
       if(phoneFromUrl){
         $("phoneSearch").value = phoneFromUrl;
-        const found = await loadCustomer({ phone: phoneFromUrl }, "電話番号検索");
+        const found = await loadCustomer({ phone: phoneFromUrl, allow_phone: "1" }, "電話番号検索");
         if(found) return;
       }
 
       const cache = readCustomerCache();
       if(cache){
         applyCachedCustomer(cache);
+        // STEP PETSALON-20B:
+        // localStorageの前回入力情報だけでは、現在のホテル申込が空になりやすい。
+        // 電話番号が分かる場合は必ずWorkerへ再確認し、owner.htmlと同じ現在申込を表示する。
+        const cachedPhone = cache.customer && cache.customer.phone ? cache.customer.phone : "";
+        if(cachedPhone){
+          await loadCustomer({ phone: cachedPhone, allow_phone: "1" }, "前回入力情報の再確認");
+        }
         return;
       }
 
@@ -708,7 +727,7 @@
         return;
       }
       $("phoneSearch").value = phone;
-      const found = await loadCustomer({ phone }, "電話番号検索");
+      const found = await loadCustomer({ phone, allow_phone: "1" }, "電話番号検索");
       if(!found){
         showError("登録情報が見つかりませんでした。初めての方はそのまま入力してください。");
       }
@@ -726,7 +745,7 @@
         state.customer = res.customer || null;
         state.pets = res.pets || [];
         state.activeReservations = Array.isArray(res.reservations) ? res.reservations : [];
-        state.activeHotels = Array.isArray(res.active_hotels) ? res.active_hotels : [];
+        state.activeHotels = Array.isArray(res.active_hotels) ? res.active_hotels : (Array.isArray(res.hotel_applications) ? res.hotel_applications : []);
         state.loadedFrom = sourceLabel || "登録情報";
         state.confirmedReuse = false;
         state.ignoreLineProfileForSubmit = false;
@@ -760,7 +779,7 @@
         state.profile.line_display_name = customer.line_display_name || "";
       }
 
-      // STEP PETSALON-20A:
+      // STEP PETSALON-20B:
       // 登録済みペットを全頭いきなり申込欄へ展開すると、
       // 「現在の申込に追加なのか」「全頭を新規申込するのか」が分かりにくい。
       // まずは今回預けるペットを選ばせ、選んだ子だけ入力欄へ反映する。
@@ -1372,10 +1391,12 @@
       const list = $("currentHotelsList");
       if(!box || !text || !list) return;
 
-      const active = Array.isArray(hotels) ? hotels.filter(h => ["requested","confirmed","checked_in"].includes(h.status || "requested")) : [];
+      const active = Array.isArray(hotels) ? hotels.filter(h => isActiveHotelApplicationStatus(h.status)) : [];
       if(!active.length){
         box.classList.remove("show");
-        text.textContent = "現在のホテル申込はありません。";
+        text.textContent = state.customer
+          ? "現在のホテル申込はありません。別日程で新規申込できます。"
+          : "現在のホテル申込を確認するには、LINE内で開くか電話番号で登録情報を確認してください。";
         list.innerHTML = "";
         return;
       }
@@ -1409,7 +1430,13 @@
         confirmed:"確定済み",
         checked_in:"お預かり中",
         checked_out:"お迎え済み",
-        cancelled:"キャンセル"
+        cancelled:"キャンセル",
+        "申込受付中":"申込受付中",
+        "確認待ち":"確認待ち",
+        "確認済み":"確認済み",
+        "確定済み":"確定済み",
+        "お預かり中":"お預かり中",
+        "その場で申込済み":"申込受付中"
       }[status] || status || "申込受付中";
     }
 
@@ -1433,7 +1460,7 @@
 
     function validateNoHotelOverlapOnClient(payload){
       const activeHotels = Array.isArray(state.activeHotels)
-        ? state.activeHotels.filter(h => ["requested","confirmed","checked_in"].includes(h.status || "requested"))
+        ? state.activeHotels.filter(h => isActiveHotelApplicationStatus(h.status))
         : [];
       if(!activeHotels.length) return;
 
