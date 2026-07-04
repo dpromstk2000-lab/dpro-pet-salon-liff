@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- STEP PETSALON-18I: ホテル申込後の現在申込表示・登録済み情報の使用中表示・会員証連携対応 -->
+<!-- STEP PETSALON-18J: ホテル申込後の現在申込表示・登録済み情報の使用中表示・会員証連携対応 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
@@ -282,7 +282,7 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-18I / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-18J / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
       <p class="lead">ホテル申込専用の画面です。申込後は、この画面とペット会員証で現在のお預かり予定を確認できます。</p>
       <div class="chips">
@@ -458,7 +458,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18I hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18J hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -513,7 +513,7 @@
       $("clearRegisteredHotelBtn").addEventListener("click", clearRegisteredForHotel);
       $("goReservationBtn").addEventListener("click", goReservationWithRegisteredCustomer);
 
-      // STEP PETSALON-18I:
+      // STEP PETSALON-18J:
       // ブラウザ標準のdate入力では端末によって過去日が見えてしまうため、
       // 実際に選べる日付だけをselectに出す。
       $("checkinDateSelect").addEventListener("change", () => {
@@ -1289,6 +1289,16 @@
       const d = new Date(`${ymd}T00:00:00+09:00`);
       d.setDate(d.getDate() + days);
       return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    }
+
+    function hm(v){
+      const s = String(v || "").trim();
+      if(!s) return "";
+      const m = s.match(/^(\d{1,2}):(\d{2})/);
+      if(m){
+        return `${m[1].padStart(2, "0")}:${m[2]}`;
+      }
+      return s;
     }
 
     function escapeHtml(value){
