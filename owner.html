@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-19G: ペット重複登録防止・既存ペット選択強化 完全版 -->
+<!-- STEP PETSALON-19H: 予約・ホテル受付の過去日／過去時間防止 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19G</title>
+  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19H</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -1483,7 +1483,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19G owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19H owner.html
     </div>
   </div>
 
@@ -1584,6 +1584,7 @@
       restoreInputs();
       bindEvents();
       setDefaultDates();
+      syncOwnerBookingDateGuards();
 
       await loadSettings();
       await loadManualServices();
@@ -1608,13 +1609,20 @@
       $("manualSearchBtn").addEventListener("click", searchManualCustomer);
       $("manualCreateBtn").addEventListener("click", createManualReservation);
       $("manualClearBtn").addEventListener("click", clearManualForm);
-      $("manualDate").addEventListener("change", loadManualAvailableTimes);
+      $("manualDate").addEventListener("change", async () => {
+        syncOwnerBookingDateGuards({ notify: true });
+        await loadManualAvailableTimes();
+      });
       if($("hotelManualSearchBtn")) $("hotelManualSearchBtn").addEventListener("click", searchHotelManualCustomer);
       if($("hotelManualCreateBtn")) $("hotelManualCreateBtn").addEventListener("click", createManualHotelApplication);
       if($("hotelManualClearBtn")) $("hotelManualClearBtn").addEventListener("click", clearHotelManualForm);
-      ["hotelManualPhone","hotelManualOwnerName","hotelManualPetName","hotelManualCheckinDate","hotelManualCheckoutDate","hotelManualStatus","hotelManualCheckinTime","hotelManualCheckoutTime","hotelManualMeal","hotelManualMedicine","hotelManualHealth"].forEach(id => {
+      ["hotelManualPhone","hotelManualOwnerName","hotelManualPetName","hotelManualStatus","hotelManualCheckinTime","hotelManualCheckoutTime","hotelManualMeal","hotelManualMedicine","hotelManualHealth"].forEach(id => {
         if($(id)) $(id).addEventListener("input", updateHotelManualSummary);
         if($(id)) $(id).addEventListener("change", updateHotelManualSummary);
+      });
+      ["hotelManualCheckinDate","hotelManualCheckoutDate"].forEach(id => {
+        if($(id)) $(id).addEventListener("input", () => { syncOwnerBookingDateGuards({ notify: true }); updateHotelManualSummary(); });
+        if($(id)) $(id).addEventListener("change", () => { syncOwnerBookingDateGuards({ notify: true }); updateHotelManualSummary(); });
       });
       ["hotelManualVaccine","hotelManualRabies","hotelManualFoodCheck","hotelManualMedicineCheck","hotelManualEmergencyCheck"].forEach(id => {
         if($(id)) $(id).addEventListener("change", updateHotelManualSummary);
@@ -1696,6 +1704,65 @@
       $("hotelTo").value = addDays(today, 90);
       if($("hotelManualCheckinDate")) $("hotelManualCheckinDate").value = today;
       if($("hotelManualCheckoutDate")) $("hotelManualCheckoutDate").value = addDays(today, 1);
+    }
+
+    function nowJstParts(){
+      const parts = Object.fromEntries(
+        new Intl.DateTimeFormat("sv-SE", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        })
+        .formatToParts(new Date())
+        .filter(p => p.type !== "literal")
+        .map(p => [p.type, p.value])
+      );
+      return {
+        date: `${parts.year}-${parts.month}-${parts.day}`,
+        time: `${parts.hour}:${parts.minute}`
+      };
+    }
+
+    function enforceMinDate(inputId, minDate, message){
+      const el = $(inputId);
+      if(!el) return false;
+      el.min = minDate;
+      if(el.value && el.value < minDate){
+        el.setCustomValidity(message);
+        el.reportValidity();
+        el.value = minDate;
+        el.setCustomValidity("");
+        return true;
+      }
+      el.setCustomValidity("");
+      return false;
+    }
+
+    function syncOwnerBookingDateGuards({ notify = false } = {}){
+      const now = nowJstParts();
+      const today = now.date;
+
+      const fixedManual = enforceMinDate("manualDate", today, "過去の日付は予約できません。");
+      const fixedCheckin = enforceMinDate("hotelManualCheckinDate", today, "過去の日付はホテル受付に使えません。");
+
+      const checkinEl = $("hotelManualCheckinDate");
+      const checkoutEl = $("hotelManualCheckoutDate");
+      const checkin = checkinEl?.value || today;
+      if(checkoutEl){
+        checkoutEl.min = checkin;
+        if(checkoutEl.value && checkoutEl.value < checkin){
+          checkoutEl.value = checkin;
+          if(notify) showOk("チェックアウト日はチェックイン日以降に自動調整しました。");
+        }
+      }
+
+      if(notify && (fixedManual || fixedCheckin)){
+        showError("過去の日付は新しい予約・ホテル受付には使えません。履歴確認は一覧の開始日・終了日で行ってください。");
+      }
     }
 
     function lineTemplates(){
@@ -2165,9 +2232,18 @@
 
     async function loadManualAvailableTimes(){
       try{
+        syncOwnerBookingDateGuards();
         const date = $("manualDate").value || todayYmd();
+        const today = todayYmd();
         if(!date){
-          renderManualTimeOptions([]);
+          renderManualTimeUnavailable("予約日を選択してください");
+          updateManualSummary();
+          return;
+        }
+        if(date < today){
+          renderManualTimeUnavailable("過去日不可");
+          showError("過去の日付は予約できません。今日以降の日付を選択してください。");
+          updateManualSummary();
           return;
         }
 
@@ -2177,28 +2253,29 @@
 
       }catch(e){
         console.error(e);
-        renderManualTimeOptions([]);
-        showError(e.message || "空き時間の取得に失敗しました。");
+        renderManualTimeUnavailable("空き時間取得失敗");
+        updateManualSummary();
+        showError(e.message || "空き時間の取得に失敗しました。通信状況を確認して再読み込みしてください。");
       }
     }
 
+    function renderManualTimeUnavailable(label){
+      $("manualTime").innerHTML = `<option value="">${escapeHtml(label || "選択不可")}</option>`;
+      $("manualTime").disabled = true;
+    }
+
     function renderManualTimeOptions(times = null){
-      const s = state.settings || {};
       const current = $("manualTime").value;
-
-      let list = Array.isArray(times) && times.length
-        ? times
-        : buildTimesForOwner(hm(s.open_time || "10:00"), hm(s.close_time || "18:00"), Number(s.reservation_slot_minutes || 30)).map(time => ({
-            time,
-            can_reserve: true,
-            disabled_reason: ""
-          }));
-
+      const list = Array.isArray(times) ? times : [];
       const available = list.filter(t => t.can_reserve);
 
+      if(list.length === 0){
+        renderManualTimeUnavailable("空き時間を取得できません");
+        return;
+      }
+
       if(available.length === 0){
-        $("manualTime").innerHTML = `<option value="">空き時間なし</option>`;
-        $("manualTime").disabled = true;
+        renderManualTimeUnavailable("空き時間なし");
         return;
       }
 
@@ -2206,7 +2283,7 @@
       $("manualTime").innerHTML = list.map(t => {
         const disabled = !t.can_reserve;
         const label = disabled
-          ? `${t.time}（${t.disabled_reason || "満枠"}）`
+          ? `${t.time}（${t.disabled_reason || "受付不可"}）`
           : `${t.time}（受付可）`;
         return `<option value="${escapeHtml(t.time)}" ${disabled ? "disabled" : ""}>${escapeHtml(label)}</option>`;
       }).join("");
@@ -2443,12 +2520,15 @@
     }
 
     function validateManualPayload(p){
+      const now = nowJstParts();
       if(!p.owner_name) throw new Error("飼い主名を入力してください。");
       if(!p.phone) throw new Error("電話番号を入力してください。");
       if(!p.pet_name) throw new Error("ペット名を入力してください。");
       assertExistingPetSelected("manual");
       if(!p.reservation_date) throw new Error("予約日を選択してください。");
+      if(p.reservation_date < now.date) throw new Error("過去の日付は予約できません。");
       if(!p.reservation_time) throw new Error("予約時間を選択してください。空き時間がない場合は別の日を選んでください。");
+      if(p.reservation_date === now.date && hm(p.reservation_time) < now.time) throw new Error(`本日 ${now.time} より前の時間は選べません。`);
       if($("manualTime").disabled) throw new Error("この日は空き時間がありません。別の日を選んでください。");
       if(!p.service_code) throw new Error("メニューを選択してください。");
     }
@@ -2771,11 +2851,13 @@
             caution_note: $("hotelManualHealth").value.trim()
           }]
         };
+        const now = nowJstParts();
         if(!payload.owner_name) throw new Error("飼い主名を入力してください。");
         if(!payload.phone) throw new Error("電話番号を入力してください。");
         if(!payload.pets[0].pet_name) throw new Error("ペット名を入力してください。");
         assertExistingPetSelected("hotel");
         if(!payload.checkin_date || !payload.checkout_date) throw new Error("チェックイン日・チェックアウト日を入力してください。");
+        if(payload.checkin_date < now.date) throw new Error("過去の日付のホテル受付は登録できません。");
         if(payload.checkout_date < payload.checkin_date) throw new Error("チェックアウト日はチェックイン日以降にしてください。");
         if($("hotelManualEmergencyCheck") && !$("hotelManualEmergencyCheck").checked) throw new Error("緊急連絡先を確認したらチェックを入れてください。");
 
