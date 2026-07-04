@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- STEP PETSALON-19E: ホテル定員・持ち物・確認事項表示強化 -->
+<!-- STEP PETSALON-19J: ホテル料金表示・メニュー料金設定反映 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-19E</title>
+  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-19J</title>
   <style>
     :root{
       --bg:#fbf6ef;
@@ -282,10 +282,11 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-19E / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-19I / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
       <p class="lead">ホテル申込専用の画面です。申込後は、この画面とペット会員証で現在のお預かり予定を確認できます。同じペットで期間が重なるホテル申込はできません。</p>
       <div class="notice" style="margin-top:12px"><b>ホテルは定員があります</b><br>ご希望日が定員に達している場合は、別日をご案内します。当日は普段のごはん・必要なお薬・リード・ワクチン証明書などをご持参ください。</div>
+      <div class="notice" id="hotelPriceBox" style="margin-top:10px;display:none"></div>
       <div class="chips">
         <span class="chip" id="apiState">API確認中</span>
         <span class="chip" id="lineState">LINE確認中</span>
@@ -459,7 +460,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-19E hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-19I hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -483,6 +484,7 @@
       },
       settings: null,
       maxPets: 3,
+      hotelServices: [],
       petCount: 1,
       customer: null,
       pets: [],
@@ -567,6 +569,7 @@
         state.maxPets = Number(status.max_pets_per_group || 3);
         $("shopName").textContent = status.shop_name || "DPROペットサロン";
         $("apiState").textContent = "API接続OK";
+        await loadHotelPriceInfo();
         renderPets();
         await tryAutoLoadExistingCustomer();
         updateSummary();
@@ -574,6 +577,22 @@
         console.error(e);
         $("apiState").textContent = "API未確認";
         showError(e.message || "API確認に失敗しました。");
+      }
+    }
+
+    async function loadHotelPriceInfo(){
+      const box = $("hotelPriceBox");
+      if(!box) return;
+      try{
+        const res = await apiGet("/api/public/services?category=hotel");
+        const services = res.services || [];
+        state.hotelServices = services;
+        if(!services.length){ box.style.display = "none"; return; }
+        box.style.display = "block";
+        box.innerHTML = `<b>ホテル料金目安</b><br>${services.map(s => `${escapeHtml(s.service_name || "ホテル")}: ${Number(s.base_price || 0).toLocaleString()}円〜${s.description ? `（${escapeHtml(s.description)}）` : ""}`).join("<br>")}<br><span style="font-size:11px">実際の料金は犬種・サイズ・日数・オプションにより変わる場合があります。</span>`;
+      }catch(e){
+        console.warn(e);
+        box.style.display = "none";
       }
     }
 
@@ -1070,14 +1089,17 @@
     function updateSummary(){
       const p = buildPayload();
       const pets = p.pets.map((pet, i) => {
+        const optionalLines = [
+          pet.meal_amount ? `ごはん：${pet.meal_amount}` : "",
+          pet.medicine_detail ? `お薬：${pet.medicine_detail}` : "",
+          pet.allergy_detail ? `アレルギー：${pet.allergy_detail}` : "",
+          pet.health_detail ? `健康状態：${pet.health_detail}` : "",
+          pet.caution_note ? `性格・注意：${pet.caution_note}` : ""
+        ].filter(Boolean);
         return [
           `【${i + 1}頭目】${pet.pet_name || "未入力"}ちゃん`,
           `犬種：${pet.breed || "未入力"} / 年齢：${pet.age_label || "未入力"} / 体重：${pet.weight || "未入力"}kg`,
-          `ごはん：${pet.meal_amount || "未入力"}`,
-          `お薬：${pet.medicine_detail || "未入力"}`,
-          `アレルギー：${pet.allergy_detail || "未入力"}`,
-          `健康状態：${pet.health_detail || "未入力"}`,
-          `注意：${pet.caution_note || "未入力"}`
+          ...(optionalLines.length ? optionalLines : ["ホテル宿泊メモ：未入力"])
         ].join("\n");
       }).join("\n\n");
 
@@ -1091,7 +1113,7 @@
         "",
         pets || "ペット情報：未入力",
         "",
-        `その他希望：${p.request_note || "未入力"}`,
+        p.request_note ? `その他希望：${p.request_note}` : "その他希望：なし",
         "",
         `確認事項：${p.terms_accepted ? "同意済み" : "未同意"}`
       ].join("\n");
