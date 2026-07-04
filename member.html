@@ -1,9 +1,10 @@
+<!-- STEP PETSALON-18O: 多頭飼い会員証最適化・ペット追加登録・ペット別予約/ホテル表示 -->
 <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜ペット会員証・予約変更・ホテル申込確認</title>
+  <title>DPROペットサロン｜多頭飼い対応ペット会員証</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -375,6 +376,85 @@
     }
     .link-grid{display:grid;gap:10px;margin-top:12px}
     @media(min-width:720px){.link-grid{grid-template-columns:1fr 1fr}}
+
+    .pet-toolbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .pet-tabs{
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      padding:2px 2px 8px;
+      -webkit-overflow-scrolling:touch;
+    }
+    .pet-tab{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--main);
+      border-radius:999px;
+      padding:9px 12px;
+      font-weight:900;
+      white-space:nowrap;
+      cursor:pointer;
+    }
+    .pet-tab.active{
+      background:var(--main);
+      color:#fff;
+      border-color:var(--main);
+      box-shadow:0 8px 18px rgba(138,90,60,.18);
+    }
+    .pet-overview{
+      display:grid;
+      gap:10px;
+      margin:10px 0 12px;
+    }
+    @media(min-width:720px){.pet-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .pet-mini-card{
+      border:1px solid var(--line);
+      background:linear-gradient(135deg,#fff,#fff8f1);
+      border-radius:18px;
+      padding:12px;
+      cursor:pointer;
+    }
+    .pet-mini-card.active{border-color:#c99a6b;box-shadow:0 8px 20px rgba(138,90,60,.12)}
+    .pet-mini-name{font-weight:1000;color:var(--main);font-size:17px}
+    .pet-mini-meta{font-size:12px;color:var(--muted);margin-top:2px}
+    .pet-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .pet-badge{font-size:11px;padding:4px 8px;border-radius:999px;background:#fff3e6;color:#7b5739;border:1px solid #eed7c2}
+    .add-pet-panel{
+      border:2px solid rgba(138,90,60,.22);
+      background:linear-gradient(135deg,#fff8f0,#fff);
+      border-radius:20px;
+      padding:14px;
+      margin:12px 0;
+    }
+    .add-pet-panel h3{margin:0 0 8px;font-size:17px;color:var(--main)}
+    .form-grid{display:grid;gap:10px;margin-top:10px}
+    @media(min-width:720px){.form-grid{grid-template-columns:1fr 1fr}}
+    .pet-action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .group-label{
+      display:inline-flex;
+      padding:4px 8px;
+      border-radius:999px;
+      background:#fff3e6;
+      color:#7b5739;
+      border:1px solid #eed7c2;
+      font-size:11px;
+      font-weight:900;
+      margin-bottom:6px;
+    }
+    .reservation-line{
+      border-top:1px dashed #eadfd5;
+      padding-top:10px;
+      margin-top:10px;
+    }
+    .reservation-line:first-of-type{border-top:0;padding-top:0;margin-top:0}
+
     .footer{
       text-align:center;
       color:var(--muted);
@@ -419,7 +499,7 @@
       <div class="hero-content">
         <span class="badge">🐾 ペット会員証</span>
         <h1 id="shopName">DPROペットサロン</h1>
-        <p>ペット情報・予約内容をLINEから確認できます。次回予約・予約変更・キャンセル希望もスムーズにできます。</p>
+        <p>ペット情報・飼い主さま1人の会員証の中で、複数ペットの情報・予約・ホテル申込を切り替えて確認できます。</p>
         <div class="status">
           <span class="pill dark" id="apiState">API確認中</span>
           <span class="pill dark" id="lineState">LINE確認中</span>
@@ -445,11 +525,11 @@
 
         <div class="btns">
           <button class="btn" type="button" id="searchBtn">会員証を表示</button>
-          <a class="btn secondary" id="reserveLink" href="./index.html?v=18n">新しく予約する</a>
+          <a class="btn secondary" id="reserveLink" href="./index.html?v=18o">新しく予約する</a>
         </div>
 
         <div class="notice" style="margin-top:12px">
-          まだ登録がない場合は、まず予約フォームからペット情報を登録してください。
+          まだ登録がない場合は、まず予約フォームから飼い主情報を登録してください。2頭目以降は会員証から追加できます。
         </div>
       </section>
 
@@ -470,9 +550,74 @@
       <div class="card-head">
         <div>
           <h2>ペット会員証</h2>
-          <p class="lead">複数頭登録にも対応できます。</p>
+          <p class="lead">飼い主さまの会員証の中で、複数ペットを切り替えて確認できます。</p>
         </div>
       </div>
+
+      <div class="pet-toolbar">
+        <div class="notice">多頭飼いの場合は、上のタブでペットを切り替えます。予約・ホテル申込はペット別に確認できます。</div>
+        <button class="btn secondary small" type="button" id="openAddPetFormBtn">＋ペットを追加する</button>
+      </div>
+
+      <div id="addPetPanel" class="add-pet-panel hidden">
+        <h3>ペットを追加登録</h3>
+        <div class="notice">2頭目以降を、現在の飼い主さまの会員証に追加します。同じ名前のペットは重複登録できません。</div>
+        <div class="form-grid">
+          <div>
+            <label>ペット名 <span class="danger-text">必須</span></label>
+            <input id="addPetName" placeholder="例：ココ" />
+          </div>
+          <div>
+            <label>犬種</label>
+            <input id="addPetBreed" placeholder="例：トイプードル" />
+          </div>
+          <div>
+            <label>年齢</label>
+            <input id="addPetAge" placeholder="例：3歳" />
+          </div>
+          <div>
+            <label>体重</label>
+            <input id="addPetWeight" inputmode="decimal" placeholder="例：4.2" />
+          </div>
+          <div>
+            <label>性別</label>
+            <select id="addPetSex">
+              <option value="unknown">未確認</option>
+              <option value="male">男の子</option>
+              <option value="female">女の子</option>
+            </select>
+          </div>
+          <div>
+            <label>避妊・去勢</label>
+            <select id="addPetNeutered">
+              <option value="">未確認</option>
+              <option value="true">済み</option>
+              <option value="false">未実施</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>性格・好きなこと</label>
+          <textarea id="addPetPersonality" placeholder="例：人なつっこい、抱っこが好き"></textarea>
+        </div>
+        <div class="form-row">
+          <label>苦手なこと</label>
+          <textarea id="addPetDislike" placeholder="例：大きな音、爪切りが苦手"></textarea>
+        </div>
+        <div class="form-row">
+          <label>健康・注意事項</label>
+          <textarea id="addPetHealth" placeholder="例：皮膚が弱い、膝が外れやすい"></textarea>
+        </div>
+        <div class="form-row">
+          <label>いつものスタイル・希望</label>
+          <textarea id="addPetFavoriteStyle" placeholder="例：体は短め、顔は丸く"></textarea>
+        </div>
+        <div class="btns">
+          <button class="btn" type="button" id="saveAddPetBtn">このペットを追加する</button>
+          <button class="btn secondary" type="button" id="cancelAddPetBtn">閉じる</button>
+        </div>
+      </div>
+
       <div id="petsBox">
         <div class="empty">ペット情報はまだ表示されていません。</div>
       </div>
@@ -560,9 +705,9 @@
         </div>
       </div>
       <div class="link-grid">
-        <a class="btn" href="./index.html?v=18n">予約フォームを開く</a>
+        <a class="btn" href="./index.html?v=18o">予約フォームを開く</a>
         <a class="btn secondary" href="#reservationsBox">現在の予約を確認・変更する</a>
-        <a class="btn secondary" href="./hotel.html?v=18n">ペットホテル申込</a>
+        <a class="btn secondary" href="./hotel.html?v=18o">ペットホテル申込</a>
         <button class="btn secondary" type="button" id="copyConsultBtn">相談メッセージをコピー</button>
       </div>
       <div class="notice" style="margin-top:12px">
@@ -571,14 +716,14 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18N member.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18O member.html
     </div>
   </div>
 
   <script>
     // =========================================================
-    // STEP PETSALON-18N
-    // member.html 会員証から予約変更希望・キャンセル希望を送信できる導線を追加
+    // STEP PETSALON-18O
+    // member.html 多頭飼い会員証最適化・ペット追加登録・ペット別予約/ホテル表示
     // =========================================================
 
     const CONFIG = {
@@ -600,6 +745,7 @@
       reservations: [],
       activeHotels: [],
       latestVisitByPet: {},
+      selectedPetId: "all",
       selectedReservation: null,
       actionMode: "change"
     };
@@ -615,6 +761,9 @@
       $("changeDateSelect").addEventListener("change", () => loadAvailableTimesForSelectedDate());
       $("sendChangeBtn").addEventListener("click", sendReservationChangeRequest);
       $("sendCancelBtn").addEventListener("click", sendReservationCancelRequest);
+      $("openAddPetFormBtn").addEventListener("click", openAddPetPanel);
+      $("cancelAddPetBtn").addEventListener("click", closeAddPetPanel);
+      $("saveAddPetBtn").addEventListener("click", saveAdditionalPet);
 
       await initLiff();
       await boot();
@@ -711,6 +860,9 @@
         state.reservations = res.reservations || [];
         state.activeHotels = res.active_hotels || [];
         state.latestVisitByPet = res.latest_visit_by_pet || {};
+        if(state.selectedPetId !== "all" && !state.pets.some(p => String(p.id) === String(state.selectedPetId))){
+          state.selectedPetId = "all";
+        }
 
         $("customerState").textContent = "会員情報OK";
         if(state.customer.phone){
@@ -735,6 +887,7 @@
       $("petsBox").innerHTML = `<div class="empty">ペット情報はありません。</div>`;
       $("reservationsBox").innerHTML = `<div class="empty">現在の予約はありません。</div>`;
       if($("hotelsBox")) $("hotelsBox").innerHTML = `<div class="empty">現在のホテル申込はありません。</div>`;
+      if($("addPetPanel")) closeAddPetPanel();
       closeReservationActionPanel();
     }
 
@@ -747,6 +900,7 @@
           <div class="info"><b>電話番号</b>${escapeHtml(c.phone || "-")}</div>
           <div class="info"><b>LINE名</b>${escapeHtml(c.line_display_name || "-")}</div>
           <div class="info"><b>ステータス</b>${customerStatusLabel(c.customer_status)}</div>
+          <div class="info"><b>登録ペット数</b>${state.pets.length}頭</div>
           <div class="info"><b>最終来店日</b>${escapeHtml(c.last_visit_date || "未登録")}</div>
         </div>
       `;
@@ -754,70 +908,63 @@
 
     function renderPets(){
       if(!state.pets.length){
-        $("petsBox").innerHTML = `<div class="empty">登録済みペットはありません。</div>`;
+        $("petsBox").innerHTML = `<div class="empty">登録済みペットはありません。上の「＋ペットを追加する」から2頭目以降も登録できます。</div>`;
         return;
       }
 
-      $("petsBox").innerHTML = state.pets.map(p => {
-        const latestVisit = state.latestVisitByPet[p.id] || null;
+      const selectedId = state.selectedPetId || "all";
+      const selectedPets = selectedId === "all" ? state.pets : state.pets.filter(p => String(p.id) === String(selectedId));
 
-        const memoLines = [
-          p.personality_notes ? `性格：${p.personality_notes}` : "",
-          p.dislike_notes ? `苦手：${p.dislike_notes}` : "",
-          p.health_notes ? `健康・注意：${p.health_notes}` : "",
-          p.favorite_style ? `希望スタイル：${p.favorite_style}` : "",
-          p.last_style_note ? `前回メモ：${p.last_style_note}` : ""
-        ].filter(Boolean);
+      const tabsHtml = `
+        <div class="pet-tabs">
+          <button class="pet-tab ${selectedId === "all" ? "active" : ""}" type="button" data-pet-tab="all">すべて ${state.pets.length}頭</button>
+          ${state.pets.map(p => `<button class="pet-tab ${String(p.id) === String(selectedId) ? "active" : ""}" type="button" data-pet-tab="${escapeAttr(p.id)}">${escapeHtml(p.pet_name || "ペット")}ちゃん</button>`).join("")}
+        </div>
+      `;
 
-        const visitHtml = latestVisit ? `
-          <div class="visit-highlight">
-            <h3>✂️ 前回の内容・次回おすすめ</h3>
-            <div class="visit-grid">
-              <div class="visit-item"><b>前回来店日</b>${escapeHtml(latestVisit.visit_date || "-")}</div>
-              <div class="visit-item"><b>前回メニュー</b>${escapeHtml(latestVisit.menu_done || "未登録")}</div>
-              <div class="visit-item"><b>皮膚の状態</b>${escapeHtml(latestVisit.skin_condition || p.skin_condition || "未入力")}</div>
-              <div class="visit-item"><b>毛玉・被毛</b>${mattingLabel(latestVisit.matting_level)}${latestVisit.coat_condition ? " / " + escapeHtml(latestVisit.coat_condition) : ""}</div>
-            </div>
-            <div class="visit-item" style="margin-top:8px"><b>施術メモ</b>${escapeHtml(latestVisit.groomer_note || p.last_style_note || "未登録")}</div>
-            <div class="visit-item" style="margin-top:8px"><b>次回おすすめ理由</b>${escapeHtml(latestVisit.next_recommend_reason || "前回来店からのお手入れ目安")}</div>
-            ${latestVisit.next_recommend_date ? `<div class="next-date">次回おすすめ日：${escapeHtml(latestVisit.next_recommend_date)}</div>` : ""}
-            <div class="same-menu-link">
-              <a class="btn small" href="./index.html?v=18n">前回内容を参考に予約する</a>
-              <button class="btn secondary small" type="button" data-copy-same-menu="${escapeHtml(p.pet_name || "")}" data-menu="${escapeHtml(latestVisit.menu_done || "")}" data-next="${escapeHtml(latestVisit.next_recommend_date || "")}">前回と同じ内容で相談コピー</button>
-            </div>
-          </div>
-        ` : `
-          <div class="visit-highlight">
-            <h3>✂️ 前回の内容・次回おすすめ</h3>
-            <div class="visit-item">まだ来店履歴はありません。施術完了後に、前回メニュー・施術メモ・次回おすすめ日が表示されます。</div>
-          </div>
-        `;
-
-        return `
-          <div class="member-card">
-            <div class="pet-head">
-              <div class="avatar">${petIcon(p.species)}</div>
-              <div>
-                <div class="pet-name">${escapeHtml(p.pet_name || "ペット")}ちゃん</div>
-                <div class="owner">${escapeHtml(state.customer?.owner_name || "")}さまのペット会員証</div>
+      const overviewHtml = `
+        <div class="pet-overview">
+          ${state.pets.map(p => {
+            const activeReservationCount = activeReservationsForPet(p.id).length;
+            const activeHotelCount = activeHotelsForPet(p.id).length;
+            const latestVisit = state.latestVisitByPet[p.id] || null;
+            return `
+              <div class="pet-mini-card ${String(p.id) === String(selectedId) ? "active" : ""}" data-pet-card="${escapeAttr(p.id)}">
+                <div class="pet-mini-name">${petIcon(p.species)} ${escapeHtml(p.pet_name || "ペット")}ちゃん</div>
+                <div class="pet-mini-meta">${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")}</div>
+                <div class="pet-badges">
+                  <span class="pet-badge">予約 ${activeReservationCount}件</span>
+                  <span class="pet-badge">ホテル ${activeHotelCount}件</span>
+                  <span class="pet-badge">前回 ${latestVisit ? escapeHtml(latestVisit.visit_date || "あり") : "未登録"}</span>
+                </div>
               </div>
-            </div>
+            `;
+          }).join("")}
+        </div>
+      `;
 
-            <div class="info-grid">
-              <div class="info"><b>犬種</b>${escapeHtml(p.breed || "未入力")}</div>
-              <div class="info"><b>年齢・体重</b>${escapeHtml(p.age_label || "未入力")} / ${escapeHtml(p.weight || "-")}kg</div>
-              <div class="info"><b>性別</b>${sexLabel(p.sex)} / ${p.neutered ? "避妊・去勢済み" : "避妊・去勢未確認"}</div>
-              <div class="info"><b>ワクチン</b>${p.vaccine_confirmed ? "確認済み" : "未確認"}</div>
-              <div class="info"><b>皮膚の状態</b>${escapeHtml(p.skin_condition || "未入力")}</div>
-              <div class="info"><b>被毛・毛玉</b>${latestVisit ? mattingLabel(latestVisit.matting_level) : escapeHtml(p.coat_condition || "未入力")}</div>
-            </div>
+      const detailHtml = selectedPets.map(p => renderPetDetailCard(p)).join("");
 
-            <div class="memo">${memoLines.length ? escapeHtml(memoLines.join("\\n")) : "メモはまだ登録されていません。"}</div>
+      $("petsBox").innerHTML = tabsHtml + overviewHtml + detailHtml;
 
-            ${visitHtml}
-          </div>
-        `;
-      }).join("");
+      document.querySelectorAll("[data-pet-tab]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.selectedPetId = btn.dataset.petTab || "all";
+          renderPets();
+          renderReservations();
+          renderHotels();
+        });
+      });
+
+      document.querySelectorAll("[data-pet-card]").forEach(card => {
+        card.addEventListener("click", () => {
+          state.selectedPetId = card.dataset.petCard || "all";
+          renderPets();
+          renderReservations();
+          renderHotels();
+          window.scrollTo({ top: card.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
+        });
+      });
 
       document.querySelectorAll("[data-copy-same-menu]").forEach(btn => {
         btn.addEventListener("click", async () => {
@@ -833,7 +980,7 @@
             "",
             "希望日時：",
             "相談したいこと："
-          ].filter(Boolean).join("\\n");
+          ].filter(Boolean).join("\n");
 
           await copyText(text);
           showOk("前回と同じ内容の相談メッセージをコピーしました。LINE公式のトークに貼り付けて送信できます。");
@@ -841,38 +988,102 @@
       });
     }
 
-    function renderReservations(){
-      const active = (state.reservations || []).filter(r => ["requested","confirmed","visited"].includes(r.status || "requested"));
+    function renderPetDetailCard(p){
+      const latestVisit = state.latestVisitByPet[p.id] || null;
+      const memoLines = [
+        p.personality_notes ? `性格：${p.personality_notes}` : "",
+        p.dislike_notes ? `苦手：${p.dislike_notes}` : "",
+        p.health_notes ? `健康・注意：${p.health_notes}` : "",
+        p.favorite_style ? `希望スタイル：${p.favorite_style}` : "",
+        p.last_style_note ? `前回メモ：${p.last_style_note}` : ""
+      ].filter(Boolean);
+
+      const phoneQs = state.customer?.phone ? `phone=${encodeURIComponent(state.customer.phone)}&` : "";
+      const petQs = p.id ? `&pet_id=${encodeURIComponent(p.id)}&pet_name=${encodeURIComponent(p.pet_name || "")}` : "";
+
+      const visitHtml = latestVisit ? `
+        <div class="visit-highlight">
+          <h3>✂️ 前回の内容・次回おすすめ</h3>
+          <div class="visit-grid">
+            <div class="visit-item"><b>前回来店日</b>${escapeHtml(latestVisit.visit_date || "-")}</div>
+            <div class="visit-item"><b>前回メニュー</b>${escapeHtml(latestVisit.menu_done || "未登録")}</div>
+            <div class="visit-item"><b>皮膚の状態</b>${escapeHtml(latestVisit.skin_condition || p.skin_condition || "未入力")}</div>
+            <div class="visit-item"><b>毛玉・被毛</b>${mattingLabel(latestVisit.matting_level)}${latestVisit.coat_condition ? " / " + escapeHtml(latestVisit.coat_condition) : ""}</div>
+          </div>
+          <div class="visit-item" style="margin-top:8px"><b>施術メモ</b>${escapeHtml(latestVisit.groomer_note || p.last_style_note || "未登録")}</div>
+          <div class="visit-item" style="margin-top:8px"><b>次回おすすめ理由</b>${escapeHtml(latestVisit.next_recommend_reason || "前回来店からのお手入れ目安")}</div>
+          ${latestVisit.next_recommend_date ? `<div class="next-date">次回おすすめ日：${escapeHtml(latestVisit.next_recommend_date)}</div>` : ""}
+          <div class="same-menu-link">
+            <a class="btn small" href="./index.html?${phoneQs}v=18o${petQs}">この子で予約する</a>
+            <button class="btn secondary small" type="button" data-copy-same-menu="${escapeAttr(p.pet_name || "")}" data-menu="${escapeAttr(latestVisit.menu_done || "")}" data-next="${escapeAttr(latestVisit.next_recommend_date || "")}">前回と同じ内容で相談コピー</button>
+          </div>
+        </div>
+      ` : `
+        <div class="visit-highlight">
+          <h3>✂️ 前回の内容・次回おすすめ</h3>
+          <div class="visit-item">まだ来店履歴はありません。施術完了後に、前回メニュー・施術メモ・次回おすすめ日が表示されます。</div>
+        </div>
+      `;
+
+      return `
+        <div class="member-card">
+          <div class="pet-head">
+            <div class="avatar">${petIcon(p.species)}</div>
+            <div>
+              <div class="pet-name">${escapeHtml(p.pet_name || "ペット")}ちゃん</div>
+              <div class="owner">${escapeHtml(state.customer?.owner_name || "")}さまのペット会員証</div>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info"><b>犬種</b>${escapeHtml(p.breed || "未入力")}</div>
+            <div class="info"><b>年齢・体重</b>${escapeHtml(p.age_label || "未入力")} / ${escapeHtml(p.weight || "-")}kg</div>
+            <div class="info"><b>性別</b>${sexLabel(p.sex)} / ${p.neutered ? "避妊・去勢済み" : "避妊・去勢未確認"}</div>
+            <div class="info"><b>ワクチン</b>${p.vaccine_confirmed ? "確認済み" : "未確認"}</div>
+            <div class="info"><b>皮膚の状態</b>${escapeHtml(p.skin_condition || "未入力")}</div>
+            <div class="info"><b>被毛・毛玉</b>${latestVisit ? mattingLabel(latestVisit.matting_level) : escapeHtml(p.coat_condition || "未入力")}</div>
+          </div>
+
+          <div class="memo">${memoLines.length ? escapeHtml(memoLines.join("\n")) : "メモはまだ登録されていません。"}</div>
+
+          <div class="pet-action-row">
+            <a class="btn small" href="./index.html?${phoneQs}v=18o${petQs}">この子でサロン予約</a>
+            <a class="btn secondary small" href="./hotel.html?${phoneQs}v=18o${petQs}">この子でホテル申込</a>
+          </div>
+
+          ${visitHtml}
+        </div>
+      `;
+    }
+
+    function activeReservationsForPet(petId){
+      return (state.reservations || []).filter(r => ["requested","confirmed","visited"].includes(r.status || "requested") && String(r.pet_id) === String(petId));
+    }
+
+    function activeHotelsForPet(petId){
+      return (state.activeHotels || []).filter(h => (h.pets || []).some(p => String(p.pet_id || p.id) === String(petId)));
+    }
+
+    function selectedPetName(){
+      if(state.selectedPetId === "all") return "すべてのペット";
+      const p = state.pets.find(p => String(p.id) === String(state.selectedPetId));
+      return p ? `${p.pet_name || "ペット"}ちゃん` : "選択中ペット";
+    }
+
+    
+function renderReservations(){
+      let active = (state.reservations || []).filter(r => ["requested","confirmed","visited"].includes(r.status || "requested"));
+      if(state.selectedPetId !== "all"){
+        active = active.filter(r => String(r.pet_id) === String(state.selectedPetId));
+      }
       if(!active.length){
-        $("reservationsBox").innerHTML = `<div class="empty">現在の予約はありません。次回予約は予約フォームからできます。</div>`;
+        $("reservationsBox").innerHTML = `<div class="empty">${escapeHtml(selectedPetName())}の現在の予約はありません。次回予約は予約フォームからできます。</div>`;
         closeReservationActionPanel();
         return;
       }
 
-      $("reservationsBox").innerHTML = active.map(r => {
-        const pet = state.pets.find(p => p.id === r.pet_id) || {};
-        const canRequest = canSelfChangeOrCancel(r);
-        const consultText = buildReservationConsultText(r, pet);
-        const reason = changeLimitReason(r);
-        return `
-          <div class="reservation" data-reservation-card="${escapeAttr(r.id || "")}">
-            <div class="reservation-top">
-              <div>
-                <div class="date">${escapeHtml(r.reservation_date || "")} ${escapeHtml(hm(r.reservation_time))}</div>
-                <div class="sub">${escapeHtml(pet.pet_name || "ペット")}ちゃん / ${escapeHtml(r.service_name || "")}</div>
-              </div>
-              <span class="status-label ${escapeHtml(r.status || "")}">${reservationStatusLabel(r.status)}</span>
-            </div>
-            ${r.request_note ? `<div class="memo">${escapeHtml(r.request_note)}</div>` : ""}
-            <div class="reservation-actions">
-              ${canRequest ? `<button class="btn secondary small" type="button" data-change-rid="${escapeAttr(r.id || "")}">予約日時を変更したい</button>` : ""}
-              ${canRequest ? `<button class="btn secondary small" type="button" data-cancel-rid="${escapeAttr(r.id || "")}">キャンセルしたい</button>` : ""}
-              <button class="btn secondary small" type="button" data-copy-reservation="${escapeAttr(r.id || "")}" data-reservation-text="${escapeAttr(consultText)}">LINE相談文をコピー</button>
-            </div>
-            ${!canRequest ? `<div class="notice" style="margin-top:10px">${escapeHtml(reason)}<br>LINE相談文をコピーして、サロンへ直接ご相談ください。</div>` : `<div class="form-help">変更・キャンセルは希望受付です。サロン確認後に確定します。</div>`}
-          </div>
-        `;
-      }).join("");
+      const groups = groupReservations(active);
+      $("reservationsBox").innerHTML = groups.map(group => renderReservationGroup(group)).join("");
 
       document.querySelectorAll("[data-change-rid]").forEach(btn => {
         btn.addEventListener("click", () => openReservationActionPanel(btn.dataset.changeRid, "change"));
@@ -888,7 +1099,59 @@
       });
     }
 
-    function findReservationById(id){
+    function groupReservations(reservations){
+      const map = new Map();
+      for(const r of reservations){
+        const key = r.reservation_group_id || r.id;
+        if(!map.has(key)) map.set(key, []);
+        map.get(key).push(r);
+      }
+      return Array.from(map.values()).sort((a,b) => {
+        const aa = `${a[0]?.reservation_date || ""} ${hm(a[0]?.reservation_time || "")}`;
+        const bb = `${b[0]?.reservation_date || ""} ${hm(b[0]?.reservation_time || "")}`;
+        return aa.localeCompare(bb);
+      });
+    }
+
+    function renderReservationGroup(group){
+      const first = group[0] || {};
+      const isMulti = group.length > 1 || Number(first.reservation_group_size || 1) > 1;
+      return `
+        <div class="reservation">
+          ${isMulti ? `<div class="group-label">まとめ予約 ${group.length}頭</div>` : ""}
+          <div class="reservation-top">
+            <div>
+              <div class="date">${escapeHtml(first.reservation_date || "")} ${escapeHtml(hm(first.reservation_time))}</div>
+              <div class="sub">${isMulti ? "同じ時間の多頭予約" : "サロン予約"}</div>
+            </div>
+            <span class="status-label ${escapeHtml(first.status || "")}">${reservationStatusLabel(first.status)}</span>
+          </div>
+          ${group.map(r => renderReservationLine(r)).join("")}
+        </div>
+      `;
+    }
+
+    function renderReservationLine(r){
+      const pet = state.pets.find(p => p.id === r.pet_id) || {};
+      const canRequest = canSelfChangeOrCancel(r);
+      const consultText = buildReservationConsultText(r, pet);
+      const reason = changeLimitReason(r);
+      return `
+        <div class="reservation-line" data-reservation-card="${escapeAttr(r.id || "")}">
+          <div class="sub"><b>${escapeHtml(pet.pet_name || "ペット")}ちゃん</b> / ${escapeHtml(r.service_name || "")}</div>
+          ${r.request_note ? `<div class="memo">${escapeHtml(r.request_note)}</div>` : ""}
+          <div class="reservation-actions">
+            ${canRequest ? `<button class="btn secondary small" type="button" data-change-rid="${escapeAttr(r.id || "")}">この子の予約日時を変更したい</button>` : ""}
+            ${canRequest ? `<button class="btn secondary small" type="button" data-cancel-rid="${escapeAttr(r.id || "")}">この子の予約をキャンセルしたい</button>` : ""}
+            <button class="btn secondary small" type="button" data-copy-reservation="${escapeAttr(r.id || "")}" data-reservation-text="${escapeAttr(consultText)}">LINE相談文をコピー</button>
+          </div>
+          ${!canRequest ? `<div class="notice" style="margin-top:10px">${escapeHtml(reason)}<br>LINE相談文をコピーして、サロンへ直接ご相談ください。</div>` : `<div class="form-help">変更・キャンセルは希望受付です。サロン確認後に確定します。</div>`}
+        </div>
+      `;
+    }
+
+    
+function findReservationById(id){
       return (state.reservations || []).find(r => String(r.id) === String(id)) || null;
     }
 
@@ -1130,9 +1393,12 @@
 
     function renderHotels(){
       if(!$("hotelsBox")) return;
-      const hotels = Array.isArray(state.activeHotels) ? state.activeHotels : [];
+      let hotels = Array.isArray(state.activeHotels) ? state.activeHotels : [];
+      if(state.selectedPetId !== "all"){
+        hotels = hotels.filter(h => (h.pets || []).some(p => String(p.pet_id || p.id) === String(state.selectedPetId)));
+      }
       if(!hotels.length){
-        $("hotelsBox").innerHTML = `<div class="empty">現在のホテル申込はありません。ホテル申込をするとここに表示されます。</div>`;
+        $("hotelsBox").innerHTML = `<div class="empty">${escapeHtml(selectedPetName())}の現在のホテル申込はありません。ホテル申込をするとここに表示されます。</div>`;
         return;
       }
 
@@ -1144,6 +1410,20 @@
           h.request_note ? `連絡事項：${h.request_note}` : ""
         ].filter(Boolean);
 
+        const petDetails = pets.length ? `
+          <div class="memo">${escapeHtml(pets.map(p => {
+            const lines = [
+              `${p.pet_name || "ペット"}ちゃん`,
+              p.meal_amount ? `ごはん：${p.meal_amount}` : "ごはん：未入力",
+              p.medicine_detail ? `お薬：${p.medicine_detail}` : "お薬：なし・未入力",
+              p.allergy_detail ? `アレルギー：${p.allergy_detail}` : "アレルギー：なし・未入力",
+              p.health_detail ? `健康状態：${p.health_detail}` : "",
+              p.caution_note ? `注意：${p.caution_note}` : ""
+            ].filter(Boolean);
+            return lines.join("\n");
+          }).join("\n\n"))}</div>
+        ` : "";
+
         return `
           <div class="hotel-reservation">
             <div class="reservation-top">
@@ -1153,10 +1433,11 @@
               </div>
               <span class="hotel-status ${escapeHtml(h.status || "requested")}">${hotelStatusLabel(h.status)}</span>
             </div>
+            ${petDetails}
             ${noteLines.length ? `<div class="memo">${escapeHtml(noteLines.join("\n"))}</div>` : ""}
             <div class="btns">
-              <a class="btn secondary small" href="./hotel.html?v=18n">ホテル申込画面を開く</a>
-              <button class="btn secondary small" type="button" data-copy-hotel="${escapeHtml(h.id || "")}" data-hotel-text="${escapeAttr(buildHotelConsultText(h, petNames))}">変更・キャンセル相談をコピー</button>
+              <a class="btn secondary small" href="./hotel.html?${state.customer?.phone ? `phone=${encodeURIComponent(state.customer.phone)}&` : ""}v=18o">ホテル申込画面を開く</a>
+              <button class="btn secondary small" type="button" data-copy-hotel="${escapeAttr(h.id || "")}" data-hotel-text="${escapeAttr(buildHotelConsultText(h, petNames))}">変更・キャンセル相談をコピー</button>
             </div>
           </div>
         `;
@@ -1170,7 +1451,8 @@
       });
     }
 
-    function buildHotelConsultText(h, petNames){
+    
+function buildHotelConsultText(h, petNames){
       return [
         "ペットホテル申込について相談したいです。",
         "",
@@ -1191,6 +1473,84 @@
         checked_out:"お迎え済み",
         cancelled:"キャンセル"
       }[status] || status || "申込受付中";
+    }
+
+    function openAddPetPanel(){
+      if(!state.customer || !state.customer.id){
+        showError("先に会員証を表示してから、ペットを追加してください。");
+        return;
+      }
+      $("addPetPanel").classList.remove("hidden");
+      $("addPetName").focus();
+    }
+
+    function closeAddPetPanel(){
+      $("addPetPanel").classList.add("hidden");
+    }
+
+    function clearAddPetForm(){
+      ["addPetName","addPetBreed","addPetAge","addPetWeight","addPetPersonality","addPetDislike","addPetHealth","addPetFavoriteStyle"].forEach(id => {
+        const el = $(id);
+        if(el) el.value = "";
+      });
+      if($("addPetSex")) $("addPetSex").value = "unknown";
+      if($("addPetNeutered")) $("addPetNeutered").value = "";
+    }
+
+    async function saveAdditionalPet(){
+      try{
+        showError("");
+        showOk("");
+        if(!state.customer || !state.customer.id){
+          showError("会員情報が見つかりません。先に会員証を表示してください。");
+          return;
+        }
+        const petName = $("addPetName").value.trim();
+        if(!petName){
+          showError("ペット名を入力してください。");
+          return;
+        }
+
+        $("saveAddPetBtn").disabled = true;
+        $("saveAddPetBtn").textContent = "追加中...";
+
+        const neuteredValue = $("addPetNeutered").value;
+        const payload = {
+          customer_id: state.customer.id,
+          phone: state.customer.phone || $("phoneSearch").value.trim(),
+          line_user_id: state.profile.line_user_id || state.customer.line_user_id || "",
+          pet_name: petName,
+          species: "dog",
+          breed: $("addPetBreed").value.trim(),
+          age_label: $("addPetAge").value.trim(),
+          weight: $("addPetWeight").value.trim(),
+          sex: $("addPetSex").value,
+          neutered: neuteredValue === "" ? null : neuteredValue === "true",
+          vaccine_confirmed: false,
+          personality_notes: $("addPetPersonality").value.trim(),
+          dislike_notes: $("addPetDislike").value.trim(),
+          health_notes: $("addPetHealth").value.trim(),
+          favorite_style: $("addPetFavoriteStyle").value.trim()
+        };
+
+        const res = await apiPost("/api/public/pets/create", payload);
+        state.selectedPetId = res.pet?.id || "all";
+        clearAddPetForm();
+        closeAddPetPanel();
+        showOk(res.message || `${petName}ちゃんを追加しました。`);
+
+        if(state.profile.line_user_id){
+          await loadCustomer({ line_user_id: state.profile.line_user_id });
+        }else{
+          await loadCustomer({ phone: state.customer.phone || $("phoneSearch").value.trim() });
+        }
+      }catch(e){
+        console.error(e);
+        showError(e.message || "ペット追加に失敗しました。");
+      }finally{
+        $("saveAddPetBtn").disabled = false;
+        $("saveAddPetBtn").textContent = "このペットを追加する";
+      }
     }
 
     async function copyConsultMessage(){
@@ -1255,7 +1615,7 @@
     }
 
     function updateActionLinks(phone){
-      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18n` : `?v=18n`;
+      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18o` : `?v=18o`;
       const reserveLink = $("reserveLink");
       if(reserveLink) reserveLink.href = `./index.html${qs}`;
       document.querySelectorAll('a[href^="./index.html"]').forEach(a => { a.href = `./index.html${qs}`; });
