@@ -416,7 +416,7 @@
 
         <div class="btns">
           <button class="btn" type="button" id="searchBtn">会員証を表示</button>
-          <a class="btn secondary" id="reserveLink" href="./index.html">新しく予約する</a>
+          <a class="btn secondary" id="reserveLink" href="./index.html?v=18l">新しく予約する</a>
         </div>
 
         <div class="notice" style="margin-top:12px">
@@ -481,9 +481,9 @@
         </div>
       </div>
       <div class="link-grid">
-        <a class="btn" href="./index.html">予約フォームを開く</a>
+        <a class="btn" href="./index.html?v=18l">予約フォームを開く</a>
         <a class="btn secondary" href="./manage.html">予約変更・キャンセル</a>
-        <a class="btn secondary" href="./hotel.html">ペットホテル申込</a>
+        <a class="btn secondary" href="./hotel.html?v=18l">ペットホテル申込</a>
         <button class="btn secondary" type="button" id="copyConsultBtn">相談メッセージをコピー</button>
       </div>
       <div class="notice" style="margin-top:12px">
@@ -492,14 +492,14 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18I member.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18L member.html
     </div>
   </div>
 
   <script>
     // =========================================================
-    // STEP PETSALON-18I
-    // member.html ペット会員証・現在予約・ホテル申込表示
+    // STEP PETSALON-18L
+    // member.html 予約完了後の電話番号URL自動表示に対応
     // =========================================================
 
     const CONFIG = {
@@ -564,10 +564,25 @@
         $("apiState").textContent = "API接続OK";
         $("shopName").textContent = status.shop_name || "DPROペットサロン";
 
+        const urlPhone = getPhoneFromUrl();
+        if(urlPhone){
+          $("phoneSearch").value = urlPhone;
+        }
+
         if(state.profile.line_user_id){
           await loadCustomer({ line_user_id: state.profile.line_user_id });
+        }else if(urlPhone){
+          $("customerState").textContent = "電話番号で自動確認中";
+          await loadCustomer({ phone: urlPhone });
         }else{
-          $("customerState").textContent = "電話番号で確認";
+          const cache = readCustomerCache();
+          if(cache && cache.customer && cache.customer.phone){
+            $("phoneSearch").value = cache.customer.phone;
+            $("customerState").textContent = "前回入力情報で確認中";
+            await loadCustomer({ phone: cache.customer.phone });
+          }else{
+            $("customerState").textContent = "電話番号で確認";
+          }
         }
       }catch(e){
         console.error(e);
@@ -613,6 +628,8 @@
         $("customerState").textContent = "会員情報OK";
         if(state.customer.phone){
           $("phoneSearch").value = state.customer.phone;
+          saveCustomerCache({ customer: state.customer, pets: state.pets, profile: state.profile });
+          updateActionLinks(state.customer.phone);
         }
 
         renderCustomer();
@@ -677,7 +694,7 @@
             <div class="visit-item" style="margin-top:8px"><b>次回おすすめ理由</b>${escapeHtml(latestVisit.next_recommend_reason || "前回来店からのお手入れ目安")}</div>
             ${latestVisit.next_recommend_date ? `<div class="next-date">次回おすすめ日：${escapeHtml(latestVisit.next_recommend_date)}</div>` : ""}
             <div class="same-menu-link">
-              <a class="btn small" href="./index.html">前回内容を参考に予約する</a>
+              <a class="btn small" href="./index.html?v=18l">前回内容を参考に予約する</a>
               <button class="btn secondary small" type="button" data-copy-same-menu="${escapeHtml(p.pet_name || "")}" data-menu="${escapeHtml(latestVisit.menu_done || "")}" data-next="${escapeHtml(latestVisit.next_recommend_date || "")}">前回と同じ内容で相談コピー</button>
             </div>
           </div>
@@ -786,7 +803,7 @@
             </div>
             ${noteLines.length ? `<div class="memo">${escapeHtml(noteLines.join("\n"))}</div>` : ""}
             <div class="btns">
-              <a class="btn secondary small" href="./hotel.html">ホテル申込画面を開く</a>
+              <a class="btn secondary small" href="./hotel.html?v=18l">ホテル申込画面を開く</a>
               <button class="btn secondary small" type="button" data-copy-hotel="${escapeHtml(h.id || "")}" data-hotel-text="${escapeAttr(buildHotelConsultText(h, petNames))}">変更・キャンセル相談をコピー</button>
             </div>
           </div>
@@ -840,6 +857,57 @@
 
       await copyText(text);
       showOk("相談メッセージをコピーしました。LINE公式のトークに貼り付けて送信できます。");
+    }
+
+    function getPhoneFromUrl(){
+      try{
+        const url = new URL(window.location.href);
+        return (url.searchParams.get("phone") || "").trim();
+      }catch(e){
+        return "";
+      }
+    }
+
+    function cacheKey(){
+      return `dpro_pet_salon_customer_cache_${CONFIG.SHOP_CODE}`;
+    }
+
+    function readCustomerCache(){
+      try{
+        const raw = localStorage.getItem(cacheKey());
+        if(!raw) return null;
+        const data = JSON.parse(raw);
+        if(!data || !data.customer) return null;
+        return data;
+      }catch(e){
+        console.warn(e);
+        return null;
+      }
+    }
+
+    function saveCustomerCache(data){
+      try{
+        const customer = data.customer || {};
+        const pets = Array.isArray(data.pets) ? data.pets : [];
+        if(!customer.owner_name && !customer.phone && pets.length === 0) return;
+        localStorage.setItem(cacheKey(), JSON.stringify({
+          saved_at: new Date().toISOString(),
+          source: "member",
+          profile: data.profile || {},
+          customer,
+          pets
+        }));
+      }catch(e){
+        console.warn(e);
+      }
+    }
+
+    function updateActionLinks(phone){
+      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18l` : `?v=18l`;
+      const reserveLink = $("reserveLink");
+      if(reserveLink) reserveLink.href = `./index.html${qs}`;
+      document.querySelectorAll('a[href^="./index.html"]').forEach(a => { a.href = `./index.html${qs}`; });
+      document.querySelectorAll('a[href^="./hotel.html"]').forEach(a => { a.href = `./hotel.html${qs}`; });
     }
 
     async function apiGet(path){
