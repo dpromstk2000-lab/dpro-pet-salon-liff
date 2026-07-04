@@ -1,4 +1,4 @@
-<!-- STEP PETSALON-19A: 多頭飼い会員証スマホ表示最適化・縦カード選択・横伸び防止 -->
+<!-- STEP PETSALON-19B: 多頭飼い会員証スマホ表示最適化・縦カード選択・横伸び防止 -->
 <!doctype html>
 <html lang="ja">
 <head>
@@ -573,16 +573,16 @@
         <div class="card-head">
           <div>
             <h2>会員情報を確認</h2>
-            <p class="lead">LINE内では自動確認、通常ブラウザでは電話番号で確認できます。</p>
+            <p class="lead">LINE内では本人確認して自動表示します。電話番号検索はデモ環境または店舗側確認用です。本番ではLINE公式メニューから開いてください。</p>
           </div>
         </div>
 
-        <label>電話番号で確認</label>
+        <label>電話番号で確認（デモ用）</label>
         <input id="phoneSearch" inputmode="tel" placeholder="例：090-0000-0000" />
 
         <div class="btns">
           <button class="btn" type="button" id="searchBtn">会員証を表示</button>
-          <a class="btn secondary" id="reserveLink" href="./index.html?v=18p">新しく予約する</a>
+          <a class="btn secondary" id="reserveLink" href="./index.html?v=19b">新しく予約する</a>
         </div>
 
         <div class="notice" style="margin-top:12px">
@@ -762,9 +762,9 @@
         </div>
       </div>
       <div class="link-grid">
-        <a class="btn" href="./index.html?v=18p">予約フォームを開く</a>
+        <a class="btn" href="./index.html?v=19b">予約フォームを開く</a>
         <a class="btn secondary" href="#reservationsBox">現在の予約を確認・変更する</a>
-        <a class="btn secondary" href="./hotel.html?v=18p">ペットホテル申込</a>
+        <a class="btn secondary" href="./hotel.html?v=19b">ペットホテル申込</a>
         <button class="btn secondary" type="button" id="copyConsultBtn">相談メッセージをコピー</button>
       </div>
       <div class="notice" style="margin-top:12px">
@@ -874,7 +874,7 @@
             $("customerState").textContent = "前回入力情報で確認中";
             await loadCustomer({ phone: cache.customer.phone });
           }else{
-            $("customerState").textContent = "電話番号で確認";
+            $("customerState").textContent = "電話番号で確認（デモ用）";
           }
         }
       }catch(e){
@@ -1085,7 +1085,7 @@
           <div class="visit-item" style="margin-top:8px"><b>次回おすすめ理由</b>${escapeHtml(latestVisit.next_recommend_reason || "前回来店からのお手入れ目安")}</div>
           ${latestVisit.next_recommend_date ? `<div class="next-date">次回おすすめ日：${escapeHtml(latestVisit.next_recommend_date)}</div>` : ""}
           <div class="same-menu-link">
-            <a class="btn small" href="./index.html?${phoneQs}v=18p${petQs}">この子で予約する</a>
+            <a class="btn small" href="./index.html?${phoneQs}v=19b${petQs}">この子で予約する</a>
             <button class="btn secondary small" type="button" data-copy-same-menu="${escapeAttr(p.pet_name || "")}" data-menu="${escapeAttr(latestVisit.menu_done || "")}" data-next="${escapeAttr(latestVisit.next_recommend_date || "")}">前回と同じ内容で相談コピー</button>
           </div>
         </div>
@@ -1118,8 +1118,8 @@
           <div class="memo">${memoLines.length ? escapeHtml(memoLines.join("\n")) : "メモはまだ登録されていません。"}</div>
 
           <div class="pet-action-row">
-            <a class="btn small" href="./index.html?${phoneQs}v=18p${petQs}">この子でサロン予約</a>
-            <a class="btn secondary small" href="./hotel.html?${phoneQs}v=18p${petQs}">この子でホテル申込</a>
+            <a class="btn small" href="./index.html?${phoneQs}v=19b${petQs}">この子でサロン予約</a>
+            <a class="btn secondary small" href="./hotel.html?${phoneQs}v=19b${petQs}">この子でホテル申込</a>
           </div>
 
           ${visitHtml}
@@ -1507,7 +1507,7 @@ function findReservationById(id){
             ${petDetails}
             ${noteLines.length ? `<div class="memo">${escapeHtml(noteLines.join("\n"))}</div>` : ""}
             <div class="btns">
-              <a class="btn secondary small" href="./hotel.html?${state.customer?.phone ? `phone=${encodeURIComponent(state.customer.phone)}&` : ""}v=18p">ホテル申込画面を開く</a>
+              <a class="btn secondary small" href="./hotel.html?${state.customer?.phone ? `phone=${encodeURIComponent(state.customer.phone)}&` : ""}v=19b">ホテル申込画面を開く</a>
               <button class="btn secondary small" type="button" data-copy-hotel="${escapeAttr(h.id || "")}" data-hotel-text="${escapeAttr(buildHotelConsultText(h, petNames))}">変更・キャンセル相談をコピー</button>
             </div>
           </div>
@@ -1686,7 +1686,7 @@ function buildHotelConsultText(h, petNames){
     }
 
     function updateActionLinks(phone){
-      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18p` : `?v=18p`;
+      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=19b` : `?v=19b`;
       const reserveLink = $("reserveLink");
       if(reserveLink) reserveLink.href = `./index.html${qs}`;
       document.querySelectorAll('a[href^="./index.html"]').forEach(a => { a.href = `./index.html${qs}`; });
