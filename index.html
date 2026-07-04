@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜STEP18L サロン予約</title>
+  <title>DPROペットサロン｜STEP18M サロン予約</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -365,6 +365,35 @@
       .btn{min-height:48px}
     }
 
+
+    .member-return-card{
+      margin-top:12px;
+      padding:14px;
+      border-radius:18px;
+      border:1px solid #d6e3f3;
+      background:linear-gradient(135deg,#f2f7ff,#fffdf9);
+      box-shadow:0 8px 22px rgba(49,95,143,.07);
+    }
+    .member-return-title{
+      font-weight:1000;
+      color:var(--blue);
+      margin-bottom:4px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .member-return-card p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+    }
+    .hero-member-link{
+      color:#fff!important;
+      text-decoration:none;
+      font-weight:900;
+    }
+
   </style>
 </head>
 <body>
@@ -378,17 +407,28 @@
           <span class="pill dark" id="apiState">API確認中</span>
           <span class="pill dark" id="lineState">LINE確認中</span>
           <span class="pill dark" id="openState">営業時間確認中</span>
+          <a class="pill dark hero-member-link" id="memberLinkTop" href="./member.html?v=18m">🐾 会員証を見る</a>
         </div>
       </div>
     </section>
 
     <div class="alert err" id="errorBox"></div>
     <div class="alert ok" id="okBox"></div>
+
+    <div class="member-return-card" id="memberReturnCard">
+      <div class="member-return-title">🐾 ペット会員証へ戻る</div>
+      <p>予約済みの方は、会員証で現在の予約・登録済みペット情報・ホテル申込状況を確認できます。</p>
+      <div class="btns">
+        <a class="btn blue" id="memberLinkAlways" href="./member.html?v=18m">ペット会員証を確認する</a>
+        <a class="btn secondary" href="./hotel.html?v=18k">ペットホテル申込へ</a>
+      </div>
+    </div>
+
     <div class="success-actions" id="successActions">
       <div class="success-title">✅ 予約希望を送信しました</div>
       <p>会員証で、登録済みペット情報・現在の予約・ホテル申込状況を確認できます。</p>
       <div class="btns">
-        <a class="btn" id="memberLinkAfterReservation" href="./member.html">ペット会員証で確認する</a>
+        <a class="btn" id="memberLinkAfterReservation" href="./member.html">ペット会員証で予約内容を確認する</a>
         <a class="btn secondary" id="newReservationAfterReservation" href="./index.html">続けて予約する</a>
       </div>
     </div>
@@ -492,7 +532,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18L index.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18M index.html
     </div>
   </div>
 
@@ -595,8 +635,8 @@
 
   <script>
     // =========================================================
-    // STEP PETSALON-18L
-    // index.html 気になること「特になし」・スマホ入力安全・会員証導線
+    // STEP PETSALON-18M
+    // index.html 会員証へ戻る導線を常時表示・予約完了後も明確化
     // =========================================================
 
     const CONFIG = {
@@ -635,7 +675,9 @@
       $("useRegisteredBtn").addEventListener("click", confirmRegisteredReuse);
       $("clearRegisteredBtn").addEventListener("click", clearRegisteredCustomer);
       $("goHotelBtn").addEventListener("click", goHotelWithRegisteredCustomer);
+      if($("phone")) $("phone").addEventListener("input", () => updateMemberLinks($("phone").value));
 
+      updateMemberLinks("");
       await initLiff();
       await boot();
     });
@@ -1194,13 +1236,28 @@
     }
 
 
+
+    function memberUrlWithPhone(phone){
+      const cleanPhone = String(phone || "").trim();
+      return cleanPhone ? `./member.html?phone=${encodeURIComponent(cleanPhone)}&v=18m` : `./member.html?v=18m`;
+    }
+
+    function updateMemberLinks(phone){
+      const href = memberUrlWithPhone(phone || ($("phone") ? $("phone").value : ""));
+      ["memberLinkTop", "memberLinkAlways", "memberLinkAfterReservation"].forEach(id => {
+        const el = $(id);
+        if(el) el.href = href;
+      });
+    }
+
     function renderReservationSuccessActions(body){
       const phone = (body && body.phone ? body.phone : $("phone").value || "").trim();
-      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18l` : `?v=18l`;
+      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18m` : `?v=18m`;
       const memberLink = $("memberLinkAfterReservation");
       const newLink = $("newReservationAfterReservation");
       if(memberLink) memberLink.href = `./member.html${qs}`;
       if(newLink) newLink.href = `./index.html${qs}`;
+      updateMemberLinks(phone);
       const success = $("successActions");
       if(success) success.classList.add("show");
     }
