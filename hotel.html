@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- STEP PETSALON-18J: ホテル申込後の現在申込表示・登録済み情報の使用中表示・会員証連携対応 -->
+<!-- STEP PETSALON-19E: ホテル定員・持ち物・確認事項表示強化 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <title>DPROペットサロン｜ペットホテル申込</title>
+  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-19E</title>
   <style>
     :root{
       --bg:#fbf6ef;
@@ -282,9 +282,10 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-19B / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-19E / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
       <p class="lead">ホテル申込専用の画面です。申込後は、この画面とペット会員証で現在のお預かり予定を確認できます。同じペットで期間が重なるホテル申込はできません。</p>
+      <div class="notice" style="margin-top:12px"><b>ホテルは定員があります</b><br>ご希望日が定員に達している場合は、別日をご案内します。当日は普段のごはん・必要なお薬・リード・ワクチン証明書などをご持参ください。</div>
       <div class="chips">
         <span class="chip" id="apiState">API確認中</span>
         <span class="chip" id="lineState">LINE確認中</span>
@@ -458,7 +459,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18J hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-19E hotel.html</div>
   </div>
 
   <div class="bottom">
