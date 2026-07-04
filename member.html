@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜ペット会員証・予約・ホテル申込確認</title>
+  <title>DPROペットサロン｜ペット会員証・予約変更・ホテル申込確認</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -105,7 +105,7 @@
       font-size:13px;
       margin:12px 0 6px;
     }
-    input{
+    input,select,textarea{
       width:100%;
       border:1px solid #ddd2c9;
       background:#fff;
@@ -114,7 +114,7 @@
       outline:none;
       color:var(--ink);
     }
-    input:focus{
+    input:focus,select:focus,textarea:focus{
       border-color:var(--main2);
       box-shadow:0 0 0 4px rgba(185,128,85,.13);
     }
@@ -381,6 +381,35 @@
       font-size:11px;
       margin-top:18px;
     }
+
+    textarea{min-height:92px;resize:vertical}
+    select{appearance:auto}
+    .policy-box{
+      background:#fff7e8;
+      border:1px solid #efd4a9;
+      color:#72502f;
+      border-radius:16px;
+      padding:12px;
+      font-size:13px;
+      margin-top:10px;
+    }
+    .change-panel{
+      border:2px solid rgba(138,90,60,.22);
+      background:linear-gradient(135deg,#fff8f0,#fff);
+      border-radius:20px;
+      padding:14px;
+      margin-top:14px;
+    }
+    .change-panel h3{margin:0 0 8px;font-size:17px;color:var(--main)}
+    .change-grid{display:grid;gap:10px;margin-top:10px}
+    @media(min-width:720px){.change-grid{grid-template-columns:1fr 1fr}}
+    .mode-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .mode-tabs .btn.active{background:var(--main);color:#fff;border-color:var(--main)}
+    .form-row{margin-top:10px}
+    .form-help{font-size:12px;color:var(--muted);margin-top:5px}
+    .danger-text{color:var(--danger);font-weight:800}
+    .reservation-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .requesting{opacity:.65;pointer-events:none}
     .hidden{display:none!important}
   </style>
 </head>
@@ -390,7 +419,7 @@
       <div class="hero-content">
         <span class="badge">🐾 ペット会員証</span>
         <h1 id="shopName">DPROペットサロン</h1>
-        <p>ペット情報・予約内容をLINEから確認できます。次回予約もスムーズにできます。</p>
+        <p>ペット情報・予約内容をLINEから確認できます。次回予約・予約変更・キャンセル希望もスムーズにできます。</p>
         <div class="status">
           <span class="pill dark" id="apiState">API確認中</span>
           <span class="pill dark" id="lineState">LINE確認中</span>
@@ -416,7 +445,7 @@
 
         <div class="btns">
           <button class="btn" type="button" id="searchBtn">会員証を表示</button>
-          <a class="btn secondary" id="reserveLink" href="./index.html?v=18m">新しく予約する</a>
+          <a class="btn secondary" id="reserveLink" href="./index.html?v=18n">新しく予約する</a>
         </div>
 
         <div class="notice" style="margin-top:12px">
@@ -453,11 +482,61 @@
       <div class="card-head">
         <div>
           <h2>現在の予約</h2>
-          <p class="lead">予約希望・確定済みの内容を確認できます。</p>
+          <p class="lead">予約希望・確定済みの内容を確認し、変更希望・キャンセル希望を送れます。</p>
         </div>
       </div>
       <div id="reservationsBox">
         <div class="empty">現在の予約はまだ表示されていません。</div>
+      </div>
+
+      <div class="policy-box">
+        予約変更・キャンセル希望は、前日18時まで会員証から送信できます。
+当日の変更・キャンセルは、LINEまたはお電話で直接ご相談ください。
+※この画面からの変更は「希望受付」です。サロン確認後に確定します。
+      </div>
+
+      <div id="reservationActionPanel" class="change-panel hidden">
+        <h3 id="actionPanelTitle">予約変更・キャンセル希望</h3>
+        <div id="actionPanelSummary" class="notice"></div>
+
+        <div class="mode-tabs">
+          <button class="btn secondary small" type="button" id="changeModeBtn">日時変更希望</button>
+          <button class="btn secondary small" type="button" id="cancelModeBtn">キャンセル希望</button>
+          <button class="btn secondary small" type="button" id="closeActionPanelBtn">閉じる</button>
+        </div>
+
+        <div id="changeFormBox">
+          <div class="change-grid">
+            <div>
+              <label>変更希望日</label>
+              <select id="changeDateSelect"></select>
+              <div class="form-help">空きのある営業日から選択してください。</div>
+            </div>
+            <div>
+              <label>変更希望時間</label>
+              <select id="changeTimeSelect"></select>
+              <div class="form-help">選択した日付の空き時間だけ表示します。</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>変更理由・希望メモ</label>
+            <textarea id="changeReason" placeholder="例：予定が入ったため、午後に変更希望です。"></textarea>
+          </div>
+          <div class="btns">
+            <button class="btn" type="button" id="sendChangeBtn">変更希望を送信する</button>
+          </div>
+        </div>
+
+        <div id="cancelFormBox" class="hidden">
+          <div class="form-row">
+            <label>キャンセル理由・連絡事項</label>
+            <textarea id="cancelReason" placeholder="例：予定が合わなくなったためキャンセル希望です。"></textarea>
+          </div>
+          <div class="btns">
+            <button class="btn blue" type="button" id="sendCancelBtn">キャンセル希望を送信する</button>
+          </div>
+          <div class="form-help danger-text">送信後、予約はキャンセル希望としてサロンへ共有されます。</div>
+        </div>
       </div>
     </section>
 
@@ -481,25 +560,25 @@
         </div>
       </div>
       <div class="link-grid">
-        <a class="btn" href="./index.html?v=18m">予約フォームを開く</a>
-        <a class="btn secondary" href="./manage.html">予約変更・キャンセル</a>
-        <a class="btn secondary" href="./hotel.html?v=18m">ペットホテル申込</a>
+        <a class="btn" href="./index.html?v=18n">予約フォームを開く</a>
+        <a class="btn secondary" href="#reservationsBox">現在の予約を確認・変更する</a>
+        <a class="btn secondary" href="./hotel.html?v=18n">ペットホテル申込</a>
         <button class="btn secondary" type="button" id="copyConsultBtn">相談メッセージをコピー</button>
       </div>
       <div class="notice" style="margin-top:12px">
-        予約・変更・キャンセル・ホテル申込まで、LINEから確認できます。ホテル申込は仮受付で、サロン確認後に確定します。
+        予約確認・変更希望・キャンセル希望・ホテル申込まで、LINEから確認できます。変更は自動確定ではなく、サロン確認後に確定します。
       </div>
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18M member.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18N member.html
     </div>
   </div>
 
   <script>
     // =========================================================
-    // STEP PETSALON-18M
-    // member.html 予約完了後の電話番号URL自動表示に対応
+    // STEP PETSALON-18N
+    // member.html 会員証から予約変更希望・キャンセル希望を送信できる導線を追加
     // =========================================================
 
     const CONFIG = {
@@ -520,7 +599,9 @@
       pets: [],
       reservations: [],
       activeHotels: [],
-      latestVisitByPet: {}
+      latestVisitByPet: {},
+      selectedReservation: null,
+      actionMode: "change"
     };
 
     const $ = (id) => document.getElementById(id);
@@ -528,6 +609,12 @@
     document.addEventListener("DOMContentLoaded", async () => {
       $("searchBtn").addEventListener("click", searchByPhone);
       $("copyConsultBtn").addEventListener("click", copyConsultMessage);
+      $("changeModeBtn").addEventListener("click", () => setActionMode("change"));
+      $("cancelModeBtn").addEventListener("click", () => setActionMode("cancel"));
+      $("closeActionPanelBtn").addEventListener("click", closeReservationActionPanel);
+      $("changeDateSelect").addEventListener("change", () => loadAvailableTimesForSelectedDate());
+      $("sendChangeBtn").addEventListener("click", sendReservationChangeRequest);
+      $("sendCancelBtn").addEventListener("click", sendReservationCancelRequest);
 
       await initLiff();
       await boot();
@@ -648,6 +735,7 @@
       $("petsBox").innerHTML = `<div class="empty">ペット情報はありません。</div>`;
       $("reservationsBox").innerHTML = `<div class="empty">現在の予約はありません。</div>`;
       if($("hotelsBox")) $("hotelsBox").innerHTML = `<div class="empty">現在のホテル申込はありません。</div>`;
+      closeReservationActionPanel();
     }
 
     function renderCustomer(){
@@ -694,7 +782,7 @@
             <div class="visit-item" style="margin-top:8px"><b>次回おすすめ理由</b>${escapeHtml(latestVisit.next_recommend_reason || "前回来店からのお手入れ目安")}</div>
             ${latestVisit.next_recommend_date ? `<div class="next-date">次回おすすめ日：${escapeHtml(latestVisit.next_recommend_date)}</div>` : ""}
             <div class="same-menu-link">
-              <a class="btn small" href="./index.html?v=18m">前回内容を参考に予約する</a>
+              <a class="btn small" href="./index.html?v=18n">前回内容を参考に予約する</a>
               <button class="btn secondary small" type="button" data-copy-same-menu="${escapeHtml(p.pet_name || "")}" data-menu="${escapeHtml(latestVisit.menu_done || "")}" data-next="${escapeHtml(latestVisit.next_recommend_date || "")}">前回と同じ内容で相談コピー</button>
             </div>
           </div>
@@ -754,15 +842,20 @@
     }
 
     function renderReservations(){
-      if(!state.reservations.length){
+      const active = (state.reservations || []).filter(r => ["requested","confirmed","visited"].includes(r.status || "requested"));
+      if(!active.length){
         $("reservationsBox").innerHTML = `<div class="empty">現在の予約はありません。次回予約は予約フォームからできます。</div>`;
+        closeReservationActionPanel();
         return;
       }
 
-      $("reservationsBox").innerHTML = state.reservations.map(r => {
+      $("reservationsBox").innerHTML = active.map(r => {
         const pet = state.pets.find(p => p.id === r.pet_id) || {};
+        const canRequest = canSelfChangeOrCancel(r);
+        const consultText = buildReservationConsultText(r, pet);
+        const reason = changeLimitReason(r);
         return `
-          <div class="reservation">
+          <div class="reservation" data-reservation-card="${escapeAttr(r.id || "")}">
             <div class="reservation-top">
               <div>
                 <div class="date">${escapeHtml(r.reservation_date || "")} ${escapeHtml(hm(r.reservation_time))}</div>
@@ -771,9 +864,268 @@
               <span class="status-label ${escapeHtml(r.status || "")}">${reservationStatusLabel(r.status)}</span>
             </div>
             ${r.request_note ? `<div class="memo">${escapeHtml(r.request_note)}</div>` : ""}
+            <div class="reservation-actions">
+              ${canRequest ? `<button class="btn secondary small" type="button" data-change-rid="${escapeAttr(r.id || "")}">予約日時を変更したい</button>` : ""}
+              ${canRequest ? `<button class="btn secondary small" type="button" data-cancel-rid="${escapeAttr(r.id || "")}">キャンセルしたい</button>` : ""}
+              <button class="btn secondary small" type="button" data-copy-reservation="${escapeAttr(r.id || "")}" data-reservation-text="${escapeAttr(consultText)}">LINE相談文をコピー</button>
+            </div>
+            ${!canRequest ? `<div class="notice" style="margin-top:10px">${escapeHtml(reason)}<br>LINE相談文をコピーして、サロンへ直接ご相談ください。</div>` : `<div class="form-help">変更・キャンセルは希望受付です。サロン確認後に確定します。</div>`}
           </div>
         `;
       }).join("");
+
+      document.querySelectorAll("[data-change-rid]").forEach(btn => {
+        btn.addEventListener("click", () => openReservationActionPanel(btn.dataset.changeRid, "change"));
+      });
+      document.querySelectorAll("[data-cancel-rid]").forEach(btn => {
+        btn.addEventListener("click", () => openReservationActionPanel(btn.dataset.cancelRid, "cancel"));
+      });
+      document.querySelectorAll("[data-copy-reservation]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          await copyText(btn.dataset.reservationText || "");
+          showOk("予約相談メッセージをコピーしました。LINE公式のトークに貼り付けて送信できます。");
+        });
+      });
+    }
+
+    function findReservationById(id){
+      return (state.reservations || []).find(r => String(r.id) === String(id)) || null;
+    }
+
+    async function openReservationActionPanel(reservationId, mode){
+      const r = findReservationById(reservationId);
+      if(!r){
+        showError("対象の予約が見つかりませんでした。会員証を再読み込みしてください。");
+        return;
+      }
+      if(!canSelfChangeOrCancel(r)){
+        showError(changeLimitReason(r));
+        return;
+      }
+
+      state.selectedReservation = r;
+      const pet = state.pets.find(p => p.id === r.pet_id) || {};
+      $("actionPanelSummary").innerHTML = `
+        <b>${escapeHtml(pet.pet_name || "ペット")}ちゃん / ${escapeHtml(r.service_name || "")}</b><br>
+        現在の予約：${escapeHtml(r.reservation_date || "")} ${escapeHtml(hm(r.reservation_time))}<br>
+        この画面から送る内容は「希望受付」です。サロン確認後に確定します。
+      `;
+      $("reservationActionPanel").classList.remove("hidden");
+      setActionMode(mode || "change");
+
+      document.getElementById("reservationActionPanel").scrollIntoView({ behavior:"smooth", block:"start" });
+
+      if(mode !== "cancel"){
+        await loadAvailableDaysForChange();
+      }
+    }
+
+    function closeReservationActionPanel(){
+      state.selectedReservation = null;
+      const panel = $("reservationActionPanel");
+      if(panel) panel.classList.add("hidden");
+    }
+
+    function setActionMode(mode){
+      state.actionMode = mode;
+      const isChange = mode === "change";
+      $("changeFormBox").classList.toggle("hidden", !isChange);
+      $("cancelFormBox").classList.toggle("hidden", isChange);
+      $("changeModeBtn").classList.toggle("active", isChange);
+      $("cancelModeBtn").classList.toggle("active", !isChange);
+      $("actionPanelTitle").textContent = isChange ? "予約日時の変更希望" : "予約キャンセル希望";
+      if(isChange && state.selectedReservation){
+        loadAvailableDaysForChange();
+      }
+    }
+
+    async function loadAvailableDaysForChange(){
+      const r = state.selectedReservation;
+      if(!r) return;
+      const dateSelect = $("changeDateSelect");
+      const timeSelect = $("changeTimeSelect");
+      dateSelect.innerHTML = `<option value="">読み込み中...</option>`;
+      timeSelect.innerHTML = `<option value="">日付を選択してください</option>`;
+
+      try{
+        const today = todayJst();
+        const res = await apiGet(`/api/public/available-days?from=${encodeURIComponent(today)}&days=60`);
+        const days = (res.days || []).filter(d => {
+          if(d.date < today) return false;
+          if(d.is_closed) return false;
+          return d.can_reserve || d.date === r.reservation_date || Number(d.remaining || 0) > 0;
+        });
+
+        if(!days.length){
+          dateSelect.innerHTML = `<option value="">選べる日がありません</option>`;
+          timeSelect.innerHTML = `<option value="">選べる時間がありません</option>`;
+          return;
+        }
+
+        dateSelect.innerHTML = `<option value="">変更希望日を選択</option>` + days.map(d => {
+          const label = `${d.date}（${d.weekday_label || ""}）${d.remaining !== undefined ? ` 残り${d.remaining}` : ""}`;
+          const selected = d.date === r.reservation_date ? "selected" : "";
+          return `<option value="${escapeAttr(d.date)}" ${selected}>${escapeHtml(label)}</option>`;
+        }).join("");
+
+        if(dateSelect.value){
+          await loadAvailableTimesForSelectedDate();
+        }
+      }catch(e){
+        console.error(e);
+        dateSelect.innerHTML = `<option value="">日付取得エラー</option>`;
+        showError(e.message || "空き日の取得に失敗しました。");
+      }
+    }
+
+    async function loadAvailableTimesForSelectedDate(){
+      const r = state.selectedReservation;
+      if(!r) return;
+      const date = $("changeDateSelect").value;
+      const timeSelect = $("changeTimeSelect");
+      if(!date){
+        timeSelect.innerHTML = `<option value="">先に日付を選択してください</option>`;
+        return;
+      }
+      timeSelect.innerHTML = `<option value="">読み込み中...</option>`;
+      try{
+        const res = await apiGet(`/api/public/available-times?date=${encodeURIComponent(date)}`);
+        const currentTime = hm(r.reservation_time);
+        const times = (res.times || []).filter(t => t.can_reserve || (date === r.reservation_date && t.time === currentTime));
+        if(!times.length){
+          timeSelect.innerHTML = `<option value="">選べる時間がありません</option>`;
+          return;
+        }
+        timeSelect.innerHTML = `<option value="">変更希望時間を選択</option>` + times.map(t => {
+          const selected = (date === r.reservation_date && t.time === currentTime) ? "selected" : "";
+          const label = `${t.time}${t.remaining !== undefined ? ` 残り${t.remaining}` : ""}`;
+          return `<option value="${escapeAttr(t.time)}" ${selected}>${escapeHtml(label)}</option>`;
+        }).join("");
+      }catch(e){
+        console.error(e);
+        timeSelect.innerHTML = `<option value="">時間取得エラー</option>`;
+        showError(e.message || "空き時間の取得に失敗しました。");
+      }
+    }
+
+    async function sendReservationChangeRequest(){
+      const r = state.selectedReservation;
+      if(!r){ showError("変更する予約を選択してください。"); return; }
+      if(!canSelfChangeOrCancel(r)){ showError(changeLimitReason(r)); return; }
+
+      const newDate = $("changeDateSelect").value;
+      const newTime = $("changeTimeSelect").value;
+      const reason = $("changeReason").value.trim();
+      if(!newDate || !newTime){
+        showError("変更希望日と時間を選択してください。");
+        return;
+      }
+
+      await withButtonLock("sendChangeBtn", async () => {
+        const payload = {
+          reservation_id: r.id,
+          new_reservation_date: newDate,
+          new_reservation_time: newTime,
+          reason,
+          phone: state.customer?.phone || "",
+          line_user_id: state.profile.line_user_id || ""
+        };
+        await apiPost("/api/reservations/change", payload);
+        showOk("予約変更希望を送信しました。サロン確認後に確定します。");
+        closeReservationActionPanel();
+        await reloadCurrentCustomer();
+      });
+    }
+
+    async function sendReservationCancelRequest(){
+      const r = state.selectedReservation;
+      if(!r){ showError("キャンセルする予約を選択してください。"); return; }
+      if(!canSelfChangeOrCancel(r)){ showError(changeLimitReason(r)); return; }
+
+      const reason = $("cancelReason").value.trim();
+      await withButtonLock("sendCancelBtn", async () => {
+        const payload = {
+          reservation_id: r.id,
+          reason,
+          phone: state.customer?.phone || "",
+          line_user_id: state.profile.line_user_id || ""
+        };
+        await apiPost("/api/reservations/cancel", payload);
+        showOk("キャンセル希望を送信しました。必要に応じてサロンからLINEまたはお電話でご連絡します。");
+        closeReservationActionPanel();
+        await reloadCurrentCustomer();
+      });
+    }
+
+    async function reloadCurrentCustomer(){
+      if(state.profile.line_user_id){
+        await loadCustomer({ line_user_id: state.profile.line_user_id });
+      }else if(state.customer && state.customer.phone){
+        await loadCustomer({ phone: state.customer.phone });
+      }else{
+        await searchByPhone();
+      }
+    }
+
+    async function withButtonLock(buttonId, fn){
+      const btn = $(buttonId);
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "送信中...";
+      try{
+        await fn();
+      }catch(e){
+        console.error(e);
+        showError(e.message || "送信に失敗しました。");
+      }finally{
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+
+    function canSelfChangeOrCancel(r){
+      if(!r || !r.reservation_date) return false;
+      if(!["requested","confirmed","visited"].includes(r.status || "requested")) return false;
+      return new Date() <= changeCancelDeadline(r.reservation_date);
+    }
+
+    function changeLimitReason(r){
+      if(!r || !r.reservation_date) return "この予約は変更・キャンセル希望を送信できません。";
+      if(!["requested","confirmed","visited"].includes(r.status || "requested")) return "この予約は変更・キャンセルできない状態です。";
+      return `会員証からの変更・キャンセル希望は、予約日前日の18:00までです。現在は受付時間を過ぎているため、LINEまたはお電話でご相談ください。`;
+    }
+
+    function changeCancelDeadline(dateStr){
+      const prev = addDaysLocal(dateStr, -1);
+      return new Date(`${prev}T18:00:00+09:00`);
+    }
+
+    function todayJst(){
+      const fmt = new Intl.DateTimeFormat("sv-SE", { timeZone:"Asia/Tokyo", year:"numeric", month:"2-digit", day:"2-digit" });
+      return fmt.format(new Date());
+    }
+
+    function addDaysLocal(dateStr, days){
+      const [yy, mm, dd] = String(dateStr || "").split("-").map(Number);
+      if(!yy || !mm || !dd) return dateStr;
+      const d = new Date(Date.UTC(yy, mm - 1, dd + Number(days || 0)));
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2,"0");
+      const day = String(d.getUTCDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function buildReservationConsultText(r, pet){
+      return [
+        "予約について相談したいです。",
+        "",
+        `ペット名：${pet.pet_name || "ペット"}`,
+        `予約日時：${r.reservation_date || ""} ${hm(r.reservation_time)}`,
+        `メニュー：${r.service_name || ""}`,
+        `状態：${reservationStatusLabel(r.status)}`,
+        "",
+        "相談内容："
+      ].join("\n");
     }
 
     function renderHotels(){
@@ -803,7 +1155,7 @@
             </div>
             ${noteLines.length ? `<div class="memo">${escapeHtml(noteLines.join("\n"))}</div>` : ""}
             <div class="btns">
-              <a class="btn secondary small" href="./hotel.html?v=18m">ホテル申込画面を開く</a>
+              <a class="btn secondary small" href="./hotel.html?v=18n">ホテル申込画面を開く</a>
               <button class="btn secondary small" type="button" data-copy-hotel="${escapeHtml(h.id || "")}" data-hotel-text="${escapeAttr(buildHotelConsultText(h, petNames))}">変更・キャンセル相談をコピー</button>
             </div>
           </div>
@@ -903,7 +1255,7 @@
     }
 
     function updateActionLinks(phone){
-      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18m` : `?v=18m`;
+      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18n` : `?v=18n`;
       const reserveLink = $("reserveLink");
       if(reserveLink) reserveLink.href = `./index.html${qs}`;
       document.querySelectorAll('a[href^="./index.html"]').forEach(a => { a.href = `./index.html${qs}`; });
@@ -916,9 +1268,32 @@
       const res = await fetch(url);
       const json = await res.json().catch(() => null);
       if(!res.ok || !json || json.ok === false){
-        throw new Error(json && json.error ? json.error : `APIエラー ${res.status}`);
+        throw new Error(json && errorMessageFromApi(json) ? errorMessageFromApi(json) : `APIエラー ${res.status}`);
       }
       return json;
+    }
+
+
+    async function apiPost(path, payload){
+      const url = `${CONFIG.WORKER_BASE_URL}${path}`;
+      const body = {
+        shop_code: CONFIG.SHOP_CODE,
+        ...(payload || {})
+      };
+      const res = await fetch(url, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json().catch(() => null);
+      if(!res.ok || !json || json.ok === false){
+        throw new Error(json && errorMessageFromApi(json) ? errorMessageFromApi(json) : `APIエラー ${res.status}`);
+      }
+      return json;
+    }
+
+    function errorMessageFromApi(json){
+      return json.detail || json.error || json.message || "";
     }
 
     function showError(msg){
