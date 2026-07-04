@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-18Q: オーナー管理画面の予約確定リアクション強化 -->
+<!-- STEP PETSALON-19A: 本番運用・営業デモ統合ブラッシュアップ -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-18Q</title>
+  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19A</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -844,6 +844,13 @@
       font-size:12px;
       font-weight:900;
     }
+    .copy-helper-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .copy-helper-row .btn{min-height:34px}
+    .editable-line-message{
+      width:100%;min-height:132px;border:1px solid var(--line);border-radius:16px;
+      background:#fffaf7;padding:12px;resize:vertical;white-space:pre-wrap;
+    }
+    .ops-note{font-size:12px;color:var(--muted);font-weight:800;margin-top:8px}
     @keyframes successFlash{
       0%{transform:scale(1);background:#fff}
       35%{transform:scale(1.01);background:#eefaf3}
@@ -873,9 +880,9 @@
       </div>
 
       <div class="kpis">
-        <div class="kpi"><b id="kpiToday">-</b><span>本日の予約</span></div>
-        <div class="kpi"><b id="kpiNext">-</b><span>次営業日の予約</span></div>
-        <div class="kpi"><b id="kpiFollow">-</b><span>本日の案内</span></div>
+        <div class="kpi"><b id="kpiToday">-</b><span>本日の確定予約</span></div>
+        <div class="kpi"><b id="kpiNext">-</b><span>新着予約希望</span></div>
+        <div class="kpi"><b id="kpiFollow">-</b><span>未送信LINE</span></div>
       </div>
 
       <div class="tabs">
@@ -919,20 +926,30 @@
         <div class="card">
           <div class="card-head">
             <div>
-              <h2>今日やること</h2>
-              <p class="lead">朝にここだけ見れば、今日の予約・ホテル・LINE案内・未確認申込がわかります。</p>
+              <h2>今日やること（未対応タスク）</h2>
+              <p class="lead">予約希望・変更/キャンセル希望・ホテル申込・LINE送信待ちだけを表示します。確定済み予約は下の一覧へ移動します。</p>
             </div>
             <button class="btn secondary small" type="button" id="refreshTodayTasksBtn">今日やること更新</button>
           </div>
           <div id="todayTasksBox"></div>
         </div>
 
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>新着予約希望・確認待ち</h2>
+              <p class="lead" id="pendingLabel">お客様から入った予約希望です。確認して問題なければ「予約確定」を押します。</p>
+            </div>
+          </div>
+          <div id="pendingReservations"></div>
+        </div>
+
         <div class="grid sidebar">
           <div class="card">
             <div class="card-head">
               <div>
-                <h2>本日の予約</h2>
-                <p class="lead" id="todayLabel">今日の予約を表示します。</p>
+                <h2>本日の確定予約</h2>
+                <p class="lead" id="todayLabel">今日来店する確定済み予約だけを表示します。</p>
               </div>
               <button class="btn secondary small" type="button" onclick="loadSummary()">更新</button>
             </div>
@@ -1820,17 +1837,20 @@
 
         const todayReservations = res.today_reservations || [];
         const nextReservations = res.next_business_reservations || [];
-        const todayActive = todayReservations.filter(isActiveReservation);
+        const pendingReservations = res.pending_reservations || [];
+        const todayConfirmed = todayReservations.filter(isConfirmedReservation);
         const nextActive = nextReservations.filter(isActiveReservation);
 
-        $("kpiToday").textContent = todayActive.length;
-        $("kpiNext").textContent = nextActive.length;
+        $("kpiToday").textContent = todayConfirmed.length;
+        $("kpiNext").textContent = pendingReservations.length;
         $("kpiFollow").textContent = res.counts?.pending_followups ?? 0;
 
-        $("todayLabel").textContent = `対象日：${res.today} / 未完了 ${todayActive.length}件`;
-        $("nextDayLabel").textContent = `対象日：${res.next_business_date} / 未完了 ${nextActive.length}件`;
+        $("todayLabel").textContent = `対象日：${res.today} / 確定済み ${todayConfirmed.length}件`;
+        $("pendingLabel").textContent = `新着予約希望・確認待ち ${pendingReservations.length}件`;
+        $("nextDayLabel").textContent = `対象日：${res.next_business_date} / 予約 ${nextActive.length}件`;
 
-        renderReservations("todayReservations", todayReservations);
+        renderReservations("pendingReservations", pendingReservations);
+        renderReservations("todayReservations", todayConfirmed);
         renderReservations("nextReservations", nextReservations);
         renderFollowups("pendingFollowups", res.pending_followups || [], true);
         renderTodayTasks();
@@ -1847,7 +1867,8 @@
 
       const summary = state.summary || {};
       const today = summary.today || todayYmd();
-      const todayReservations = (summary.today_reservations || []).filter(isActiveReservation);
+      const todayReservations = (summary.today_reservations || []).filter(isConfirmedReservation);
+      const pendingReservations = summary.pending_reservations || [];
       const pendingFollowups = summary.pending_followups || [];
       const hotels = state.hotelApplications || [];
 
@@ -1861,13 +1882,23 @@
 
       const tasks = [
         {
-          title: "本日の予約",
+          title: "新着予約希望",
+          count: pendingReservations.length,
+          sub: pendingReservations.length
+            ? "内容を確認し、問題なければ予約確定を押してください。"
+            : "新着の予約希望はありません。",
+          tab: "dashboard",
+          label: "確認待ちを見る",
+          tone: pendingReservations.length ? "urgent" : "good"
+        },
+        {
+          title: "本日の確定予約",
           count: todayReservations.length,
           sub: todayReservations.length
             ? `次の予約：${nextReservation ? hm(nextReservation.reservation_time) + " " + ((nextReservation.pet || {}).pet_name || "ペット") + "ちゃん" : "確認してください"}`
-            : "本日の未完了予約はありません。",
+            : "本日の確定予約はありません。",
           tab: "dashboard",
-          label: "予約を見る",
+          label: "確定予約を見る",
           tone: todayReservations.length ? "" : "good"
         },
         {
@@ -2636,6 +2667,7 @@
         : "";
 
       el.innerHTML = activeHtml + historyHtml;
+      bindCopyButtons(el);
 
       el.querySelectorAll("[data-action]").forEach(btn => {
         btn.addEventListener("click", async () => {
@@ -2656,6 +2688,10 @@
 
     function isActiveReservation(r){
       return ["requested", "confirmed", "visited"].includes(r.status || "requested");
+    }
+
+    function isConfirmedReservation(r){
+      return ["confirmed", "visited"].includes(r.status || "requested");
     }
 
     function isHistoryReservation(r){
@@ -2717,6 +2753,13 @@
             <div class="info"><b>皮膚・健康</b>${escapeHtml([p.skin_condition, p.health_notes].filter(Boolean).join(" / ") || "未入力")}</div>
           </div>
 
+          <div class="copy-helper-row">
+            <button class="btn secondary small" type="button" data-copy-direct="${escapeAttr(c.line_display_name || c.owner_name || '')}">LINE名をコピー</button>
+            <button class="btn secondary small" type="button" data-copy-direct="${escapeAttr(c.owner_name || '')}">飼い主名をコピー</button>
+            <button class="btn secondary small" type="button" data-copy-direct="${escapeAttr(c.phone || '')}">電話番号をコピー</button>
+          </div>
+          <div class="ops-note">LINE公式アカウントのチャット検索でLINE名または飼い主名を検索し、文面を貼り付けて送信します。</div>
+
           ${requestNote ? `<div class="message-box">${escapeHtml(requestNote)}</div>` : ""}
           ${status === "confirmed" ? `<div class="confirmed-inline-note">✅ この予約は確定済みです。必要に応じてLINE確定連絡をコピーして送信してください。</div>` : ""}
 
@@ -2744,13 +2787,14 @@
       }
 
       el.innerHTML = followups.map(f => followupCard(f, compact)).join("");
+      bindCopyButtons(el);
 
       el.querySelectorAll("[data-follow-action]").forEach(btn => {
         btn.addEventListener("click", async () => {
           const id = btn.dataset.id;
           const action = btn.dataset.followAction;
           const card = btn.closest(".follow-card");
-          const message = card.querySelector(".message-box")?.innerText || "";
+          const message = card.querySelector("textarea.editable-line-message")?.value || card.querySelector(".message-box")?.innerText || "";
 
           if(action === "copy"){
             await copyText(message);
@@ -2779,7 +2823,13 @@
             <span class="status ${escapeHtml(f.status || "pending")}">${followStatusLabel(f.status)}</span>
           </div>
 
-          <div class="message-box">${escapeHtml(f.message_body || "")}</div>
+          <div class="copy-helper-row">
+            <button class="btn secondary small" type="button" data-copy-direct="${escapeAttr(c.line_display_name || c.owner_name || '')}">LINE名をコピー</button>
+            <button class="btn secondary small" type="button" data-copy-direct="${escapeAttr(c.owner_name || '')}">飼い主名をコピー</button>
+            <button class="btn secondary small" type="button" data-copy-direct="${escapeAttr(c.phone || '')}">電話番号をコピー</button>
+          </div>
+          <label style="display:block;margin-top:10px;font-weight:1000">LINE送信用文面（編集できます）</label>
+          <textarea class="editable-line-message">${escapeHtml(f.message_body || "")}</textarea>
 
           <div class="btns">
             <button class="btn small" data-follow-action="copy" data-id="${escapeHtml(f.id)}">文面コピー</button>
@@ -2860,7 +2910,9 @@
           ["ペット", `${petName}ちゃん`],
           ["予約日時", `${date} ${time}`.trim()],
           ["メニュー", service],
-          ["次の操作", "LINE確定連絡を送る / 今日の予約を確認"],
+          ["LINE名", c.line_display_name || "未取得"],
+          ["検索補助", "LINE名または飼い主名をコピーしてLINE公式チャットで検索"],
+          ["次の操作", "文面編集 → コピー → LINE公式チャットで送信 → 送信済みにする"],
           ["状態", "予約確定済み"]
         ],
         copyMessage: message,
@@ -2892,13 +2944,14 @@
         ` : ""}
         ${copyMessage ? `
           <div class="action-feedback-copy">
-            <b>お客様へ送る文面</b>
-            <div class="message-box">${escapeHtml(copyMessage)}</div>
+            <b>お客様へ送る文面（必要に応じて編集できます）</b>
+            <textarea class="editable-line-message" id="actionFeedbackMessageInput">${escapeHtml(copyMessage)}</textarea>
             <div class="btns">
-              <button type="button" class="btn small" id="actionFeedbackCopyBtn" data-copy-message="${escapeAttr(copyMessage)}">${escapeHtml(copyLabel)}</button>
+              <button type="button" class="btn small" id="actionFeedbackCopyBtn">${escapeHtml(copyLabel)}</button>
+              <button type="button" class="btn ok small" id="actionFeedbackSentBtn">送信済みにする</button>
               <button type="button" class="btn secondary small" id="actionFeedbackHideBtn">閉じる</button>
             </div>
-            <div class="copy-note">コピー後、LINE公式アカウントのチャットに貼り付けて送信してください。</div>
+            <div class="copy-note">LINE名・飼い主名でLINE公式アカウントのチャットを検索し、文面を貼り付けて送信してください。</div>
           </div>
         ` : ""}
       `;
@@ -2912,9 +2965,18 @@
       const copy = $("actionFeedbackCopyBtn");
       if(copy){
         copy.addEventListener("click", async () => {
-          await copyText(copy.dataset.copyMessage || "");
+          const input = $("actionFeedbackMessageInput");
+          await copyText(input ? input.value : "");
           copy.textContent = "コピーしました";
-          showOk("LINE確定連絡をコピーしました。LINE公式のチャット欄へ貼り付けて送信できます。");
+          showOk("LINE文面をコピーしました。LINE公式のチャット欄へ貼り付けて送信できます。");
+        });
+      }
+      const sent = $("actionFeedbackSentBtn");
+      if(sent){
+        sent.addEventListener("click", () => {
+          sent.disabled = true;
+          sent.textContent = "送信済み";
+          showOk("送信済みにしました。今日やることからはLINE未送信タスクを外す運用です。");
         });
       }
     }
@@ -3193,6 +3255,19 @@
       el.textContent = msg;
       el.classList.add("show");
       $("errorBox").classList.remove("show");
+    }
+
+    function bindCopyButtons(root = document){
+      root.querySelectorAll("[data-copy-direct]").forEach(btn => {
+        if(btn.dataset.boundCopy === "1") return;
+        btn.dataset.boundCopy = "1";
+        btn.addEventListener("click", async () => {
+          await copyText(btn.dataset.copyDirect || "");
+          const old = btn.textContent;
+          btn.textContent = "コピーしました";
+          setTimeout(() => btn.textContent = old, 1200);
+        });
+      });
     }
 
     async function copyText(text){
