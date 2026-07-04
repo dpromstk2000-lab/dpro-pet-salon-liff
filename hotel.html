@@ -192,6 +192,34 @@
       align-items:end;
       margin:12px 0 4px;
     }
+
+    .registered-confirm{
+      border:1px solid #cce9db;
+      background:linear-gradient(135deg,#eefaf5,#fffdf9);
+      border-radius:16px;
+      padding:13px;
+      margin:12px 0;
+      color:#195f4c;
+      line-height:1.65;
+    }
+    .registered-confirm.warning{
+      border-color:#f0d5a8;
+      background:linear-gradient(135deg,#fff7e7,#fffdf9);
+      color:#765019;
+    }
+    .confirm-title{font-weight:1000;margin-bottom:4px}
+    .confirm-text{font-size:13px;white-space:pre-wrap}
+    .existing-list{display:grid;gap:7px;margin-top:9px}
+    .existing-item{
+      border:1px solid rgba(0,0,0,.07);
+      background:rgba(255,255,255,.78);
+      border-radius:12px;
+      padding:9px 10px;
+      font-size:12px;
+      line-height:1.55;
+    }
+    .confirm-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .hidden{display:none!important}
     .registered-pets{
       display:none;
       background:#f3fbf7;
@@ -255,6 +283,17 @@
       </div>
 
       <div class="resume-box" id="registeredBox" style="display:none"></div>
+
+      <div class="registered-confirm hidden" id="registeredConfirmBox">
+        <div class="confirm-title">✅ 登録済み情報が見つかりました</div>
+        <div class="confirm-text" id="registeredConfirmText"></div>
+        <div class="existing-list" id="existingReservationList"></div>
+        <div class="confirm-actions">
+          <button class="btn small ok" type="button" id="useRegisteredHotelBtn">この情報でホテル申込を続ける</button>
+          <button class="btn small secondary" type="button" id="goReservationBtn">通常予約へ進む</button>
+          <button class="btn small secondary" type="button" id="clearRegisteredHotelBtn">別の飼い主情報で入力する</button>
+        </div>
+      </div>
 
       <div class="phone-search">
         <div>
@@ -404,7 +443,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18B hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-18C hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -451,6 +490,9 @@
       $("reviewBtn").addEventListener("click", updateSummary);
       $("submitBtn").addEventListener("click", submitHotelApplication);
       $("phoneSearchBtn").addEventListener("click", searchCustomerByPhone);
+      $("useRegisteredHotelBtn").addEventListener("click", confirmRegisteredForHotel);
+      $("clearRegisteredHotelBtn").addEventListener("click", clearRegisteredForHotel);
+      $("goReservationBtn").addEventListener("click", goReservationWithRegisteredCustomer);
 
       document.addEventListener("input", e => {
         if(e.target.matches("input,textarea,select")) updateSummary();
@@ -550,8 +592,11 @@
 
         state.customer = res.customer || null;
         state.pets = res.pets || [];
+        state.activeReservations = Array.isArray(res.reservations) ? res.reservations : [];
         state.loadedFrom = sourceLabel || "登録情報";
-        applyExistingCustomer(state.customer, state.pets, state.loadedFrom);
+        state.confirmedReuse = false;
+        state.ignoreLineProfileForSubmit = false;
+        applyExistingCustomer(state.customer, state.pets, state.loadedFrom, state.activeReservations);
         saveCustomerCache({
           source: sourceLabel || "public_customer",
           customer: state.customer,
@@ -565,7 +610,7 @@
       }
     }
 
-    function applyExistingCustomer(customer, pets, sourceLabel){
+    function applyExistingCustomer(customer, pets, sourceLabel, reservations = []){
       if(!customer) return;
 
       $("ownerName").value = customer.owner_name || "";
@@ -602,14 +647,74 @@
       const pets = Array.isArray(cache.pets) ? cache.pets : [];
       state.customer = customer;
       state.pets = pets;
+      state.activeReservations = [];
       state.loadedFrom = "前回入力情報";
+      state.confirmedReuse = false;
+      state.ignoreLineProfileForSubmit = false;
 
       if(cache.profile){
         state.profile.line_user_id = state.profile.line_user_id || cache.profile.line_user_id || "";
         state.profile.line_display_name = state.profile.line_display_name || cache.profile.line_display_name || "";
       }
 
-      applyExistingCustomer(customer, pets, "前回入力情報");
+      applyExistingCustomer(customer, pets, "前回入力情報", []);
+    }
+
+
+    function renderRegisteredConfirmForHotel(customer, pets, sourceLabel, reservations){
+      const box = $("registeredConfirmBox");
+      const text = $("registeredConfirmText");
+      const list = $("existingReservationList");
+      const hasReservations = Array.isArray(reservations) && reservations.length > 0;
+      box.classList.remove("hidden");
+      box.classList.toggle("warning", hasReservations);
+
+      text.textContent = [
+        `${sourceLabel || "登録情報"}を呼び出しました。`,
+        `飼い主さま：${customer.owner_name || "-"}`,
+        `電話番号：${customer.phone || "-"}`,
+        pets && pets.length ? `登録ペット：${pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、")}` : "登録ペット：なし",
+        hasReservations ? "現在の予約があります。ホテル申込とは別で追加されるため、内容を確認してから進んでください。" : "この情報を使う場合は、下のボタンで確認してからホテル申込を送信できます。"
+      ].join("\n");
+
+      if(hasReservations){
+        list.innerHTML = reservations.slice(0, 4).map(r => {
+          const petName = r.pet && r.pet.pet_name ? r.pet.pet_name : (r.pet_name || "ペット");
+          return `<div class="existing-item">📅 ${escapeHtml(r.reservation_date || "-")} ${escapeHtml(String(r.reservation_time || "").slice(0,5))}<br>${escapeHtml(petName)}ちゃん / ${escapeHtml(r.service_name || "予約")}</div>`;
+        }).join("");
+      }else{
+        list.innerHTML = "";
+      }
+    }
+
+    function confirmRegisteredForHotel(){
+      state.confirmedReuse = true;
+      showOk("登録済み情報を確認しました。このままホテル申込を送信できます。");
+      window.scrollTo({ top:0, behavior:"smooth" });
+    }
+
+    function clearRegisteredForHotel(){
+      state.customer = null;
+      state.pets = [];
+      state.activeReservations = [];
+      state.loadedFrom = "";
+      state.confirmedReuse = true;
+      state.ignoreLineProfileForSubmit = true;
+      localStorage.removeItem(cacheKey());
+      $("registeredConfirmBox").classList.add("hidden");
+      $("registeredPetsBox").style.display = "none";
+      showRegisteredBox("別の飼い主さま情報で入力できます。LINE登録情報は今回の送信には使いません。", true);
+
+      ["ownerName","ownerKana","phone","phoneSearch","email","emergencyName","emergencyPhone"].forEach(id => { if($(id)) $(id).value = ""; });
+      state.petCount = 1;
+      renderPets([{}]);
+      updateSummary();
+    }
+
+    function goReservationWithRegisteredCustomer(){
+      const phone = $("phone").value.trim();
+      const qs = phone ? `?phone=${encodeURIComponent(phone)}` : "";
+      window.location.href = `index.html${qs}`;
     }
 
     function mapExistingPetToHotelPet(p){
@@ -793,8 +898,8 @@
     function buildPayload(){
       return {
         shop_code: CONFIG.SHOP_CODE,
-        line_user_id: state.profile.line_user_id,
-        line_display_name: state.profile.line_display_name,
+        line_user_id: state.ignoreLineProfileForSubmit ? "" : state.profile.line_user_id,
+        line_display_name: state.ignoreLineProfileForSubmit ? "" : state.profile.line_display_name,
         owner_name: $("ownerName").value.trim(),
         owner_kana: $("ownerKana").value.trim(),
         phone: $("phone").value.trim(),
@@ -857,6 +962,9 @@
         updateSummary();
 
         const payload = buildPayload();
+        if(state.customer && !state.confirmedReuse){
+          throw new Error("登録済み情報が見つかっています。誤送信を防ぐため、先に『この情報でホテル申込を続ける』を押して確認してください。");
+        }
         validatePayload(payload);
 
         $("submitBtn").disabled = true;
