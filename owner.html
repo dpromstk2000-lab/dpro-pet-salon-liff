@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-19E: 19D機能込み・ホテル定員を店舗設定から変更可能にする完全版 -->
+<!-- STEP PETSALON-19F: 店舗設定保存リアクション強化・変更内容表示 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19E</title>
+  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19F</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -219,6 +219,35 @@
     .alert.show{display:block}
     .alert.err{background:#fff1f1;color:var(--danger);border:1px solid #f0caca}
     .alert.ok{background:#eefaf3;color:var(--ok);border:1px solid #ccebd9}
+    .settings-save-feedback{
+      display:none;
+      margin-top:12px;
+      padding:13px 14px;
+      border-radius:16px;
+      border:1px solid #ccebd9;
+      background:#eefaf3;
+      color:var(--ok);
+      font-size:13px;
+      font-weight:800;
+      white-space:normal;
+    }
+    .settings-save-feedback.show{display:block}
+    .settings-save-feedback.saving{background:#fff8e5;color:#9a6b00;border-color:#ecd9a1}
+    .settings-save-feedback.nochange{background:#f8f5f2;color:#7d6f66;border-color:#e1d8cf}
+    .settings-save-feedback.err{background:#fff1f1;color:var(--danger);border-color:#f0caca}
+    .settings-save-feedback .save-title{font-size:14px;font-weight:1000;margin-bottom:5px}
+    .settings-save-feedback ul{margin:7px 0 0;padding-left:1.25em}
+    .settings-save-feedback li{margin:2px 0}
+    .setting-changed{
+      animation:settingFlash 2.6s ease;
+      border-color:var(--ok)!important;
+      box-shadow:0 0 0 4px rgba(47,125,85,.15)!important;
+    }
+    @keyframes settingFlash{
+      0%{background:#e9f7ef}
+      70%{background:#e9f7ef}
+      100%{background:#fff}
+    }
     .section{display:none}
     .section.active{display:block}
     .res-card,.follow-card{
@@ -1160,7 +1189,7 @@
 
           <div class="btns" style="margin-top:14px">
             <button class="btn" type="button" id="loadHotelBtn">ホテル申込を更新</button>
-            <button class="btn secondary" type="button" onclick="window.open('./hotel.html?v=19d','_blank')">ホテル申込画面を開く</button>
+            <button class="btn secondary" type="button" onclick="window.open('./hotel.html?v=19e','_blank')">ホテル申込画面を開く</button>
           </div>
 
           <div id="hotelActionFeedback" class="action-feedback" style="display:none;margin-top:14px"></div>
@@ -1168,7 +1197,7 @@
           <details class="history-wrap" style="margin-top:14px" open>
             <summary>
               <span>ホテル電話・店頭受付</span>
-              <span class="history-count">19E</span>
+              <span class="history-count">19F</span>
             </summary>
             <div style="padding:0 12px 12px">
               <div class="notice" style="margin-bottom:12px">
@@ -1421,6 +1450,7 @@
               <button class="btn" type="button" id="saveSettingsBtn">店舗設定を保存</button>
               <button class="btn secondary" type="button" id="loadSettingsBtn">設定を再取得</button>
             </div>
+            <div id="settingsSaveFeedback" class="settings-save-feedback" aria-live="polite"></div>
           </div>
 
           <div class="card">
@@ -1451,7 +1481,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19E owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19F owner.html
     </div>
   </div>
 
@@ -3583,33 +3613,203 @@
       }
     }
 
+    function collectSettingsPayload(){
+      const regular_holidays = [...document.querySelectorAll("#holidayChecks input:checked")].map(x => x.value).sort();
+      return {
+        admin_code: adminCode(),
+        shop_code: shopCode(),
+        shop_name: $("setShopName").value.trim(),
+        open_time: $("setOpenTime").value,
+        close_time: $("setCloseTime").value,
+        reservation_rule_preset: $("setRulePreset").value,
+        max_reservations_per_day: Number($("setMaxReservations").value || 4),
+        max_reservations_per_slot: Number($("setMaxReservationsPerSlot").value || 1),
+        max_pets_per_group: Number($("setMaxPetsPerGroup").value || 3),
+        hotel_max_pets_per_day: Number($("setHotelMaxPetsPerDay").value || 3),
+        allow_multi_pet_same_time: $("setAllowMultiPetSameTime").value !== "false",
+        reservation_slot_minutes: Number($("setSlotMinutes").value || 30),
+        regular_holidays
+      };
+    }
+
+    function currentSettingsSnapshot(){
+      const s = state.settings || {};
+      const hotelMax = s.hotel_max_pets_per_day ?? s.max_hotel_pets_per_day ?? 3;
+      const holidays = Array.isArray(s.regular_holidays) ? [...s.regular_holidays].sort() : [];
+      return {
+        shop_name: s.shop_name || "",
+        open_time: hm(s.open_time || "10:00"),
+        close_time: hm(s.close_time || "18:00"),
+        reservation_rule_preset: s.reservation_rule_preset || "solo",
+        max_reservations_per_day: Number(s.max_reservations_per_day || 4),
+        max_reservations_per_slot: Number(s.max_reservations_per_slot || 1),
+        max_pets_per_group: Number(s.max_pets_per_group || 3),
+        hotel_max_pets_per_day: Number(hotelMax || 3),
+        allow_multi_pet_same_time: s.allow_multi_pet_same_time !== false,
+        reservation_slot_minutes: Number(s.reservation_slot_minutes || 30),
+        regular_holidays: holidays
+      };
+    }
+
+    const SETTINGS_LABELS = {
+      shop_name: "店舗名",
+      open_time: "開店時間",
+      close_time: "閉店時間",
+      reservation_rule_preset: "予約受付ルール",
+      max_reservations_per_day: "1日の予約上限",
+      max_reservations_per_slot: "同じ時間の予約数",
+      max_pets_per_group: "多頭予約の同時受付",
+      hotel_max_pets_per_day: "ホテル定員",
+      allow_multi_pet_same_time: "多頭予約の同時間受付",
+      reservation_slot_minutes: "予約枠の分数",
+      regular_holidays: "定休日"
+    };
+
+    const SETTINGS_FIELD_IDS = {
+      shop_name: "setShopName",
+      open_time: "setOpenTime",
+      close_time: "setCloseTime",
+      reservation_rule_preset: "setRulePreset",
+      max_reservations_per_day: "setMaxReservations",
+      max_reservations_per_slot: "setMaxReservationsPerSlot",
+      max_pets_per_group: "setMaxPetsPerGroup",
+      hotel_max_pets_per_day: "setHotelMaxPetsPerDay",
+      allow_multi_pet_same_time: "setAllowMultiPetSameTime",
+      reservation_slot_minutes: "setSlotMinutes",
+      regular_holidays: "holidayChecks"
+    };
+
+    function settingsComparableValue(key, value){
+      if(key === "regular_holidays") return Array.isArray(value) ? [...value].sort().join(",") : "";
+      if(["max_reservations_per_day", "max_reservations_per_slot", "max_pets_per_group", "hotel_max_pets_per_day", "reservation_slot_minutes"].includes(key)){
+        return String(Number(value || 0));
+      }
+      if(key === "allow_multi_pet_same_time") return String(value !== false);
+      if(key === "open_time" || key === "close_time") return hm(value || "");
+      return String(value ?? "").trim();
+    }
+
+    function formatSettingValue(key, value){
+      if(key === "regular_holidays"){
+        const names = { sunday:"日", monday:"月", tuesday:"火", wednesday:"水", thursday:"木", friday:"金", saturday:"土" };
+        const arr = Array.isArray(value) ? value : [];
+        return arr.length ? arr.map(v => names[v] || v).join("・") : "なし";
+      }
+      if(key === "reservation_rule_preset"){
+        return (BOOKING_RULE_PRESETS[value] && BOOKING_RULE_PRESETS[value].label) || "自由設定";
+      }
+      if(key === "allow_multi_pet_same_time"){
+        return value !== false ? "同じ飼い主さまならOK" : "通常予約と同じ制限";
+      }
+      if(key === "max_reservations_per_day") return `${Number(value || 0)}件`;
+      if(key === "max_reservations_per_slot") return `${Number(value || 0)}組`;
+      if(key === "max_pets_per_group") return `${Number(value || 0)}頭`;
+      if(key === "hotel_max_pets_per_day") return `${Number(value || 0)}頭`;
+      if(key === "reservation_slot_minutes") return `${Number(value || 0)}分`;
+      if(key === "open_time" || key === "close_time") return hm(value || "未設定");
+      return String(value || "未設定");
+    }
+
+    function buildSettingsDiff(before, after){
+      const keys = [
+        "shop_name",
+        "open_time",
+        "close_time",
+        "reservation_rule_preset",
+        "max_reservations_per_day",
+        "max_reservations_per_slot",
+        "max_pets_per_group",
+        "hotel_max_pets_per_day",
+        "allow_multi_pet_same_time",
+        "reservation_slot_minutes",
+        "regular_holidays"
+      ];
+      return keys
+        .filter(key => settingsComparableValue(key, before[key]) !== settingsComparableValue(key, after[key]))
+        .map(key => ({
+          key,
+          label: SETTINGS_LABELS[key] || key,
+          before: formatSettingValue(key, before[key]),
+          after: formatSettingValue(key, after[key])
+        }));
+    }
+
+    function renderSettingsSaveFeedback(status, diffs = []){
+      const el = $("settingsSaveFeedback");
+      if(!el) return;
+      el.className = "settings-save-feedback";
+      if(!status){ el.innerHTML = ""; return; }
+      el.classList.add("show");
+      if(status === "saving"){
+        el.classList.add("saving");
+        el.innerHTML = `<div class="save-title">保存中…</div><div>店舗設定を保存しています。</div>`;
+        return;
+      }
+      if(status === "nochange"){
+        el.classList.add("nochange");
+        el.innerHTML = `<div class="save-title">変更はありません</div><div>現在の設定をそのまま再保存しました。</div>`;
+        return;
+      }
+      if(status === "error"){
+        el.classList.add("err");
+        el.innerHTML = `<div class="save-title">保存に失敗しました</div><div>通信状況を確認して、もう一度お試しください。</div>`;
+        return;
+      }
+      const rows = diffs.map(d => `<li>${escapeHtml(d.label)}：${escapeHtml(d.before)} → ${escapeHtml(d.after)}</li>`).join("");
+      el.innerHTML = `<div class="save-title">設定を保存しました</div>${rows ? `<ul>${rows}</ul>` : `<div>変更内容を保存しました。</div>`}`;
+    }
+
+    function highlightChangedSettings(diffs){
+      document.querySelectorAll(".setting-changed").forEach(el => el.classList.remove("setting-changed"));
+      diffs.forEach(d => {
+        const id = SETTINGS_FIELD_IDS[d.key];
+        const el = id ? $(id) : null;
+        if(!el) return;
+        el.classList.add("setting-changed");
+        setTimeout(() => el.classList.remove("setting-changed"), 2800);
+      });
+    }
+
     async function saveSettings(){
+      const btn = $("saveSettingsBtn");
+      const oldText = btn ? btn.textContent : "";
+      let diffs = [];
       try{
         showError("");
-        const regular_holidays = [...document.querySelectorAll("#holidayChecks input:checked")].map(x => x.value);
+        showOk("");
+        renderSettingsSaveFeedback("saving");
+        if(btn){
+          btn.disabled = true;
+          btn.textContent = "保存中…";
+        }
 
-        await apiPost("/api/admin/settings/update", {
-          admin_code: adminCode(),
-          shop_code: shopCode(),
-          shop_name: $("setShopName").value.trim(),
-          open_time: $("setOpenTime").value,
-          close_time: $("setCloseTime").value,
-          reservation_rule_preset: $("setRulePreset").value,
-          max_reservations_per_day: Number($("setMaxReservations").value || 4),
-          max_reservations_per_slot: Number($("setMaxReservationsPerSlot").value || 1),
-          max_pets_per_group: Number($("setMaxPetsPerGroup").value || 3),
-          hotel_max_pets_per_day: Number($("setHotelMaxPetsPerDay").value || 3),
-          allow_multi_pet_same_time: $("setAllowMultiPetSameTime").value !== "false",
-          reservation_slot_minutes: Number($("setSlotMinutes").value || 30),
-          regular_holidays
-        });
+        const payload = collectSettingsPayload();
+        const before = currentSettingsSnapshot();
+        diffs = buildSettingsDiff(before, payload);
 
-        showOk("店舗設定を保存しました。サロン予約・ホテル定員にも反映されます。");
+        await apiPost("/api/admin/settings/update", payload);
+
         await loadSettings();
         await loadSummary();
+
+        if(diffs.length){
+          const message = ["店舗設定を保存しました。", ...diffs.map(d => `${d.label}：${d.before} → ${d.after}`)].join("\n");
+          showOk(message);
+          renderSettingsSaveFeedback("success", diffs);
+          highlightChangedSettings(diffs);
+        }else{
+          showOk("変更はありません。現在の店舗設定を再保存しました。");
+          renderSettingsSaveFeedback("nochange");
+        }
       }catch(e){
         console.error(e);
+        renderSettingsSaveFeedback("error");
         showError(e.message || "店舗設定の保存に失敗しました。");
+      }finally{
+        if(btn){
+          btn.disabled = false;
+          btn.textContent = oldText || "店舗設定を保存";
+        }
       }
     }
 
