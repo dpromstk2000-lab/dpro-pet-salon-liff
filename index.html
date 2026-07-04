@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜予約受付ルール対応LINE予約</title>
+  <title>DPROペットサロン｜STEP18L サロン予約</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -323,6 +323,48 @@
       margin-top:18px;
       padding-bottom:74px;
     }
+
+    .success-actions{
+      display:none;
+      margin-top:12px;
+      padding:14px;
+      border-radius:18px;
+      border:1px solid #ccebd9;
+      background:linear-gradient(135deg,#eefaf3,#fffdf9);
+    }
+    .success-actions.show{display:block}
+    .success-title{
+      font-weight:1000;
+      color:var(--ok);
+      margin-bottom:6px;
+    }
+    .success-actions p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .concern-help{
+      margin:-2px 0 8px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+    }
+    @media(max-width:719px){
+      .actions{
+        position:static!important;
+        bottom:auto!important;
+        z-index:1!important;
+        margin:14px 14px 24px!important;
+        padding:0!important;
+        background:transparent!important;
+        backdrop-filter:none!important;
+        border-top:0!important;
+      }
+      .action-inner{grid-template-columns:1fr;gap:10px}
+      .footer{padding-bottom:18px!important}
+      .btn{min-height:48px}
+    }
+
   </style>
 </head>
 <body>
@@ -342,6 +384,14 @@
 
     <div class="alert err" id="errorBox"></div>
     <div class="alert ok" id="okBox"></div>
+    <div class="success-actions" id="successActions">
+      <div class="success-title">✅ 予約希望を送信しました</div>
+      <p>会員証で、登録済みペット情報・現在の予約・ホテル申込状況を確認できます。</p>
+      <div class="btns">
+        <a class="btn" id="memberLinkAfterReservation" href="./member.html">ペット会員証で確認する</a>
+        <a class="btn secondary" id="newReservationAfterReservation" href="./index.html">続けて予約する</a>
+      </div>
+    </div>
 
     <div class="grid two">
       <section class="card">
@@ -442,7 +492,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18C index.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18L index.html
     </div>
   </div>
 
@@ -504,8 +554,10 @@
         <label class="check"><input type="checkbox" data-field="vaccine_confirmed" /> ワクチン確認済み</label>
       </div>
 
-      <label>気になること</label>
+      <label>気になること <span style="font-weight:700;color:var(--muted);font-size:12px">任意</span></label>
+      <div class="concern-help">通常のサロン予約で気になる点がなければ「特になし」を選んでください。未選択のままでも送信できます。</div>
       <div class="checks">
+        <label class="check"><input type="checkbox" data-concern data-concern-none value="特になし" /> 特になし</label>
         <label class="check"><input type="checkbox" data-concern value="毛玉が気になる" /> 毛玉が気になる</label>
         <label class="check"><input type="checkbox" data-concern value="抜け毛が気になる" /> 抜け毛が気になる</label>
         <label class="check"><input type="checkbox" data-concern value="皮膚が弱い" /> 皮膚が弱い</label>
@@ -543,8 +595,8 @@
 
   <script>
     // =========================================================
-    // STEP PETSALON-18C
-    // index.html 登録済み情報の確認導線・重複予約防止
+    // STEP PETSALON-18L
+    // index.html 気になること「特になし」・スマホ入力安全・会員証導線
     // =========================================================
 
     const CONFIG = {
@@ -829,10 +881,30 @@
         el.addEventListener("change", updateSummary);
       });
 
+      wireConcernNoneBehavior(node);
+
       updateAddButton();
       updateSummary();
     }
 
+
+    function wireConcernNoneBehavior(card){
+      const none = card.querySelector('[data-concern-none]');
+      const others = [...card.querySelectorAll('[data-concern]:not([data-concern-none])')];
+      if(!none) return;
+
+      none.addEventListener("change", () => {
+        if(none.checked) others.forEach(el => { el.checked = false; });
+        updateSummary();
+      });
+
+      others.forEach(el => {
+        el.addEventListener("change", () => {
+          if(el.checked) none.checked = false;
+          updateSummary();
+        });
+      });
+    }
 
     function fillPetCard(card, data){
       Object.entries(data || {}).forEach(([key, value]) => {
@@ -1043,6 +1115,8 @@
       try{
         showError("");
         showOk("");
+        const success = $("successActions");
+        if(success) success.classList.remove("show");
         updateSummary();
 
         const ownerName = $("owner_name").value.trim();
@@ -1104,8 +1178,9 @@
           "",
           res.line_message || "",
           "",
-          "この画面を閉じて、LINEに戻ってください。"
+          "続けて、下のボタンからペット会員証で内容を確認できます。"
         ].join("\n"));
+        renderReservationSuccessActions(body);
 
         window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -1118,6 +1193,17 @@
       }
     }
 
+
+    function renderReservationSuccessActions(body){
+      const phone = (body && body.phone ? body.phone : $("phone").value || "").trim();
+      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18l` : `?v=18l`;
+      const memberLink = $("memberLinkAfterReservation");
+      const newLink = $("newReservationAfterReservation");
+      if(memberLink) memberLink.href = `./member.html${qs}`;
+      if(newLink) newLink.href = `./index.html${qs}`;
+      const success = $("successActions");
+      if(success) success.classList.add("show");
+    }
 
     function cacheKey(){
       return `dpro_pet_salon_customer_cache_${CONFIG.SHOP_CODE}`;
@@ -1202,6 +1288,8 @@
       el.textContent = msg;
       el.classList.add("show");
       $("okBox").classList.remove("show");
+      const success = $("successActions");
+      if(success) success.classList.remove("show");
     }
 
     function showOk(msg){
