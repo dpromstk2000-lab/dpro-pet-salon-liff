@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-19C: 顧客検索からサロン予約・ホテル受付へ進める導線整理 -->
+<!-- STEP PETSALON-19E: 19D機能込み・ホテル定員を店舗設定から変更可能にする完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19C</title>
+  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19E</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -869,9 +869,9 @@
     <section class="hero">
       <div class="hero-top">
         <div>
-          <span class="badge">🐾 DPRO PET SALON / OWNER</span>
+          <span class="badge">🐾 DPRO PET SALON / OWNER</span> <span class="badge" id="modeBadge">モード確認中</span>
           <h1 id="shopName">DPROペットサロン 管理画面</h1>
-          <p>予約・ペットカルテ・次回案内をまとめて管理します。</p>
+          <p>予約・ペットカルテ・ホテル定員・次回案内をまとめて管理します。</p>
         </div>
         <div class="hero-actions">
           <button class="btn secondary small" type="button" id="reloadBtn">再読み込み</button>
@@ -883,6 +883,7 @@
         <div class="kpi"><b id="kpiToday">-</b><span>本日の確定予約</span></div>
         <div class="kpi"><b id="kpiNext">-</b><span>新着予約希望</span></div>
         <div class="kpi"><b id="kpiFollow">-</b><span>未送信LINE</span></div>
+        <div class="kpi"><b id="kpiHotelCap">-</b><span>ホテル定員目安</span></div>
       </div>
 
       <div class="tabs">
@@ -1142,7 +1143,7 @@
           <div class="card-head">
             <div>
               <h2>ペットホテル申込</h2>
-              <p class="lead">未完了・本日対応・退店済み履歴を分けて表示します。急に消えたように見えない整理です。</p>
+              <p class="lead">未完了・本日対応・退店済み履歴を分けて表示します。ホテル定員と確認チェックもここで見ます。</p>
             </div>
           </div>
 
@@ -1159,7 +1160,7 @@
 
           <div class="btns" style="margin-top:14px">
             <button class="btn" type="button" id="loadHotelBtn">ホテル申込を更新</button>
-            <button class="btn secondary" type="button" onclick="window.open('./hotel.html?v=19b','_blank')">ホテル申込画面を開く</button>
+            <button class="btn secondary" type="button" onclick="window.open('./hotel.html?v=19d','_blank')">ホテル申込画面を開く</button>
           </div>
 
           <div id="hotelActionFeedback" class="action-feedback" style="display:none;margin-top:14px"></div>
@@ -1167,7 +1168,7 @@
           <details class="history-wrap" style="margin-top:14px" open>
             <summary>
               <span>ホテル電話・店頭受付</span>
-              <span class="history-count">19C</span>
+              <span class="history-count">19E</span>
             </summary>
             <div style="padding:0 12px 12px">
               <div class="notice" style="margin-bottom:12px">
@@ -1216,6 +1217,17 @@
               </div>
               <label>健康状態・注意事項</label>
               <textarea id="hotelManualHealth" placeholder="例：食欲あり。大きな音が苦手。"></textarea>
+              <div class="notice" style="margin-top:10px">
+                <b>ホテル受付チェック</b><br>
+                電話・店頭受付では、確認できた項目にチェックを入れてから登録します。
+              </div>
+              <div class="checks" id="hotelManualChecks" style="margin-top:10px">
+                <label class="check"><input type="checkbox" id="hotelManualVaccine" checked>混合ワクチン確認</label>
+                <label class="check"><input type="checkbox" id="hotelManualRabies" checked>狂犬病確認</label>
+                <label class="check"><input type="checkbox" id="hotelManualFoodCheck">ごはん持参確認</label>
+                <label class="check"><input type="checkbox" id="hotelManualMedicineCheck">薬・投薬確認</label>
+                <label class="check"><input type="checkbox" id="hotelManualEmergencyCheck" checked>緊急連絡先確認</label>
+              </div>
               <div class="btns" style="margin-top:12px">
                 <button class="btn ok" type="button" id="hotelManualCreateBtn">ホテル電話受付を登録</button>
                 <button class="btn secondary" type="button" id="hotelManualClearBtn">入力をクリア</button>
@@ -1225,6 +1237,7 @@
           </details>
 
           <div id="hotelTodayBoard"></div>
+          <div id="hotelCapacityBoard"></div>
 
           <div class="hotel-section-title">
             <h3>未完了のホテル申込</h3>
@@ -1308,7 +1321,7 @@
             <div class="card-head">
               <div>
                 <h2>店舗設定</h2>
-                <p class="lead">営業時間・定休日・予約上限を変更します。</p>
+                <p class="lead">営業時間・定休日・予約上限・ホテル定員を変更します。</p>
               </div>
             </div>
 
@@ -1377,6 +1390,22 @@
               例：1人サロン向けを選んだ後に、1日の予約上限だけ 4 → 5 に変えることもできます。
             </div>
 
+            <div class="row two" style="margin-top:10px">
+              <div>
+                <label>ペットホテル定員</label>
+                <input id="setHotelMaxPetsPerDay" type="number" min="1" max="50" />
+              </div>
+              <div class="notice" style="margin-top:0">
+                <b>1日に受け入れ可能な頭数</b><br>
+                店舗の部屋数・スタッフ数に合わせて変更できます。例：小規模店は2頭、余裕がある店舗は4〜5頭。
+              </div>
+            </div>
+
+            <div class="notice" style="margin-top:10px">
+              <b>ホテル定員の判定</b><br>
+              保存した店舗設定をWorkerが優先して確認します。未設定の場合だけ、Cloudflare Workerの環境変数 <b>HOTEL_MAX_PETS_PER_DAY</b>、それも無ければ3頭を使います。
+            </div>
+
             <label>定休日</label>
             <div class="checks" id="holidayChecks">
               <label class="check"><input type="checkbox" value="sunday">日</label>
@@ -1422,7 +1451,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19C owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19E owner.html
     </div>
   </div>
 
@@ -1548,8 +1577,12 @@
       if($("hotelManualSearchBtn")) $("hotelManualSearchBtn").addEventListener("click", searchHotelManualCustomer);
       if($("hotelManualCreateBtn")) $("hotelManualCreateBtn").addEventListener("click", createManualHotelApplication);
       if($("hotelManualClearBtn")) $("hotelManualClearBtn").addEventListener("click", clearHotelManualForm);
-      ["hotelManualPhone","hotelManualOwnerName","hotelManualPetName","hotelManualCheckinDate","hotelManualCheckoutDate","hotelManualStatus"].forEach(id => {
+      ["hotelManualPhone","hotelManualOwnerName","hotelManualPetName","hotelManualCheckinDate","hotelManualCheckoutDate","hotelManualStatus","hotelManualCheckinTime","hotelManualCheckoutTime","hotelManualMeal","hotelManualMedicine","hotelManualHealth"].forEach(id => {
         if($(id)) $(id).addEventListener("input", updateHotelManualSummary);
+        if($(id)) $(id).addEventListener("change", updateHotelManualSummary);
+      });
+      ["hotelManualVaccine","hotelManualRabies","hotelManualFoodCheck","hotelManualMedicineCheck","hotelManualEmergencyCheck"].forEach(id => {
+        if($(id)) $(id).addEventListener("change", updateHotelManualSummary);
       });
       $("customerSearchBtn").addEventListener("click", () => searchCustomers(false));
       $("recentCustomersBtn").addEventListener("click", () => searchCustomers(true));
@@ -1804,9 +1837,11 @@
         $("setMaxReservations").value = s.max_reservations_per_day || 4;
         $("setMaxReservationsPerSlot").value = s.max_reservations_per_slot || 1;
         $("setMaxPetsPerGroup").value = s.max_pets_per_group || 3;
+        $("setHotelMaxPetsPerDay").value = s.hotel_max_pets_per_day || s.max_hotel_pets_per_day || 3;
         $("setAllowMultiPetSameTime").value = String(s.allow_multi_pet_same_time !== false);
         $("setSlotMinutes").value = String(s.reservation_slot_minutes || 30);
         updateRulePresetNote();
+        updateModeBadge(s);
 
         const holidays = Array.isArray(s.regular_holidays) ? s.regular_holidays : [];
         document.querySelectorAll("#holidayChecks input").forEach(ch => {
@@ -1817,6 +1852,15 @@
         console.error(e);
         showError(e.message || "店舗設定の取得に失敗しました。");
       }
+    }
+
+    function updateModeBadge(settings){
+      const el = $("modeBadge");
+      if(!el) return;
+      const demo = settings && settings.demo_mode !== false;
+      el.textContent = demo ? "デモモード：電話番号検索OK" : "本番モード：会員証はLINE本人確認";
+      el.style.background = demo ? "#fff4d6" : "#e9f7f0";
+      el.style.color = demo ? "#7a5200" : "#2f7d55";
     }
 
     const BOOKING_RULE_PRESETS = {
@@ -2567,9 +2611,10 @@
           checkout_date: $("hotelManualCheckoutDate").value,
           checkout_time: $("hotelManualCheckoutTime").value || "17:00",
           emergency_contact_phone: $("hotelManualEmergencyPhone").value.trim() || $("hotelManualPhone").value.trim(),
-          vaccine_confirmed: true,
-          rabies_confirmed: true,
+          vaccine_confirmed: $("hotelManualVaccine") ? $("hotelManualVaccine").checked : true,
+          rabies_confirmed: $("hotelManualRabies") ? $("hotelManualRabies").checked : true,
           terms_accepted: true,
+          request_note: buildHotelManualChecklistNote(),
           pets: [{
             pet_name: $("hotelManualPetName").value.trim(),
             breed: $("hotelManualBreed").value.trim(),
@@ -2585,6 +2630,7 @@
         if(!payload.pets[0].pet_name) throw new Error("ペット名を入力してください。");
         if(!payload.checkin_date || !payload.checkout_date) throw new Error("チェックイン日・チェックアウト日を入力してください。");
         if(payload.checkout_date < payload.checkin_date) throw new Error("チェックアウト日はチェックイン日以降にしてください。");
+        if($("hotelManualEmergencyCheck") && !$("hotelManualEmergencyCheck").checked) throw new Error("緊急連絡先を確認したらチェックを入れてください。");
 
         $("hotelManualCreateBtn").disabled = true;
         $("hotelManualCreateBtn").textContent = "登録中...";
@@ -2612,13 +2658,24 @@
       if(showMessage) showOk("ホテル電話受付の入力をクリアしました。");
     }
 
+    function buildHotelManualChecklistNote(){
+      const checks = [];
+      if($("hotelManualVaccine")?.checked) checks.push("混合ワクチン確認済み");
+      if($("hotelManualRabies")?.checked) checks.push("狂犬病確認済み");
+      if($("hotelManualFoodCheck")?.checked) checks.push("ごはん持参確認済み");
+      if($("hotelManualMedicineCheck")?.checked) checks.push("薬・投薬確認済み");
+      if($("hotelManualEmergencyCheck")?.checked) checks.push("緊急連絡先確認済み");
+      return ["【ホテル電話受付チェック】", ...checks].join("\n");
+    }
+
     function updateHotelManualSummary(){
       if(!$("hotelManualSummary")) return;
       $("hotelManualSummary").textContent = [
         `受付：${$("hotelManualStatus")?.selectedOptions?.[0]?.textContent || "未選択"}`,
         `飼い主：${$("hotelManualOwnerName")?.value || "未入力"}`,
         `ペット：${$("hotelManualPetName")?.value || "未入力"}`,
-        `宿泊：${$("hotelManualCheckinDate")?.value || "未入力"} ${$("hotelManualCheckinTime")?.value || ""} 〜 ${$("hotelManualCheckoutDate")?.value || "未入力"} ${$("hotelManualCheckoutTime")?.value || ""}`
+        `宿泊：${$("hotelManualCheckinDate")?.value || "未入力"} ${$("hotelManualCheckinTime")?.value || ""} 〜 ${$("hotelManualCheckoutDate")?.value || "未入力"} ${$("hotelManualCheckoutTime")?.value || ""}`,
+        `確認：${buildHotelManualChecklistNote().replace("【ホテル電話受付チェック】\n", "") || "未確認"}`
       ].join(" / ");
     }
 
@@ -2715,6 +2772,8 @@
         </div>
       `;
 
+      renderHotelCapacityBoard(active);
+
       $("hotelActiveCount").textContent = active.length;
       $("hotelHistoryCount").textContent = history.length;
 
@@ -2731,6 +2790,53 @@
           await updateHotelApplicationStatus(btn.dataset.hotelId, btn.dataset.hotelStatus);
         });
       });
+    }
+
+    function renderHotelCapacityBoard(activeApps){
+      const el = $("hotelCapacityBoard");
+      if(!el) return;
+      const max = Number(state.settings?.hotel_max_pets_per_day || 3);
+      $("kpiHotelCap").textContent = `${max}頭/日`;
+      const counts = {};
+      (activeApps || []).forEach(app => {
+        const petCount = Array.isArray(app.pets) && app.pets.length ? app.pets.length : 1;
+        hotelStayDatesUi(app.checkin_date, app.checkout_date).forEach(d => {
+          counts[d] = (counts[d] || 0) + petCount;
+        });
+      });
+      const dates = Object.keys(counts).sort().slice(0, 14);
+      if(!dates.length){
+        el.innerHTML = `<div class="notice" style="margin-top:12px"><b>ホテル定員</b><br>現在、今後のホテル定員超過はありません。目安：1日最大${max}頭。</div>`;
+        return;
+      }
+      el.innerHTML = `
+        <div class="notice" style="margin-top:12px">
+          <b>ホテル定員チェック</b><br>
+          目安：1日最大${max}頭。定員に近い日は電話受付・LINE申込の前に確認してください。
+          <div class="mini-list" style="margin-top:10px">
+            ${dates.map(d => {
+              const n = counts[d] || 0;
+              const label = n >= max ? "満室" : (n >= max - 1 ? "残りわずか" : "余裕あり");
+              return `<div class="mini-box"><b>${escapeHtml(d)}</b>${n}/${max}頭<br>${label}</div>`;
+            }).join("")}
+          </div>
+        </div>`;
+    }
+
+    function hotelStayDatesUi(checkinDate, checkoutDate){
+      const start = String(checkinDate || "");
+      const end = String(checkoutDate || "");
+      if(!start) return [];
+      const dates = [];
+      let d = start;
+      const safeEnd = end && end >= start ? end : start;
+      while(d < safeEnd){
+        dates.push(d);
+        d = addDays(d, 1);
+        if(dates.length > 60) break;
+      }
+      if(!dates.length) dates.push(start);
+      return dates;
     }
 
     function sortHotels(a, b){
@@ -2794,6 +2900,12 @@
             <b>健康状態：</b>${escapeHtml(app.health_note || "未入力")}<br>
             <b>性格・過ごし方：</b>${escapeHtml(app.personality_note || "未入力")}<br>
             <b>その他希望：</b>${escapeHtml(app.request_note || "未入力")}
+          </div>
+
+          <div class="notice" style="margin-top:12px">
+            <b>ホテル確認チェック</b><br>
+            混合ワクチン：${app.vaccine_confirmed ? "確認済み" : "未確認"} / 狂犬病：${app.rabies_confirmed ? "確認済み" : "未確認"} / 緊急連絡先：${app.emergency_contact_phone ? "確認済み" : "未入力"}<br>
+            持ち物：普段のごはん・必要なお薬・リード・ワクチン証明書を案内してください。
           </div>
 
           ${dateGuardNote ? `<div class="notice" style="margin-top:12px">${dateGuardNote}</div>` : ""}
@@ -2886,7 +2998,7 @@
         `【お預かり】${app.checkin_date || ""} ${hm(app.checkin_time || "")}`,
         `【お迎え】${app.checkout_date || ""} ${hm(app.checkout_time || "")}`,
         "",
-        "当日はごはん・お薬・ワクチン証明書など、必要なものをご持参ください。",
+        "当日は、普段のごはん・必要なお薬・リード・ワクチン証明書などをご持参ください。",
         "体調に変化がある場合は、事前にこのLINEへご連絡ください。",
         "",
         "ご不明点があれば、このLINEにそのままご返信ください。"
@@ -3427,6 +3539,8 @@
           "・多頭予約デモ",
           "・キャンセル履歴",
           "・ホテル申込デモ",
+          "・ホテル定員チェック表示",
+          "・ホテル受付チェックリスト",
           "・会員証の前回来店履歴",
           "・本日やるLINE案内",
           "",
@@ -3484,12 +3598,13 @@
           max_reservations_per_day: Number($("setMaxReservations").value || 4),
           max_reservations_per_slot: Number($("setMaxReservationsPerSlot").value || 1),
           max_pets_per_group: Number($("setMaxPetsPerGroup").value || 3),
+          hotel_max_pets_per_day: Number($("setHotelMaxPetsPerDay").value || 3),
           allow_multi_pet_same_time: $("setAllowMultiPetSameTime").value !== "false",
           reservation_slot_minutes: Number($("setSlotMinutes").value || 30),
           regular_holidays
         });
 
-        showOk("店舗設定を保存しました。予約フォームにも反映されます。");
+        showOk("店舗設定を保存しました。サロン予約・ホテル定員にも反映されます。");
         await loadSettings();
         await loadSummary();
       }catch(e){
