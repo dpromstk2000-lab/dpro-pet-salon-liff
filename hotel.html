@@ -282,9 +282,9 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-18J / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-18K / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
-      <p class="lead">ホテル申込専用の画面です。申込後は、この画面とペット会員証で現在のお預かり予定を確認できます。</p>
+      <p class="lead">ホテル申込専用の画面です。申込後は、この画面とペット会員証で現在のお預かり予定を確認できます。同じペットで期間が重なるホテル申込はできません。</p>
       <div class="chips">
         <span class="chip" id="apiState">API確認中</span>
         <span class="chip" id="lineState">LINE確認中</span>
@@ -1158,7 +1158,7 @@
       }
 
       box.classList.add("show");
-      text.textContent = "現在受付中・確定済み・お預かり中のホテル申込です。変更やキャンセルはLINEまたは電話でサロンへご相談ください。";
+      text.textContent = "現在受付中・確定済み・お預かり中のホテル申込です。変更やキャンセルはLINEまたは電話でサロンへご相談ください。同じペットで期間が重なる申込は送信できません。";
       list.innerHTML = active.map(h => {
         const pets = Array.isArray(h.pets) ? h.pets : [];
         const petNames = pets.length ? pets.map(p => `${escapeHtml(p.pet_name || "ペット")}ちゃん`).join("、") : "対象ペット未取得";
@@ -1198,6 +1198,53 @@
       p.pets.forEach((pet, i) => {
         if(!pet.pet_name || !pet.pet_name.trim()) throw new Error(`${i + 1}頭目のペット名を入力してください。`);
       });
+      validateNoHotelOverlapOnClient(p);
+    }
+
+    function validateNoHotelOverlapOnClient(payload){
+      const activeHotels = Array.isArray(state.activeHotels)
+        ? state.activeHotels.filter(h => ["requested","confirmed","checked_in"].includes(h.status || "requested"))
+        : [];
+      if(!activeHotels.length) return;
+
+      const newStart = hotelDateTimeMsClient(payload.checkin_date, payload.checkin_time || "10:00");
+      let newEnd = hotelDateTimeMsClient(payload.checkout_date, payload.checkout_time || "10:00");
+      if(!Number.isFinite(newEnd) || newEnd <= newStart) newEnd = newStart + 24 * 60 * 60 * 1000;
+
+      const incomingPetNames = new Set((payload.pets || [])
+        .map(p => normalizePetNameForCompare(p.pet_name))
+        .filter(Boolean));
+
+      for(const hotel of activeHotels){
+        const oldStart = hotelDateTimeMsClient(hotel.checkin_date, hotel.checkin_time || "10:00");
+        let oldEnd = hotelDateTimeMsClient(hotel.checkout_date, hotel.checkout_time || "10:00");
+        if(!Number.isFinite(oldEnd) || oldEnd <= oldStart) oldEnd = oldStart + 24 * 60 * 60 * 1000;
+        if(!hotelPeriodsOverlapClient(newStart, newEnd, oldStart, oldEnd)) continue;
+
+        const pets = Array.isArray(hotel.pets) ? hotel.pets : [];
+        const hitPet = pets.find(p => incomingPetNames.has(normalizePetNameForCompare(p.pet_name)));
+        if(hitPet){
+          throw new Error(`${hitPet.pet_name || "このペット"}ちゃんは、すでに ${hotel.checkin_date || "-"} ${hm(hotel.checkin_time || "")}〜${hotel.checkout_date || "-"} ${hm(hotel.checkout_time || "")} のホテル申込があります。期間が重ならない日程を選択してください。`);
+        }
+      }
+    }
+
+    function hotelDateTimeMsClient(date, time){
+      if(!date) return NaN;
+      const t = hm(time || "00:00") || "00:00";
+      return new Date(`${date}T${t}:00+09:00`).getTime();
+    }
+
+    function hotelPeriodsOverlapClient(startA, endA, startB, endB){
+      return Number.isFinite(startA) && Number.isFinite(endA) && Number.isFinite(startB) && Number.isFinite(endB)
+        && startA < endB && startB < endA;
+    }
+
+    function normalizePetNameForCompare(name){
+      return String(name || "")
+        .replace(/[\s　]/g, "")
+        .replace(/ちゃん$/g, "")
+        .toLowerCase();
     }
 
     async function apiGet(path){
