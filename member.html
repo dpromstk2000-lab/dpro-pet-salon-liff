@@ -1,10 +1,10 @@
-<!-- STEP PETSALON-18O: 多頭飼い会員証最適化・ペット追加登録・ペット別予約/ホテル表示retry2 -->
+<!-- STEP PETSALON-18P: 多頭飼い会員証スマホ表示最適化・縦カード選択・横伸び防止 -->
 <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜多頭飼い対応ペット会員証</title>
+  <title>DPROペットサロン｜スマホ最適化ペット会員証</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -23,7 +23,8 @@
       --shadow:0 18px 45px rgba(70,42,25,.10);
       --radius:22px;
     }
-    *{box-sizing:border-box}
+    *{box-sizing:border-box;min-width:0}
+    html,body{max-width:100%;overflow-x:hidden}
     body{
       margin:0;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
@@ -32,9 +33,11 @@
         radial-gradient(circle at top left, rgba(185,128,85,.18), transparent 34%),
         linear-gradient(180deg,#fffaf4 0%,#fff 45%,#fffaf4 100%);
       line-height:1.65;
+      overflow-wrap:anywhere;
+      word-break:break-word;
     }
     button,input,select,textarea{font:inherit}
-    .wrap{max-width:980px;margin:0 auto;padding:18px 14px 44px}
+    .wrap{max-width:980px;margin:0 auto;padding:18px 14px 44px;overflow:hidden}
     .hero{
       background:linear-gradient(135deg,#4b3328,#8a5a3c 55%,#c99a6b);
       color:#fff;
@@ -90,6 +93,7 @@
       border-radius:var(--radius);
       padding:18px;
       box-shadow:0 10px 28px rgba(70,42,25,.07);
+      overflow:hidden;
     }
     .card-head{
       display:flex;
@@ -335,7 +339,9 @@
       font-weight:900;
       background:#f1ebe5;
       color:var(--main);
-      white-space:nowrap;
+      white-space:normal;
+      text-align:center;
+      flex:none;
     }
     .status-label.requested{background:#fff6dc;color:#8b6100}
     .status-label.confirmed{background:#eaf3ff;color:#315f8f}
@@ -354,7 +360,9 @@
       font-weight:900;
       background:#eefaf3;
       color:#2f7d55;
-      white-space:nowrap;
+      white-space:normal;
+      text-align:center;
+      flex:none;
     }
     .hotel-status.requested{background:#fff6dc;color:#8b6100}
     .hotel-status.confirmed{background:#eaf3ff;color:#315f8f}
@@ -385,47 +393,76 @@
       flex-wrap:wrap;
       margin-bottom:12px;
     }
-    .pet-tabs{
-      display:flex;
-      gap:8px;
-      overflow-x:auto;
-      padding:2px 2px 8px;
-      -webkit-overflow-scrolling:touch;
-    }
-    .pet-tab{
-      border:1px solid var(--line);
-      background:#fff;
-      color:var(--main);
-      border-radius:999px;
-      padding:9px 12px;
-      font-weight:900;
-      white-space:nowrap;
-      cursor:pointer;
-    }
-    .pet-tab.active{
-      background:var(--main);
-      color:#fff;
-      border-color:var(--main);
-      box-shadow:0 8px 18px rgba(138,90,60,.18);
-    }
-    .pet-overview{
+    .pet-selector{
       display:grid;
       gap:10px;
-      margin:10px 0 12px;
+      margin:10px 0 14px;
     }
-    @media(min-width:720px){.pet-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    .pet-mini-card{
+    .pet-select-card{
+      width:100%;
       border:1px solid var(--line);
       background:linear-gradient(135deg,#fff,#fff8f1);
       border-radius:18px;
       padding:12px;
       cursor:pointer;
+      display:grid;
+      gap:9px;
+      text-align:left;
+      color:var(--ink);
     }
-    .pet-mini-card.active{border-color:#c99a6b;box-shadow:0 8px 20px rgba(138,90,60,.12)}
-    .pet-mini-name{font-weight:1000;color:var(--main);font-size:17px}
-    .pet-mini-meta{font-size:12px;color:var(--muted);margin-top:2px}
-    .pet-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-    .pet-badge{font-size:11px;padding:4px 8px;border-radius:999px;background:#fff3e6;color:#7b5739;border:1px solid #eed7c2}
+    .pet-select-card.active{
+      border-color:#c99a6b;
+      box-shadow:0 8px 20px rgba(138,90,60,.12);
+      background:linear-gradient(135deg,#fff7ef,#fff);
+    }
+    .pet-select-main{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .pet-select-name{
+      font-weight:1000;
+      color:var(--main);
+      font-size:17px;
+      line-height:1.35;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+    .pet-select-meta{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:2px;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+    .pet-select-action{
+      flex:none;
+      border-radius:999px;
+      padding:5px 9px;
+      font-size:11px;
+      font-weight:1000;
+      color:var(--main);
+      background:#fff;
+      border:1px solid var(--line);
+      white-space:nowrap;
+    }
+    .pet-select-card.active .pet-select-action{
+      color:#fff;
+      background:var(--main);
+      border-color:var(--main);
+    }
+    .pet-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:0}
+    .pet-badge{font-size:11px;padding:4px 8px;border-radius:999px;background:#fff3e6;color:#7b5739;border:1px solid #eed7c2;max-width:100%;overflow-wrap:anywhere}
+    .selected-pet-note{
+      margin:8px 0 12px;
+      padding:11px 12px;
+      border-radius:16px;
+      background:#fff7ef;
+      border:1px solid var(--line);
+      font-size:13px;
+      color:var(--muted);
+    }
     .add-pet-panel{
       border:2px solid rgba(138,90,60,.22);
       background:linear-gradient(135deg,#fff8f0,#fff);
@@ -490,6 +527,26 @@
     .danger-text{color:var(--danger);font-weight:800}
     .reservation-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .requesting{opacity:.65;pointer-events:none}
+
+    @media(max-width:719px){
+      .wrap{padding:14px 10px 36px}
+      .hero{border-radius:22px;padding:20px 14px}
+      h1{font-size:22px}
+      .card{padding:15px;border-radius:20px}
+      .card-head{display:block}
+      .btns,.pet-action-row,.reservation-actions,.same-menu-link{display:grid;grid-template-columns:1fr;gap:8px}
+      .btn,.btn.small{width:100%;min-height:44px}
+      .reservation-top{display:grid;gap:8px}
+      .date{font-size:18px;line-height:1.3;overflow-wrap:anywhere}
+      .pet-head{align-items:flex-start}
+      .avatar{width:54px;height:54px;border-radius:18px;font-size:24px}
+      .pet-name{font-size:22px;line-height:1.25;overflow-wrap:anywhere;word-break:break-word}
+      .owner,.sub,.hotel-meta,.pet-select-meta{overflow-wrap:anywhere;word-break:break-word}
+      .info,.memo,.visit-item,.reservation,.hotel-reservation{overflow-wrap:anywhere;word-break:break-word}
+      .pet-select-card{padding:13px}
+      .pet-select-main{align-items:flex-start}
+      .pet-select-action{margin-top:1px}
+    }
     .hidden{display:none!important}
   </style>
 </head>
@@ -499,7 +556,7 @@
       <div class="hero-content">
         <span class="badge">🐾 ペット会員証</span>
         <h1 id="shopName">DPROペットサロン</h1>
-        <p>ペット情報・飼い主さま1人の会員証の中で、複数ペットの情報・予約・ホテル申込を切り替えて確認できます。</p>
+        <p>ペット情報・飼い主さま1人の会員証の中で、複数ペットの情報・予約・ホテル申込を、スマホでも見やすく縦カードで切り替えて確認できます。</p>
         <div class="status">
           <span class="pill dark" id="apiState">API確認中</span>
           <span class="pill dark" id="lineState">LINE確認中</span>
@@ -525,7 +582,7 @@
 
         <div class="btns">
           <button class="btn" type="button" id="searchBtn">会員証を表示</button>
-          <a class="btn secondary" id="reserveLink" href="./index.html?v=18o">新しく予約する</a>
+          <a class="btn secondary" id="reserveLink" href="./index.html?v=18p">新しく予約する</a>
         </div>
 
         <div class="notice" style="margin-top:12px">
@@ -705,9 +762,9 @@
         </div>
       </div>
       <div class="link-grid">
-        <a class="btn" href="./index.html?v=18o">予約フォームを開く</a>
+        <a class="btn" href="./index.html?v=18p">予約フォームを開く</a>
         <a class="btn secondary" href="#reservationsBox">現在の予約を確認・変更する</a>
-        <a class="btn secondary" href="./hotel.html?v=18o">ペットホテル申込</a>
+        <a class="btn secondary" href="./hotel.html?v=18p">ペットホテル申込</a>
         <button class="btn secondary" type="button" id="copyConsultBtn">相談メッセージをコピー</button>
       </div>
       <div class="notice" style="margin-top:12px">
@@ -913,56 +970,70 @@
       }
 
       const selectedId = state.selectedPetId || "all";
-      const selectedPets = selectedId === "all" ? state.pets : state.pets.filter(p => String(p.id) === String(selectedId));
+      const selectedPets = selectedId === "all" ? [] : state.pets.filter(p => String(p.id) === String(selectedId));
+      const totalReservations = (state.reservations || []).filter(r => ["requested","confirmed","visited"].includes(r.status || "requested")).length;
+      const totalHotels = (state.activeHotels || []).length;
 
-      const tabsHtml = `
-        <div class="pet-tabs">
-          <button class="pet-tab ${selectedId === "all" ? "active" : ""}" type="button" data-pet-tab="all">すべて ${state.pets.length}頭</button>
-          ${state.pets.map(p => `<button class="pet-tab ${String(p.id) === String(selectedId) ? "active" : ""}" type="button" data-pet-tab="${escapeAttr(p.id)}">${escapeHtml(p.pet_name || "ペット")}ちゃん</button>`).join("")}
+      const selectorHtml = `
+        <div class="selected-pet-note">
+          <b>表示するペットを選択</b><br>
+          3頭以上でも見やすいよう、横並びタブではなく縦カードで切り替えます。現在の予約・ホテル申込は、選択中のペットに合わせて下の各欄も切り替わります。
         </div>
-      `;
-
-      const overviewHtml = `
-        <div class="pet-overview">
+        <div class="pet-selector">
+          <button class="pet-select-card ${selectedId === "all" ? "active" : ""}" type="button" data-pet-select="all">
+            <div class="pet-select-main">
+              <div>
+                <div class="pet-select-name">🐾 すべてのペット</div>
+                <div class="pet-select-meta">登録 ${state.pets.length}頭 / 全体の予約・ホテル申込をまとめて確認</div>
+              </div>
+              <span class="pet-select-action">${selectedId === "all" ? "表示中" : "表示する"}</span>
+            </div>
+            <div class="pet-badges">
+              <span class="pet-badge">予約 ${totalReservations}件</span>
+              <span class="pet-badge">ホテル ${totalHotels}件</span>
+            </div>
+          </button>
           ${state.pets.map(p => {
             const activeReservationCount = activeReservationsForPet(p.id).length;
             const activeHotelCount = activeHotelsForPet(p.id).length;
             const latestVisit = state.latestVisitByPet[p.id] || null;
+            const active = String(p.id) === String(selectedId);
             return `
-              <div class="pet-mini-card ${String(p.id) === String(selectedId) ? "active" : ""}" data-pet-card="${escapeAttr(p.id)}">
-                <div class="pet-mini-name">${petIcon(p.species)} ${escapeHtml(p.pet_name || "ペット")}ちゃん</div>
-                <div class="pet-mini-meta">${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")}</div>
+              <button class="pet-select-card ${active ? "active" : ""}" type="button" data-pet-select="${escapeAttr(p.id)}">
+                <div class="pet-select-main">
+                  <div>
+                    <div class="pet-select-name">${petIcon(p.species)} ${escapeHtml(p.pet_name || "ペット")}ちゃん</div>
+                    <div class="pet-select-meta">${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")}</div>
+                  </div>
+                  <span class="pet-select-action">${active ? "表示中" : "表示する"}</span>
+                </div>
                 <div class="pet-badges">
                   <span class="pet-badge">予約 ${activeReservationCount}件</span>
                   <span class="pet-badge">ホテル ${activeHotelCount}件</span>
                   <span class="pet-badge">前回 ${latestVisit ? escapeHtml(latestVisit.visit_date || "あり") : "未登録"}</span>
                 </div>
-              </div>
+              </button>
             `;
           }).join("")}
         </div>
       `;
 
-      const detailHtml = selectedPets.map(p => renderPetDetailCard(p)).join("");
+      const detailHtml = selectedId === "all"
+        ? `<div class="empty">個別の会員証情報を見る場合は、上のペットカードから1頭を選択してください。</div>`
+        : selectedPets.map(p => renderPetDetailCard(p)).join("");
 
-      $("petsBox").innerHTML = tabsHtml + overviewHtml + detailHtml;
+      $("petsBox").innerHTML = selectorHtml + detailHtml;
 
-      document.querySelectorAll("[data-pet-tab]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          state.selectedPetId = btn.dataset.petTab || "all";
-          renderPets();
-          renderReservations();
-          renderHotels();
-        });
-      });
-
-      document.querySelectorAll("[data-pet-card]").forEach(card => {
+      document.querySelectorAll("[data-pet-select]").forEach(card => {
         card.addEventListener("click", () => {
-          state.selectedPetId = card.dataset.petCard || "all";
+          state.selectedPetId = card.dataset.petSelect || "all";
           renderPets();
           renderReservations();
           renderHotels();
-          window.scrollTo({ top: card.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
+          const target = $("petsBox");
+          if(target){
+            window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 84, behavior: "smooth" });
+          }
         });
       });
 
@@ -1014,7 +1085,7 @@
           <div class="visit-item" style="margin-top:8px"><b>次回おすすめ理由</b>${escapeHtml(latestVisit.next_recommend_reason || "前回来店からのお手入れ目安")}</div>
           ${latestVisit.next_recommend_date ? `<div class="next-date">次回おすすめ日：${escapeHtml(latestVisit.next_recommend_date)}</div>` : ""}
           <div class="same-menu-link">
-            <a class="btn small" href="./index.html?${phoneQs}v=18o${petQs}">この子で予約する</a>
+            <a class="btn small" href="./index.html?${phoneQs}v=18p${petQs}">この子で予約する</a>
             <button class="btn secondary small" type="button" data-copy-same-menu="${escapeAttr(p.pet_name || "")}" data-menu="${escapeAttr(latestVisit.menu_done || "")}" data-next="${escapeAttr(latestVisit.next_recommend_date || "")}">前回と同じ内容で相談コピー</button>
           </div>
         </div>
@@ -1047,8 +1118,8 @@
           <div class="memo">${memoLines.length ? escapeHtml(memoLines.join("\n")) : "メモはまだ登録されていません。"}</div>
 
           <div class="pet-action-row">
-            <a class="btn small" href="./index.html?${phoneQs}v=18o${petQs}">この子でサロン予約</a>
-            <a class="btn secondary small" href="./hotel.html?${phoneQs}v=18o${petQs}">この子でホテル申込</a>
+            <a class="btn small" href="./index.html?${phoneQs}v=18p${petQs}">この子でサロン予約</a>
+            <a class="btn secondary small" href="./hotel.html?${phoneQs}v=18p${petQs}">この子でホテル申込</a>
           </div>
 
           ${visitHtml}
@@ -1436,7 +1507,7 @@ function findReservationById(id){
             ${petDetails}
             ${noteLines.length ? `<div class="memo">${escapeHtml(noteLines.join("\n"))}</div>` : ""}
             <div class="btns">
-              <a class="btn secondary small" href="./hotel.html?${state.customer?.phone ? `phone=${encodeURIComponent(state.customer.phone)}&` : ""}v=18o">ホテル申込画面を開く</a>
+              <a class="btn secondary small" href="./hotel.html?${state.customer?.phone ? `phone=${encodeURIComponent(state.customer.phone)}&` : ""}v=18p">ホテル申込画面を開く</a>
               <button class="btn secondary small" type="button" data-copy-hotel="${escapeAttr(h.id || "")}" data-hotel-text="${escapeAttr(buildHotelConsultText(h, petNames))}">変更・キャンセル相談をコピー</button>
             </div>
           </div>
@@ -1615,7 +1686,7 @@ function buildHotelConsultText(h, petNames){
     }
 
     function updateActionLinks(phone){
-      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18o` : `?v=18o`;
+      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=18p` : `?v=18p`;
       const reserveLink = $("reserveLink");
       if(reserveLink) reserveLink.href = `./index.html${qs}`;
       document.querySelectorAll('a[href^="./index.html"]').forEach(a => { a.href = `./index.html${qs}`; });
