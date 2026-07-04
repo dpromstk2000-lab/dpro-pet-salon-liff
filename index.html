@@ -278,6 +278,43 @@
       white-space:pre-wrap;
     }
     .summary b{display:block;margin-bottom:5px;color:var(--main)}
+
+    .registered-confirm{
+      border:1px solid #cce9db;
+      background:linear-gradient(135deg,#eefaf5,#fffdf9);
+      border-radius:18px;
+      padding:14px;
+      margin:12px 0 14px;
+      color:#195f4c;
+    }
+    .registered-confirm.warning{
+      border-color:#f0d5a8;
+      background:linear-gradient(135deg,#fff7e7,#fffdf9);
+      color:#765019;
+    }
+    .confirm-head{
+      display:flex;
+      gap:9px;
+      align-items:flex-start;
+      font-weight:1000;
+      margin-bottom:6px;
+    }
+    .confirm-body{font-size:13px;line-height:1.65;color:inherit;white-space:pre-wrap}
+    .reservation-mini{
+      margin-top:10px;
+      display:grid;
+      gap:7px;
+    }
+    .reservation-mini-item{
+      border:1px solid rgba(0,0,0,.07);
+      background:rgba(255,255,255,.75);
+      border-radius:13px;
+      padding:9px 10px;
+      font-size:12px;
+      line-height:1.55;
+    }
+    .confirm-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .confirm-note{font-size:12px;line-height:1.55;color:var(--muted);margin-top:8px}
     .hidden{display:none!important}
     .footer{
       text-align:center;
@@ -314,6 +351,18 @@
             <h2>飼い主さま情報</h2>
             <p class="lead">多頭予約でも飼い主情報は1回だけ入力します。</p>
           </div>
+        </div>
+
+        <div class="registered-confirm hidden" id="registeredConfirmBox">
+          <div class="confirm-head">✅ 登録済み情報が見つかりました</div>
+          <div class="confirm-body" id="registeredConfirmText"></div>
+          <div class="reservation-mini" id="registeredReservationList"></div>
+          <div class="confirm-actions">
+            <button class="btn small" type="button" id="useRegisteredBtn">この情報で新しく予約する</button>
+            <button class="btn secondary small" type="button" id="goHotelBtn">この情報でホテル申込へ</button>
+            <button class="btn secondary small" type="button" id="clearRegisteredBtn">別の飼い主情報で入力する</button>
+          </div>
+          <div class="confirm-note">既に予約がある場合は、誤って重複予約しないように、内容を確認してから進んでください。</div>
         </div>
 
         <div class="row two">
@@ -393,7 +442,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-6.5 index.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-18C index.html
     </div>
   </div>
 
@@ -494,8 +543,8 @@
 
   <script>
     // =========================================================
-    // STEP PETSALON-5.5
-    // index.html 多頭飼い予約対応
+    // STEP PETSALON-18C
+    // index.html 登録済み情報の確認導線・重複予約防止
     // =========================================================
 
     const CONFIG = {
@@ -516,7 +565,13 @@
       days: [],
       availableTimes: [],
       selectedDate: "",
-      selectedTime: ""
+      selectedTime: "",
+      customer: null,
+      pets: [],
+      activeReservations: [],
+      loadedFrom: "",
+      confirmedReuse: false,
+      ignoreLineProfileForSubmit: false
     };
 
     const $ = (id) => document.getElementById(id);
@@ -525,6 +580,9 @@
       $("refreshBtn").addEventListener("click", updateSummary);
       $("submitBtn").addEventListener("click", submitReservation);
       $("addPetBtn").addEventListener("click", addPetCard);
+      $("useRegisteredBtn").addEventListener("click", confirmRegisteredReuse);
+      $("clearRegisteredBtn").addEventListener("click", clearRegisteredCustomer);
+      $("goHotelBtn").addEventListener("click", goHotelWithRegisteredCustomer);
 
       await initLiff();
       await boot();
@@ -548,8 +606,6 @@
         state.profile.line_user_id = profile.userId || "";
         state.profile.line_display_name = profile.displayName || "";
         $("lineState").textContent = `LINE連携：${state.profile.line_display_name || "取得OK"}`;
-
-        await loadExistingCustomer();
       }catch(e){
         console.warn(e);
         $("lineState").textContent = "LINE未連携";
@@ -576,6 +632,7 @@
         renderTimes();
 
         addPetCard();
+        await tryLoadExistingCustomerForReservation();
         updateSummary();
       }catch(e){
         console.error(e);
@@ -584,24 +641,169 @@
       }
     }
 
-    async function loadExistingCustomer(){
-      if(!state.profile.line_user_id) return;
-
+    async function tryLoadExistingCustomerForReservation(){
       try{
-        const res = await apiGet(`/api/public/customer?line_user_id=${encodeURIComponent(state.profile.line_user_id)}`);
-        if(!res.found) return;
+        if(state.profile.line_user_id){
+          const found = await loadExistingCustomer({ line_user_id: state.profile.line_user_id }, "LINE登録情報");
+          if(found) return;
+        }
 
-        const c = res.customer;
-        $("owner_name").value = c.owner_name || "";
-        $("owner_kana").value = c.owner_kana || "";
-        $("phone").value = c.phone || "";
-        $("email").value = c.email || "";
+        const url = new URL(window.location.href);
+        const phoneFromUrl = (url.searchParams.get("phone") || "").trim();
+        if(phoneFromUrl){
+          const found = await loadExistingCustomer({ phone: phoneFromUrl }, "電話番号検索");
+          if(found) return;
+        }
+
+        const cache = readCustomerCache();
+        if(cache){
+          applyCachedCustomer(cache);
+        }
       }catch(e){
         console.warn(e);
       }
     }
 
-    function addPetCard(){
+    async function loadExistingCustomer(params, sourceLabel){
+      try{
+        const query = new URLSearchParams(params).toString();
+        const res = await apiGet(`/api/public/customer?${query}`);
+        if(!res.found) return false;
+
+        state.customer = res.customer || null;
+        state.pets = res.pets || [];
+        state.activeReservations = Array.isArray(res.reservations) ? res.reservations : [];
+        state.loadedFrom = sourceLabel || "登録情報";
+        state.confirmedReuse = false;
+        state.ignoreLineProfileForSubmit = false;
+
+        applyRegisteredCustomerToForm(state.customer, state.pets, state.loadedFrom, state.activeReservations);
+        saveCustomerCache({
+          source: state.loadedFrom,
+          customer: state.customer,
+          pets: state.pets,
+          profile: state.profile
+        });
+        return true;
+      }catch(e){
+        console.warn(e);
+        return false;
+      }
+    }
+
+    function applyCachedCustomer(cache){
+      const customer = cache.customer || {};
+      const pets = Array.isArray(cache.pets) ? cache.pets : [];
+      state.customer = customer;
+      state.pets = pets;
+      state.activeReservations = [];
+      state.loadedFrom = "前回入力情報";
+      state.confirmedReuse = false;
+      state.ignoreLineProfileForSubmit = false;
+
+      if(cache.profile){
+        state.profile.line_user_id = state.profile.line_user_id || cache.profile.line_user_id || "";
+        state.profile.line_display_name = state.profile.line_display_name || cache.profile.line_display_name || "";
+      }
+
+      applyRegisteredCustomerToForm(customer, pets, "前回入力情報", []);
+    }
+
+    function applyRegisteredCustomerToForm(customer, pets, sourceLabel, reservations){
+      if(!customer) return;
+
+      $("owner_name").value = customer.owner_name || "";
+      $("owner_kana").value = customer.owner_kana || "";
+      $("phone").value = customer.phone || "";
+      $("email").value = customer.email || "";
+
+      const mappedPets = (pets || []).slice(0, MAX_PETS).map(mapExistingPetToReservationPet);
+      if(mappedPets.length){
+        $("petsArea").innerHTML = "";
+        mappedPets.forEach(p => addPetCard(p));
+      }
+
+      renderRegisteredConfirm(customer, pets || [], sourceLabel, reservations || []);
+      updateSummary();
+    }
+
+    function mapExistingPetToReservationPet(p){
+      return {
+        pet_name: p.pet_name || "",
+        breed: p.breed || "",
+        age_label: p.age_label || "",
+        weight: p.weight || "",
+        sex: p.sex || "unknown",
+        neutered: p.neutered === true,
+        vaccine_confirmed: p.vaccine_confirmed === true,
+        personality_notes: p.personality_notes || "",
+        dislike_notes: p.dislike_notes || "",
+        health_notes: p.health_notes || p.skin_condition || "",
+        favorite_style: p.favorite_style || p.last_style_note || "",
+        request_note: ""
+      };
+    }
+
+    function renderRegisteredConfirm(customer, pets, sourceLabel, reservations){
+      const box = $("registeredConfirmBox");
+      const text = $("registeredConfirmText");
+      const list = $("registeredReservationList");
+      const hasReservations = Array.isArray(reservations) && reservations.length > 0;
+
+      box.classList.remove("hidden");
+      box.classList.toggle("warning", hasReservations);
+
+      text.textContent = [
+        `${sourceLabel || "登録情報"}を呼び出しました。`,
+        `飼い主さま：${customer.owner_name || "-"}`,
+        `電話番号：${customer.phone || "-"}`,
+        pets && pets.length ? `登録ペット：${pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、")}` : "登録ペット：なし",
+        hasReservations ? "現在の予約があります。新しく予約する場合は、重複していないか確認してください。" : "この情報を使う場合は、下のボタンで確認してから送信できます。"
+      ].join("\n");
+
+      if(hasReservations){
+        list.innerHTML = reservations.slice(0, 4).map(r => {
+          const petName = r.pet && r.pet.pet_name ? r.pet.pet_name : (r.pet_name || "ペット");
+          return `<div class="reservation-mini-item">📅 ${escapeHtml(r.reservation_date || "-")} ${escapeHtml(String(r.reservation_time || "").slice(0,5))}<br>${escapeHtml(petName)}ちゃん / ${escapeHtml(r.service_name || "予約")}</div>`;
+        }).join("");
+      }else{
+        list.innerHTML = "";
+      }
+    }
+
+    function confirmRegisteredReuse(){
+      state.confirmedReuse = true;
+      showOk("登録済み情報を確認しました。このまま新しい予約希望を送信できます。");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function clearRegisteredCustomer(){
+      state.customer = null;
+      state.pets = [];
+      state.activeReservations = [];
+      state.loadedFrom = "";
+      state.confirmedReuse = true;
+      state.ignoreLineProfileForSubmit = true;
+      localStorage.removeItem(cacheKey());
+
+      $("registeredConfirmBox").classList.add("hidden");
+      $("owner_name").value = "";
+      $("owner_kana").value = "";
+      $("phone").value = "";
+      $("email").value = "";
+      $("petsArea").innerHTML = "";
+      addPetCard();
+      showOk("別の飼い主さま情報で入力できます。LINE登録情報は今回の送信には使いません。");
+      updateSummary();
+    }
+
+    function goHotelWithRegisteredCustomer(){
+      const phone = $("phone").value.trim();
+      const qs = phone ? `?phone=${encodeURIComponent(phone)}` : "";
+      window.location.href = `hotel.html${qs}`;
+    }
+
+    function addPetCard(preset = null){
       const count = document.querySelectorAll("[data-pet-card]").length;
       if(count >= MAX_PETS){
         showError(`まとめ予約は最大${MAX_PETS}頭までです。`);
@@ -613,6 +815,7 @@
       $("petsArea").appendChild(node);
 
       fillServiceSelect(node);
+      if(preset) fillPetCard(node, preset);
       refreshPetNumbers();
 
       node.querySelector("[data-remove-pet]").addEventListener("click", () => {
@@ -628,6 +831,19 @@
 
       updateAddButton();
       updateSummary();
+    }
+
+
+    function fillPetCard(card, data){
+      Object.entries(data || {}).forEach(([key, value]) => {
+        const el = card.querySelector(`[data-field="${key}"]`);
+        if(!el) return;
+        if(el.type === "checkbox"){
+          el.checked = Boolean(value);
+        }else{
+          el.value = value == null ? "" : String(value);
+        }
+      });
     }
 
     function fillServiceSelect(card){
@@ -833,6 +1049,9 @@
         const phone = $("phone").value.trim();
         const pets = collectPets();
 
+        if(state.customer && !state.confirmedReuse){
+          throw new Error("登録済み情報が見つかっています。重複予約を防ぐため、先に『この情報で新しく予約する』を押して確認してください。");
+        }
         if(!ownerName) throw new Error("飼い主さま氏名を入力してください。");
         if(!phone) throw new Error("電話番号を入力してください。");
         if(!state.selectedDate) throw new Error("希望日を選択してください。");
@@ -849,8 +1068,8 @@
 
         const body = {
           shop_code: CONFIG.SHOP_CODE,
-          line_user_id: state.profile.line_user_id,
-          line_display_name: state.profile.line_display_name,
+          line_user_id: state.ignoreLineProfileForSubmit ? "" : state.profile.line_user_id,
+          line_display_name: state.ignoreLineProfileForSubmit ? "" : state.profile.line_display_name,
 
           owner_name: ownerName,
           owner_kana: $("owner_kana").value.trim(),
@@ -902,6 +1121,19 @@
 
     function cacheKey(){
       return `dpro_pet_salon_customer_cache_${CONFIG.SHOP_CODE}`;
+    }
+
+    function readCustomerCache(){
+      try{
+        const raw = localStorage.getItem(cacheKey());
+        if(!raw) return null;
+        const data = JSON.parse(raw);
+        if(!data || !data.customer) return null;
+        return data;
+      }catch(e){
+        console.warn(e);
+        return null;
+      }
     }
 
     function saveCustomerCache(data){
