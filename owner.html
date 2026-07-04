@@ -1,9 +1,10 @@
 <!doctype html>
+<!-- STEP PETSALON-18Q: オーナー管理画面の予約確定リアクション強化 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 LINE文面テンプレート整理</title>
+  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-18Q</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -725,6 +726,135 @@
       .template-help{grid-template-columns:1fr}
     }
 
+
+    /* STEP PETSALON-18Q: 予約確定リアクション強化 */
+    .action-feedback{
+      margin-top:14px;
+      border:1px solid #ccebd9;
+      background:linear-gradient(135deg,#eefaf3,#ffffff 62%);
+      color:#275f43;
+      border-radius:20px;
+      padding:15px;
+      box-shadow:0 16px 36px rgba(47,125,85,.14);
+      position:relative;
+      overflow:hidden;
+    }
+    .action-feedback:before{
+      content:"";
+      position:absolute;
+      width:140px;height:140px;border-radius:999px;
+      right:-52px;top:-58px;
+      background:rgba(47,125,85,.10);
+    }
+    .action-feedback-head{
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      align-items:flex-start;
+      position:relative;
+      z-index:1;
+    }
+    .action-feedback-icon{
+      width:42px;height:42px;border-radius:999px;
+      display:flex;align-items:center;justify-content:center;
+      flex:0 0 auto;
+      background:#2f7d55;
+      color:#fff;
+      font-weight:1000;
+      box-shadow:0 10px 22px rgba(47,125,85,.22);
+    }
+    .action-feedback-title{
+      font-size:18px;
+      font-weight:1000;
+      line-height:1.35;
+      margin:0;
+      color:#245a3e;
+    }
+    .action-feedback-body{
+      margin:3px 0 0;
+      color:#4f6d5b;
+      font-size:13px;
+      line-height:1.6;
+    }
+    .action-feedback-grid{
+      display:grid;
+      gap:8px;
+      margin-top:12px;
+      position:relative;
+      z-index:1;
+    }
+    @media(min-width:720px){.action-feedback-grid{grid-template-columns:1fr 1fr 1fr}}
+    .action-feedback-item{
+      background:#fff;
+      border:1px solid #d7ecdf;
+      border-radius:14px;
+      padding:10px;
+      font-size:12px;
+      color:#315f45;
+      min-width:0;
+      overflow-wrap:anywhere;
+    }
+    .action-feedback-item b{
+      display:block;
+      color:#2f7d55;
+      font-size:11px;
+      margin-bottom:2px;
+    }
+    .action-feedback-copy{
+      background:#fff;
+      border:1px solid #d7ecdf;
+      border-radius:16px;
+      padding:11px;
+      margin-top:12px;
+      position:relative;
+      z-index:1;
+    }
+    .action-feedback-copy .message-box{
+      margin:8px 0 10px;
+      background:#f8fdf9;
+      border-color:#d7ecdf;
+    }
+    .feedback-close{
+      border:0;
+      background:rgba(47,125,85,.10);
+      color:#2f7d55;
+      border-radius:999px;
+      width:30px;height:30px;
+      font-weight:1000;
+      cursor:pointer;
+      position:relative;
+      z-index:2;
+    }
+    .res-card.status-updating{
+      opacity:.76;
+      transform:scale(.997);
+    }
+    .res-card.action-success{
+      border-color:#8bd2a9;
+      box-shadow:0 0 0 4px rgba(47,125,85,.12), 0 14px 32px rgba(47,125,85,.12);
+      animation:successFlash 1.25s ease-out 1;
+    }
+    .res-card .confirmed-inline-note{
+      margin-top:10px;
+      border:1px solid #ccebd9;
+      background:#eefaf3;
+      color:#2f7d55;
+      border-radius:14px;
+      padding:10px;
+      font-size:12px;
+      font-weight:900;
+    }
+    @keyframes successFlash{
+      0%{transform:scale(1);background:#fff}
+      35%{transform:scale(1.01);background:#eefaf3}
+      100%{transform:scale(1);background:#fff}
+    }
+    @media(max-width:640px){
+      .action-feedback-head{align-items:flex-start}
+      .action-feedback-title{font-size:16px}
+      .action-feedback .btns .btn{width:100%}
+    }
+
   </style>
 </head>
 <body>
@@ -762,6 +892,7 @@
 
     <div class="alert err" id="errorBox"></div>
     <div class="alert ok" id="okBox"></div>
+    <div class="action-feedback hidden" id="actionFeedbackBox"></div>
 
     <section class="card" style="margin-top:14px">
       <div class="row three">
@@ -2510,14 +2641,14 @@
         btn.addEventListener("click", async () => {
           const action = btn.dataset.action;
           const id = btn.dataset.id;
+          const reservation = reservations.find(x => x.id === id);
 
           if(action === "complete"){
-            const reservation = reservations.find(x => x.id === id);
             openCompleteModal(reservation);
             return;
           }
 
-          await updateReservationStatus(id, action);
+          await updateReservationStatus(id, action, btn, reservation);
         });
       });
     }
@@ -2587,10 +2718,11 @@
           </div>
 
           ${requestNote ? `<div class="message-box">${escapeHtml(requestNote)}</div>` : ""}
+          ${status === "confirmed" ? `<div class="confirmed-inline-note">✅ この予約は確定済みです。必要に応じてLINE確定連絡をコピーして送信してください。</div>` : ""}
 
           ${showActions ? `
             <div class="btns">
-              <button class="btn blue small" data-action="confirmed" data-id="${escapeHtml(r.id)}">予約確定</button>
+              <button class="btn blue small" data-action="confirmed" data-id="${escapeHtml(r.id)}" ${status === "confirmed" ? "disabled" : ""}>${status === "confirmed" ? "予約確定済み" : "予約確定"}</button>
               <button class="btn ok small" data-action="visited" data-id="${escapeHtml(r.id)}">来店済み</button>
               <button class="btn small" data-action="complete" data-id="${escapeHtml(r.id)}">施術完了・次回案内</button>
               <button class="btn danger small" data-action="cancelled" data-id="${escapeHtml(r.id)}">キャンセル</button>
@@ -2660,22 +2792,159 @@
       `;
     }
 
-    async function updateReservationStatus(reservationId, status){
+    async function updateReservationStatus(reservationId, status, button = null, reservation = null){
+      const card = button ? button.closest(".res-card") : null;
+      const originalText = button ? button.textContent : "";
       try{
         showError("");
+        if(button){
+          button.disabled = true;
+          button.textContent = status === "confirmed" ? "確定中…" : "更新中…";
+        }
+        if(card) card.classList.add("status-updating");
+
         await apiPost("/api/admin/reservations/update-status", {
           admin_code: adminCode(),
           shop_code: shopCode(),
           reservation_id: reservationId,
           status
         });
-        showOk(`予約ステータスを「${statusLabel(status)}」に更新しました。`);
+
+        if(card){
+          card.classList.remove("status-updating");
+          card.classList.add("action-success");
+          setTimeout(() => card.classList.remove("action-success"), 1600);
+        }
+
+        if(status === "confirmed"){
+          showReservationConfirmedFeedback(reservation);
+          showOk("予約を確定しました。お客様へ送るLINE文面も下に表示しています。");
+        }else{
+          showOk(`予約ステータスを「${statusLabel(status)}」に更新しました。`);
+          showActionFeedback({
+            title: `ステータスを「${statusLabel(status)}」に更新しました`,
+            body: "管理画面に反映しました。必要に応じてお客様へLINEまたはお電話でご連絡ください。",
+            icon: "✓"
+          });
+        }
+
         await loadSummary();
         await loadDayIfVisible();
       }catch(e){
         console.error(e);
+        if(button){
+          button.disabled = false;
+          button.textContent = originalText || "更新";
+        }
+        if(card) card.classList.remove("status-updating");
         showError(e.message || "予約ステータス更新に失敗しました。");
       }
+    }
+
+    function showReservationConfirmedFeedback(r = {}){
+      const c = r.customer || {};
+      const p = r.pet || {};
+      const ownerName = c.owner_name || "お客様";
+      const petName = p.pet_name || "ペット";
+      const date = r.reservation_date || "予約日未設定";
+      const time = hm(r.reservation_time || "");
+      const service = r.service_name || "メニュー未設定";
+      const message = buildReservationConfirmedLineMessage(r);
+
+      showActionFeedback({
+        title: "予約を確定しました",
+        body: `${petName}ちゃんの予約を確定しました。必要に応じて、下のLINE確定連絡をコピーしてお客様へ送信してください。`,
+        icon: "✓",
+        items: [
+          ["飼い主", `${ownerName}さま`],
+          ["ペット", `${petName}ちゃん`],
+          ["予約日時", `${date} ${time}`.trim()],
+          ["メニュー", service],
+          ["次の操作", "LINE確定連絡を送る / 今日の予約を確認"],
+          ["状態", "予約確定済み"]
+        ],
+        copyMessage: message,
+        copyLabel: "LINE確定連絡をコピー"
+      });
+    }
+
+    function showActionFeedback({title, body, icon = "✓", items = [], copyMessage = "", copyLabel = "文面をコピー"}){
+      const el = $("actionFeedbackBox");
+      if(!el) return;
+
+      el.innerHTML = `
+        <div class="action-feedback-head">
+          <div style="display:flex;gap:10px;align-items:flex-start;min-width:0">
+            <div class="action-feedback-icon">${escapeHtml(icon)}</div>
+            <div style="min-width:0">
+              <p class="action-feedback-title">${escapeHtml(title || "操作が完了しました")}</p>
+              <p class="action-feedback-body">${escapeHtml(body || "管理画面に反映しました。")}</p>
+            </div>
+          </div>
+          <button type="button" class="feedback-close" id="actionFeedbackClose" aria-label="閉じる">×</button>
+        </div>
+        ${items.length ? `
+          <div class="action-feedback-grid">
+            ${items.map(([label,value]) => `
+              <div class="action-feedback-item"><b>${escapeHtml(label)}</b>${escapeHtml(value)}</div>
+            `).join("")}
+          </div>
+        ` : ""}
+        ${copyMessage ? `
+          <div class="action-feedback-copy">
+            <b>お客様へ送る文面</b>
+            <div class="message-box">${escapeHtml(copyMessage)}</div>
+            <div class="btns">
+              <button type="button" class="btn small" id="actionFeedbackCopyBtn" data-copy-message="${escapeAttr(copyMessage)}">${escapeHtml(copyLabel)}</button>
+              <button type="button" class="btn secondary small" id="actionFeedbackHideBtn">閉じる</button>
+            </div>
+            <div class="copy-note">コピー後、LINE公式アカウントのチャットに貼り付けて送信してください。</div>
+          </div>
+        ` : ""}
+      `;
+      el.classList.remove("hidden");
+      el.scrollIntoView({behavior:"smooth", block:"nearest"});
+
+      const close = $("actionFeedbackClose");
+      if(close) close.addEventListener("click", () => hideActionFeedback());
+      const hide = $("actionFeedbackHideBtn");
+      if(hide) hide.addEventListener("click", () => hideActionFeedback());
+      const copy = $("actionFeedbackCopyBtn");
+      if(copy){
+        copy.addEventListener("click", async () => {
+          await copyText(copy.dataset.copyMessage || "");
+          copy.textContent = "コピーしました";
+          showOk("LINE確定連絡をコピーしました。LINE公式のチャット欄へ貼り付けて送信できます。");
+        });
+      }
+    }
+
+    function hideActionFeedback(){
+      const el = $("actionFeedbackBox");
+      if(!el) return;
+      el.classList.add("hidden");
+      el.innerHTML = "";
+    }
+
+    function buildReservationConfirmedLineMessage(r = {}){
+      const c = r.customer || {};
+      const p = r.pet || {};
+      const ownerName = c.owner_name || "お客様";
+      const petName = p.pet_name || "ペット";
+      const date = r.reservation_date || "";
+      const time = hm(r.reservation_time || "");
+      const service = r.service_name || "";
+      return [
+        `${ownerName}さま`,
+        "ご予約を確定しました。",
+        "",
+        `【日時】${date} ${time}`.trim(),
+        `【ペット】${petName}ちゃん`,
+        service ? `【メニュー】${service}` : "",
+        "",
+        "ご来店をお待ちしております。",
+        "変更やご不明点がありましたら、このLINEにご返信ください。"
+      ].filter(Boolean).join("\n");
     }
 
     async function updateFollowupStatus(followupId, status){
