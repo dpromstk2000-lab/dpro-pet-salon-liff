@@ -1696,7 +1696,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19K owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-20C owner.html
     </div>
   </div>
 
@@ -2683,6 +2683,31 @@
       return "custom_menu";
     }
 
+    function buildMenuSettingsChanges(before, after){
+      const beforeMap = new Map((before || []).map(s => [String(s.service_code || s.service_name || ""), s]));
+      const changes = [];
+      (after || []).forEach(s => {
+        const key = String(s.service_code || s.service_name || "");
+        const b = beforeMap.get(key);
+        const name = s.service_name || key || "メニュー";
+        if(!b){
+          changes.push(`・${name}：追加（${yen(s.base_price)} / ${Number(s.base_minutes || 0)}分 / ${s.is_active ? "表示ON" : "表示OFF"}）`);
+          return;
+        }
+        if(Number(b.base_price || 0) !== Number(s.base_price || 0)) changes.push(`・${name} 料金：${yen(b.base_price)} → ${yen(s.base_price)}`);
+        if(Number(b.base_minutes || 0) !== Number(s.base_minutes || 0)) changes.push(`・${name} 所要時間：${Number(b.base_minutes || 0)}分 → ${Number(s.base_minutes || 0)}分`);
+        if(Boolean(b.is_active) !== Boolean(s.is_active)) changes.push(`・${name} 表示：${b.is_active ? "表示ON" : "表示OFF"} → ${s.is_active ? "表示ON" : "表示OFF"}`);
+        if(String(b.service_name || "") !== String(s.service_name || "")) changes.push(`・メニュー名：${b.service_name || "未設定"} → ${s.service_name || "未設定"}`);
+        if(Number(b.sort_order || 0) !== Number(s.sort_order || 0)) changes.push(`・${name} 並び順：${Number(b.sort_order || 0)} → ${Number(s.sort_order || 0)}`);
+      });
+      const afterKeys = new Set((after || []).map(s => String(s.service_code || s.service_name || "")));
+      (before || []).forEach(s => {
+        const key = String(s.service_code || s.service_name || "");
+        if(key && !afterKeys.has(key)) changes.push(`・${s.service_name || key}：削除`);
+      });
+      return changes;
+    }
+
     function renderMenuSettingsFeedback(status, message = ""){
       const el = $("menuSettingsFeedback");
       if(!el) return;
@@ -2696,7 +2721,7 @@
         el.classList.add("err");
         el.innerHTML = `<div class="save-title">保存に失敗しました</div><div>${escapeHtml(message || "通信状況を確認してください。")}</div>`;
       }else{
-        el.innerHTML = `<div class="save-title">メニュー・料金を保存しました</div><div>${escapeHtml(message || "お客様予約画面と電話受付のメニューに反映されます。")}</div>`;
+        el.innerHTML = `<div class="save-title">メニュー・料金を保存しました</div><div>${escapeHtml(message || "お客様予約画面と電話受付のメニューに反映されます。").replace(/\n/g,"<br>")}</div>`;
       }
     }
 
@@ -2708,7 +2733,9 @@
         showOk("");
         renderMenuSettingsFeedback("saving");
         if(btn){ btn.disabled = true; btn.textContent = "保存中…"; }
+        const beforeServices = (state.services || []).map(s => ({...s}));
         const services = collectMenuSettingsRows(true);
+        const changes = buildMenuSettingsChanges(beforeServices, services);
         const res = await apiPost("/api/admin/services/save", {
           admin_code: adminCode(),
           shop_code: shopCode(),
@@ -2717,8 +2744,9 @@
         state.services = res.services || services;
         renderMenuSettings(state.services);
         await loadManualServices();
+        const changeMessage = changes.length ? changes.join("\n") : "変更はありません。";
         showOk("メニュー・料金を保存しました。予約画面・電話受付メニューへ反映されます。");
-        renderMenuSettingsFeedback("success", `保存件数：${state.services.length}件`);
+        renderMenuSettingsFeedback("success", `${changeMessage}\n保存件数：${state.services.length}件`);
       }catch(e){
         console.error(e);
         renderMenuSettingsFeedback("error", e.message || "保存できませんでした。");
@@ -2890,7 +2918,7 @@
       const existing = findExistingPetByInput(pets, petName);
       if(existing && String(existing.id || "") !== String(selectedId || "")){
         const action = kind === "hotel" ? "ホテル受付" : "サロン電話予約";
-        throw new Error(`${existing.pet_name || petName}ちゃんは登録済みです。重複登録を防ぐため、顧客検索結果から「${existing.pet_name || petName}ちゃんを選択」してから${action}してください。`);
+        throw new Error(`${petDisplayName(existing.pet_name || petName)}は登録済みです。重複登録を防ぐため、顧客検索結果から「${petDisplayName(existing.pet_name || petName)}を選択」してから${action}してください。`);
       }
     }
 
@@ -2922,7 +2950,7 @@
           ? `<div class="pet-select-row">${pets.map(p => `
               <button class="btn secondary small" type="button"
                 data-manual-pet='${escapeAttr(JSON.stringify(p))}'>
-                ${escapeHtml(p.pet_name || "ペット")}ちゃんを選択
+                ${escapeHtml(petDisplayName(p.pet_name || "ペット"))}を選択
               </button>
             `).join("")}</div>`
           : `<div style="margin-top:8px">登録済みペットはありません。</div>`;
@@ -3184,7 +3212,7 @@
         const data = escapeAttr(JSON.stringify({ customer: c, pet: p }));
         return `
           <div class="pet-chip">
-            <b>${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん</b><br>
+            <b>${escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))}</b><br>
             ${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg<br>
             前回来店：${escapeHtml(latest?.visit_date || "未登録")}<br>
             次回目安：${escapeHtml(latest?.next_recommend_date || "未登録")}
@@ -3199,7 +3227,7 @@
       const reservationList = reservations.length ? reservations.slice(0, 3).map(r => `
         <div class="mini-box">
           <b>予約</b>${escapeHtml(r.reservation_date || "")} ${escapeHtml(hm(r.reservation_time || ""))}<br>
-          ${escapeHtml(r.pet?.pet_name || "ペット")}ちゃん / ${escapeHtml(r.service_name || "")}<br>
+          ${escapeHtml(petDisplayName(r.pet?.pet_name || "ペット"))} / ${escapeHtml(r.service_name || "")}<br>
           ${escapeHtml(statusLabel(r.status || "requested"))}
         </div>
       `).join("") : `<div class="mini-box"><b>予約</b>現在の予約はありません。</div>`;
@@ -3301,7 +3329,7 @@
             電話：${escapeHtml(c.phone || "-")} / LINE名：${escapeHtml(c.line_display_name || "-")}
             ${duplicatePetNoticeHtml(c.pets || [])}
             <div class="btns" style="margin-top:8px">
-              ${(c.pets || []).map(p => `<button class="btn secondary small" type="button" data-hotel-manual-pet='${escapeAttr(JSON.stringify({customer:c,pet:p}))}'>${escapeHtml(p.pet_name || "ペット")}ちゃんを選択</button>`).join("")}
+              ${(c.pets || []).map(p => `<button class="btn secondary small" type="button" data-hotel-manual-pet='${escapeAttr(JSON.stringify({customer:c,pet:p}))}'>${escapeHtml(petDisplayName(p.pet_name || "ペット"))}を選択</button>`).join("")}
             </div>
           </div>`;
         document.querySelectorAll("[data-hotel-manual-pet]").forEach(btn => {
@@ -3645,7 +3673,7 @@
 
     function hotelApplicationCard(app){
       const pets = Array.isArray(app.pets) ? app.pets : [];
-      const petNames = pets.length ? pets.map(p => `${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん`).join("、") : "ペット情報なし";
+      const petNames = pets.length ? pets.map(p => escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))).join("、") : "ペット情報なし";
       const today = todayYmd();
       const checkinDisabled = today < String(app.checkin_date || "");
       const checkoutDisabled = today < String(app.checkout_date || "");
@@ -3655,7 +3683,7 @@
       ].filter(Boolean).join(" ");
       const petDetail = pets.length ? pets.map((p, i) => `
         <div class="info">
-          <b>${i + 1}頭目：${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん</b>
+          <b>${i + 1}頭目：${escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))}</b>
           ${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg<br>
           ${hotelPetNoteHtml(p, app)}
         </div>
@@ -3745,7 +3773,7 @@
       const box = $("hotelActionFeedback");
       if(!box) return;
       const pets = Array.isArray(app.pets) ? app.pets : [];
-      const petNames = pets.length ? pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、") : "ペット";
+      const petNames = pets.length ? pets.map(p => petDisplayName(p.pet_name || "ペット")).join("、") : "ペット";
       const msg = buildHotelConfirmedMessage(app, petNames);
       box.style.display = "block";
       box.innerHTML = `
@@ -3771,8 +3799,8 @@
         showOk("ホテル確定LINE文面をコピーしました。LINE公式チャットへ貼り付けてください。");
       });
       $("markHotelConfirmSentBtn").addEventListener("click", () => {
-        box.style.display = "none";
-        showOk("ホテル確定連絡を送信済みにしました。");
+        box.innerHTML = `<div class="action-feedback-copy"><h3>ホテル確定連絡を送信済みにしました</h3><p>お客様へのホテル確定連絡は送信済み扱いです。対象のホテル申込は「確定済み」として残ります。</p></div>`;
+        showOk("ホテル確定連絡を送信済みにしました。対象申込は送信済み扱いです。");
       });
       box.scrollIntoView({ behavior:"smooth", block:"start" });
     }
@@ -3920,7 +3948,7 @@
           <div class="res-top">
             <div>
               <div class="time">${escapeHtml(hm(r.reservation_time))}</div>
-              <div class="name">${escapeHtml(p.pet_name || "ペット名未登録")}ちゃん / ${escapeHtml(c.owner_name || "飼い主未登録")}</div>
+              <div class="name">${escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))} / ${escapeHtml(c.owner_name || "飼い主未登録")}</div>
               <div class="sub">${escapeHtml(r.service_name || "")}　${escapeHtml(r.reservation_date || "")}</div>
             </div>
             <div style="display:flex;gap:6px;align-items:flex-end;flex-direction:column">
@@ -4011,7 +4039,7 @@
           <div class="follow-top">
             <div>
               <div class="name">${escapeHtml(f.title || "LINE案内")}</div>
-              <div class="sub">${escapeHtml(f.scheduled_date || "")} / ${escapeHtml(p.pet_name || "ペット")}ちゃん / ${escapeHtml(c.owner_name || "飼い主")}</div>
+              <div class="sub">${escapeHtml(f.scheduled_date || "")} / ${escapeHtml(petDisplayName(p.pet_name || "ペット"))} / ${escapeHtml(c.owner_name || "飼い主")}</div>
             </div>
             <span class="status ${escapeHtml(f.status || "pending")}">${followStatusLabel(f.status)}</span>
           </div>
@@ -4100,7 +4128,7 @@
         icon: "✓",
         items: [
           ["飼い主", `${ownerName}さま`],
-          ["ペット", `${petName}ちゃん`],
+          ["ペット", petDisplayName(petName)],
           ["予約日時", `${date} ${time}`.trim()],
           ["メニュー", service],
           ["LINE名", c.line_display_name || "未取得"],
@@ -4169,7 +4197,12 @@
         sent.addEventListener("click", () => {
           sent.disabled = true;
           sent.textContent = "送信済み";
-          showOk("送信済みにしました。今日やることからはLINE未送信タスクを外す運用です。");
+          sent.classList.add("done");
+          const note = document.createElement("div");
+          note.className = "ops-note";
+          note.innerHTML = "✅ LINE連絡を送信済みにしました。対象タスクは完了扱いです。";
+          sent.closest(".btns")?.after(note);
+          showOk("LINE連絡を送信済みにしました。対象カードを送信済みとして扱います。");
         });
       }
     }
@@ -4741,6 +4774,17 @@
         '"':"&quot;",
         "'":"&#39;"
       }[s]));
+    }
+
+    function petDisplayName(name){
+      const raw = String(name || "ペット").trim();
+      if(!raw) return "ペットちゃん";
+      return /(ちゃん|くん|君|さん|様)$/.test(raw) ? raw : `${raw}ちゃん`;
+    }
+
+    function yen(v){
+      const n = Number(v || 0);
+      return `${n.toLocaleString()}円`;
     }
   </script>
 </body>
