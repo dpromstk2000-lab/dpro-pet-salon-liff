@@ -1,4 +1,4 @@
-<!-- STEP PETSALON-19J: 会員証表示・メニュー料金設定対応（19I維持） -->
+<!-- STEP PETSALON-20C: 最終UX改善（敬称・表示整理） -->
 <!doctype html>
 <html lang="ja">
 <head>
@@ -777,7 +777,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19I member.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-20C member.html
     </div>
   </div>
 
@@ -1006,7 +1006,7 @@
               <button class="pet-select-card ${active ? "active" : ""}" type="button" data-pet-select="${escapeAttr(p.id)}">
                 <div class="pet-select-main">
                   <div>
-                    <div class="pet-select-name">${petIcon(p.species)} ${escapeHtml(p.pet_name || "ペット")}ちゃん</div>
+                    <div class="pet-select-name">${petIcon(p.species)} ${escapeHtml(petDisplayName(p.pet_name || "ペット"))}</div>
                     <div class="pet-select-meta">${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")}</div>
                   </div>
                   <span class="pet-select-action">${active ? "表示中" : "表示する"}</span>
@@ -1105,7 +1105,7 @@
           <div class="pet-head">
             <div class="avatar">${petIcon(p.species)}</div>
             <div>
-              <div class="pet-name">${escapeHtml(p.pet_name || "ペット")}ちゃん</div>
+              <div class="pet-name">${escapeHtml(petDisplayName(p.pet_name || "ペット"))}</div>
               <div class="owner">${escapeHtml(state.customer?.owner_name || "")}さまのペット会員証</div>
             </div>
           </div>
@@ -1142,7 +1142,7 @@
     function selectedPetName(){
       if(state.selectedPetId === "all") return "すべてのペット";
       const p = state.pets.find(p => String(p.id) === String(state.selectedPetId));
-      return p ? `${p.pet_name || "ペット"}ちゃん` : "選択中ペット";
+      return p ? `${petDisplayName(p.pet_name || "ペット")}` : "選択中ペット";
     }
 
     
@@ -1213,7 +1213,7 @@ function renderReservations(){
       const reason = changeLimitReason(r);
       return `
         <div class="reservation-line" data-reservation-card="${escapeAttr(r.id || "")}">
-          <div class="sub"><b>${escapeHtml(pet.pet_name || "ペット")}ちゃん</b> / ${escapeHtml(r.service_name || "")}</div>
+          <div class="sub"><b>${escapeHtml(petDisplayName(pet.pet_name || "ペット"))}</b> / ${escapeHtml(r.service_name || "")}</div>
           ${r.request_note ? `<div class="memo">${escapeHtml(r.request_note)}</div>` : ""}
           <div class="reservation-actions">
             ${canRequest ? `<button class="btn secondary small" type="button" data-change-rid="${escapeAttr(r.id || "")}">この子の予約日時を変更したい</button>` : ""}
@@ -1244,7 +1244,7 @@ function findReservationById(id){
       state.selectedReservation = r;
       const pet = state.pets.find(p => p.id === r.pet_id) || {};
       $("actionPanelSummary").innerHTML = `
-        <b>${escapeHtml(pet.pet_name || "ペット")}ちゃん / ${escapeHtml(r.service_name || "")}</b><br>
+        <b>${escapeHtml(petDisplayName(pet.pet_name || "ペット"))} / ${escapeHtml(r.service_name || "")}</b><br>
         現在の予約：${escapeHtml(r.reservation_date || "")} ${escapeHtml(hm(r.reservation_time))}<br>
         この画面から送る内容は「希望受付」です。サロン確認後に確定します。
       `;
@@ -1496,7 +1496,7 @@ function findReservationById(id){
 
       $("hotelsBox").innerHTML = hotels.map(h => {
         const pets = Array.isArray(h.pets) ? h.pets : [];
-        const petNames = pets.length ? pets.map(p => `${escapeHtml(p.pet_name || "ペット")}ちゃん`).join("、") : "対象ペット未取得";
+        const petNames = pets.length ? pets.map(p => `${escapeHtml(petDisplayName(p.pet_name || "ペット"))}`).join("、") : "対象ペット未取得";
         const requestNote = hotelVisibleRequestNote(h.request_note);
         const noteLines = [
           h.emergency_contact_phone ? `緊急連絡先：${h.emergency_contact_phone}` : "",
@@ -1513,7 +1513,7 @@ function findReservationById(id){
               hotelMemberLine("性格・過ごし方", p.caution_note || h.personality_note)
             ].filter(Boolean);
             const lines = [
-              `${p.pet_name || "ペット"}ちゃん`,
+              `${petDisplayName(p.pet_name || "ペット")}`,
               ...(detailLines.length ? detailLines : ["ホテル宿泊メモは未入力です"])
             ];
             return lines.join("\n");
@@ -1844,6 +1844,12 @@ function buildHotelConsultText(h, petNames){
         '"':"&quot;",
         "'":"&#39;"
       }[s]));
+    }
+
+    function petDisplayName(name){
+      const raw = String(name || "ペット").trim();
+      if(!raw) return "ペットちゃん";
+      return /(ちゃん|くん|君|さん|様)$/.test(raw) ? raw : `${raw}ちゃん`;
     }
   </script>
 </body>
