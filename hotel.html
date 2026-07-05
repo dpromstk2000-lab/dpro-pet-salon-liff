@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- STEP PETSALON-20F: hotel.html 送信前確認ペット情報の確実反映修正 -->
+<!-- STEP PETSALON-20H: hotel.html LINE内ブラウザ表示整理・未入力送信防止 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-20F</title>
+  <title>DPROペットサロン｜ペットホテル申込</title>
   <style>
     :root{
       --bg:#fbf6ef;
@@ -143,6 +143,7 @@
     .btn.blue{background:var(--blue)}
     .btn.danger{background:var(--danger)}
     .btn.small{padding:8px 10px;font-size:12px}
+    .btn:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
     .notice{
       background:var(--soft);
       border:1px solid var(--line);
@@ -338,9 +339,9 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-20F / PET HOTEL LIFF</div>
+      <div class="pill">🏨 ペットホテル申込</div>
       <h1 id="shopName">DPROペットサロン</h1>
-      <p class="lead">ホテル申込専用の画面です。登録済み情報がある場合は、現在の申込を確認してから「別日程で新規申込」または「変更・追加相談」を選びます。現在のホテル申込を確実に確認し、同じ期間の重複申込はできません。</p>
+      <p class="lead">ホテル申込専用の画面です。登録済み情報がある場合は、現在の申込を確認してから進みます。同じペット・同じ期間の重複申込はできません。</p>
       <div class="notice" style="margin-top:12px"><b>ホテルは定員があります</b><br>ご希望日が定員に達している場合は、別日をご案内します。当日は普段のごはん・必要なお薬・リード・ワクチン証明書などをご持参ください。</div>
       <div class="notice" id="hotelPriceBox" style="margin-top:10px;display:none"></div>
       <div class="chips">
@@ -516,13 +517,13 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-20F hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / ペットホテル申込</div>
   </div>
 
   <div class="bottom">
     <div class="bottom-inner">
       <button class="btn secondary" type="button" id="reviewBtn">内容を再確認</button>
-      <button class="btn" type="button" id="submitBtn">ホテル申込を送信する</button>
+      <button class="btn" type="button" id="submitBtn" disabled>ホテル申込を送信する</button>
     </div>
   </div>
 
@@ -554,7 +555,8 @@
       // 送信前確認に「ペット情報：未入力」と出るケースがあったため、
       // 反映済みペットを安全に保持する。
       appliedHotelPets: [],
-      ignoreLineProfileForSubmit: false
+      ignoreLineProfileForSubmit: false,
+      reviewConfirmed: false
     };
 
     const $ = id => document.getElementById(id);
@@ -576,14 +578,14 @@
       fillTimeOptions();
       setDefaultDates();
       renderPets();
-      updateSummary();
+      resetReviewState("必要事項を入力後、『内容を再確認』を押すと送信前確認が表示されます。");
       await initLiff();
       await boot();
     });
 
     function bindEvents(){
       $("addPetBtn").addEventListener("click", addPet);
-      $("reviewBtn").addEventListener("click", updateSummary);
+      $("reviewBtn").addEventListener("click", reviewHotelApplication);
       $("submitBtn").addEventListener("click", submitHotelApplication);
       $("phoneSearchBtn").addEventListener("click", searchCustomerByPhone);
       $("useRegisteredHotelBtn").addEventListener("click", confirmRegisteredForHotel);
@@ -630,10 +632,16 @@
       });
 
       document.addEventListener("input", e => {
-        if(e.target.matches("input,textarea,select")) updateSummary();
+        if(e.target.matches("input,textarea,select")){
+          markReviewDirty();
+          updateSummary();
+        }
       });
       document.addEventListener("change", e => {
-        if(e.target.matches("input,textarea,select")) updateSummary();
+        if(e.target.matches("input,textarea,select")){
+          markReviewDirty();
+          updateSummary();
+        }
       });
     }
 
@@ -1029,6 +1037,7 @@
       // renderPets() 内の再描画後も、選択済みペット情報を確実に保持する。
       // スマホ実機で「申込欄には反映済みなのに、送信前確認だけ未入力」と見える事故を防ぐ。
       state.appliedHotelPets = mappedPets.map(p => ({ ...p }));
+      markReviewDirty();
       updateSummary();
       if(showMessage){
         showOk(`${mappedPets.map(p => petDisplayName(p.pet_name || "ペット")).join("、")}を申込欄に反映しました。送信前確認にもペット情報が表示されます。`);
@@ -1354,6 +1363,55 @@
       return pets.filter((p, idx) => checked.includes(registeredPetKey(p, idx)));
     }
 
+
+    function resetReviewState(message){
+      state.reviewConfirmed = false;
+      const submitBtn = $("submitBtn");
+      if(submitBtn) submitBtn.disabled = true;
+      if(message && $("summaryBox")) $("summaryBox").textContent = message;
+    }
+
+    function markReviewDirty(){
+      if(state.reviewConfirmed){
+        state.reviewConfirmed = false;
+        const submitBtn = $("submitBtn");
+        if(submitBtn) submitBtn.disabled = true;
+      }
+    }
+
+    function focusValidationTarget(fieldId){
+      if(!fieldId) return;
+      const el = $(fieldId);
+      if(!el) return;
+      el.scrollIntoView({ behavior:"smooth", block:"center" });
+      if(typeof el.focus === "function") setTimeout(() => el.focus({ preventScroll:true }), 250);
+    }
+
+    function reviewHotelApplication(){
+      try{
+        showError("");
+        showOk("");
+        syncCheckoutDateWithCheckin(false);
+        const payload = buildPayload();
+        if(state.customer && !state.confirmedReuse){
+          throw validationError("登録済み情報が見つかっています。先に『選んだペットで新規申込へ』を押して、使用中にしてください。", "registeredConfirmBox");
+        }
+        validatePayload(payload);
+        updateSummary();
+        state.reviewConfirmed = true;
+        const submitBtn = $("submitBtn");
+        if(submitBtn) submitBtn.disabled = false;
+        showOk("送信前確認が完了しました。内容に問題なければ『ホテル申込を送信する』を押してください。");
+        const summary = $("summaryBox");
+        if(summary) summary.scrollIntoView({ behavior:"smooth", block:"center" });
+      }catch(e){
+        console.error(e);
+        resetReviewState("未入力または未選択の項目があります。上の赤い案内に従って入力してから、もう一度『内容を再確認』を押してください。");
+        showError(e.message || "入力内容を確認してください。");
+        focusValidationTarget(e.fieldId);
+      }
+    }
+
     function buildPayload(){
       if($("checkinDateSelect")) $("checkinDate").value = $("checkinDateSelect").value || $("checkinDate").value;
       if($("checkoutDateSelect")) $("checkoutDate").value = $("checkoutDateSelect").value || $("checkoutDate").value;
@@ -1426,6 +1484,9 @@
         updateSummary();
 
         const payload = buildPayload();
+        if(!state.reviewConfirmed){
+          throw validationError("先に『内容を再確認』を押して、送信前確認を完了してください。", "reviewBtn");
+        }
         if(state.customer && !state.confirmedReuse){
           throw new Error("登録済み情報が見つかっています。誤送信を防ぐため、先に上部の『この情報でホテル申込をはじめる』ボタンを押して、使用中にしてください。");
         }
@@ -1453,6 +1514,7 @@
           state.activeHotels = [res.application, ...(state.activeHotels || [])];
           renderCurrentHotelApplications(state.activeHotels);
         }
+        state.reviewConfirmed = false;
         showOk("別日程の新規ホテル申込を受け付けました。上部の『現在のペットホテル申込』とペット会員証で確認できます。");
         window.scrollTo({ top:0, behavior:"smooth" });
 
@@ -1460,7 +1522,7 @@
         console.error(e);
         showError(e.message || "送信に失敗しました。");
       }finally{
-        $("submitBtn").disabled = false;
+        $("submitBtn").disabled = !state.reviewConfirmed;
         $("submitBtn").textContent = "ホテル申込を送信する";
       }
     }
