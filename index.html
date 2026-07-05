@@ -450,7 +450,7 @@
           <div class="confirm-actions">
             <button class="btn small" type="button" id="useRegisteredBtn">この情報で新しく予約する</button>
             <button class="btn secondary small" type="button" id="goHotelBtn">この情報でホテル申込へ</button>
-            <button class="btn secondary small" type="button" id="clearRegisteredBtn">別の飼い主情報で入力する</button>
+            <button class="btn secondary small" type="button" id="clearRegisteredBtn">別のお客様で予約する</button>
           </div>
           <div class="confirm-note">既に予約がある場合は、誤って重複予約しないように、内容を確認してから進んでください。</div>
         </div>
@@ -532,7 +532,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-19J index.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-20C index.html
     </div>
   </div>
 
@@ -550,7 +550,7 @@
           <span class="pet-no" data-pet-no>1</span>
           <span data-pet-heading>1頭目の情報</span>
         </div>
-        <button class="btn danger small hidden" type="button" data-remove-pet>削除</button>
+        <button class="btn danger small hidden" type="button" data-remove-pet title="登録情報は消えません。今回の予約入力欄から外すだけです。">この予約から外す</button>
       </div>
 
       <div class="row three">
@@ -851,14 +851,14 @@
         `${sourceLabel || "登録情報"}を呼び出しました。`,
         `飼い主さま：${customer.owner_name || "-"}`,
         `電話番号：${customer.phone || "-"}`,
-        pets && pets.length ? `登録ペット：${pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、")}` : "登録ペット：なし",
+        pets && pets.length ? `登録ペット：${pets.map(p => petDisplayName(p.pet_name || "ペット")).join("、")}` : "登録ペット：なし",
         hasReservations ? "現在の予約があります。新しく予約する場合は、重複していないか確認してください。" : "この情報を使う場合は、下のボタンで確認してから送信できます。"
       ].join("\n");
 
       if(hasReservations){
         list.innerHTML = reservations.slice(0, 4).map(r => {
           const petName = r.pet && r.pet.pet_name ? r.pet.pet_name : (r.pet_name || "ペット");
-          return `<div class="reservation-mini-item">📅 ${escapeHtml(r.reservation_date || "-")} ${escapeHtml(String(r.reservation_time || "").slice(0,5))}<br>${escapeHtml(petName)}ちゃん / ${escapeHtml(r.service_name || "予約")}</div>`;
+          return `<div class="reservation-mini-item">📅 ${escapeHtml(r.reservation_date || "-")} ${escapeHtml(String(r.reservation_time || "").slice(0,5))}<br>${escapeHtml(petDisplayName(petName))} / ${escapeHtml(r.service_name || "予約")}</div>`;
         }).join("");
       }else{
         list.innerHTML = "";
@@ -887,7 +887,7 @@
       $("email").value = "";
       $("petsArea").innerHTML = "";
       addPetCard();
-      showOk("別の飼い主さま情報で入力できます。LINE登録情報は今回の送信には使いません。");
+      showOk("別のお客様として新規入力できます。前回の登録済み情報・一時保存情報はこの画面から外しました。");
       updateSummary();
     }
 
@@ -1370,6 +1370,12 @@
         '"':"&quot;",
         "'":"&#39;"
       }[s]));
+    }
+
+    function petDisplayName(name){
+      const raw = String(name || "ペット").trim();
+      if(!raw) return "ペットちゃん";
+      return /(ちゃん|くん|君|さん|様)$/.test(raw) ? raw : `${raw}ちゃん`;
     }
   </script>
 </body>
