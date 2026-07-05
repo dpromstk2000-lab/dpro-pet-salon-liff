@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- STEP PETSALON-20B: 現在ホテル申込表示・重複判定wo統一 -->
+<!-- STEP PETSALON-20B: 現在ホテル申込表示・重複判定統一 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
@@ -284,6 +284,8 @@
       vertical-align:middle;
     }
     .pet-selection-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .field-error{border-color:#d85d5d!important;background:#fff7f7!important}
+    .error-summary-list{margin:8px 0 0 0;padding-left:18px;line-height:1.75}
     .selection-warning{
       margin-top:10px;
       border:1px solid #efc9c9;
@@ -336,7 +338,7 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-20B / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-20C / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
       <p class="lead">ホテル申込専用の画面です。登録済み情報がある場合は、現在の申込を確認してから「別日程で新規申込」または「変更・追加相談」を選びます。現在のホテル申込を確実に確認し、同じ期間の重複申込はできません。</p>
       <div class="notice" style="margin-top:12px"><b>ホテルは定員があります</b><br>ご希望日が定員に達している場合は、別日をご案内します。当日は普段のごはん・必要なお薬・リード・ワクチン証明書などをご持参ください。</div>
@@ -514,7 +516,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-20B hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-20C hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -785,8 +787,8 @@
       // まずは今回預けるペットを選ばせ、選んだ子だけ入力欄へ反映する。
       state.selectedRegisteredPetKeys = [];
       if((pets || []).length){
-        state.petCount = 1;
-        renderPets([{}]);
+        state.petCount = 0;
+        renderPets([]);
       }
 
       renderRegisteredPetsBox(customer, pets || [], sourceLabel);
@@ -794,7 +796,7 @@
         `登録済み情報を呼び出しました（${sourceLabel || "登録情報"}）。`,
         `飼い主さま：${customer.owner_name || "-"}`,
         `電話番号：${customer.phone || "-"}`,
-        (pets && pets.length) ? `登録ペット：${pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、")}` : "登録ペット：なし"
+        (pets && pets.length) ? `登録ペット：${pets.map(p => petDisplayName(p.pet_name || "ペット")).join("、")}` : "登録ペット：なし"
       ].join("\n"), false);
 
       // STEP PETSALON-18Cの確認導線を確実に表示する。
@@ -836,14 +838,14 @@
         `${sourceLabel || "登録情報"}を呼び出しました。`,
         `飼い主さま：${customer.owner_name || "-"}`,
         `電話番号：${customer.phone || "-"}`,
-        pets && pets.length ? `登録ペット：${pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、")}` : "登録ペット：なし",
+        pets && pets.length ? `登録ペット：${pets.map(p => petDisplayName(p.pet_name || "ペット")).join("、")}` : "登録ペット：なし",
         hasHotels ? "現在のホテル申込があります。上の『現在のペットホテル申込』で確認できます。" : "この情報で申し込む場合は、下のボタンを押すと『使用中』に切り替わります。"
       ].join("\n");
 
       if(hasReservations){
         list.innerHTML = reservations.slice(0, 4).map(r => {
           const petName = r.pet && r.pet.pet_name ? r.pet.pet_name : (r.pet_name || "ペット");
-          return `<div class="existing-item">📅 ${escapeHtml(r.reservation_date || "-")} ${escapeHtml(String(r.reservation_time || "").slice(0,5))}<br>${escapeHtml(petName)}ちゃん / ${escapeHtml(r.service_name || "予約")}</div>`;
+          return `<div class="existing-item">📅 ${escapeHtml(r.reservation_date || "-")} ${escapeHtml(String(r.reservation_time || "").slice(0,5))}<br>${escapeHtml(petDisplayName(petName))} / ${escapeHtml(r.service_name || "予約")}</div>`;
         }).join("");
       }else{
         list.innerHTML = "";
@@ -952,7 +954,7 @@
           <label class="registered-pet-select" data-registered-pet-card="${escapeAttr(key)}">
             <input type="checkbox" data-registered-pet-check value="${escapeAttr(key)}" />
             <span>
-              <span class="registered-pet-main">🐾 ${escapeHtml(p.pet_name || "ペット")}ちゃん${status}</span>
+              <span class="registered-pet-main">🐾 ${escapeHtml(petDisplayName(p.pet_name || "ペット"))}${status}</span>
               <span class="registered-pet-sub">${sub}</span>
             </span>
           </label>
@@ -1016,7 +1018,7 @@
       renderPets(mappedPets);
       updateSummary();
       if(showMessage){
-        showOk(`${mappedPets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、")}を申込欄に反映しました。これは別日程の新規申込として送信します。`);
+        showOk(`${mappedPets.map(p => petDisplayName(p.pet_name || "ペット")).join("、")}を申込欄に反映しました。これは別日程の新規申込として送信します。`);
       }
       const target = $("petList");
       if(target && showMessage) target.scrollIntoView({ behavior:"smooth", block:"start" });
@@ -1038,7 +1040,7 @@
       const phone = $("phone")?.value || state.customer?.phone || "";
       const hotels = Array.isArray(state.activeHotels) ? state.activeHotels.filter(h => ["requested","confirmed","checked_in"].includes(h.status || "requested")) : [];
       const hotelLines = hotels.map(h => {
-        const pets = Array.isArray(h.pets) ? h.pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、") : "対象ペット";
+        const pets = Array.isArray(h.pets) ? h.pets.map(p => petDisplayName(p.pet_name || "ペット")).join("、") : "対象ペット";
         return `・${h.checkin_date || "-"}〜${h.checkout_date || "-"} ${pets}`;
       }).join("\n");
       const text = [
@@ -1175,8 +1177,14 @@
 
     function renderPets(existing = null){
       const values = existing || collectPets();
-      const count = Math.max(1, state.petCount);
+      const count = Math.max(0, state.petCount);
       let html = "";
+
+      if(count === 0){
+        $("petList").innerHTML = `<div class="notice">今回お預かりするペットを選択してから、上の「選んだペットを申込欄に反映」を押してください。選択した子だけ入力欄に表示されます。</div>`;
+        updateAddButton();
+        return;
+      }
 
       for(let i=0; i<count; i++){
         const v = values[i] || {};
@@ -1185,7 +1193,7 @@
             <input type="hidden" data-pet-field="pet_id" value="${escapeAttr(v.pet_id || "")}" />
             <div class="pet-head">
               <div class="pet-title">${i + 1}頭目の情報</div>
-              ${i > 0 ? `<button class="btn danger small" type="button" onclick="removePet(${i})">削除</button>` : ""}
+              ${i > 0 ? `<button class="btn danger small" type="button" onclick="removePet(${i})">この申込から外す</button>` : ""}
             </div>
 
             <div class="grid three">
@@ -1316,7 +1324,7 @@
           pet.caution_note ? `性格・注意：${pet.caution_note}` : ""
         ].filter(Boolean);
         return [
-          `【${i + 1}頭目】${pet.pet_name || "未入力"}ちゃん`,
+          `【${i + 1}頭目】${petDisplayName(pet.pet_name || "未入力")}`,
           `犬種：${pet.breed || "未入力"} / 年齢：${pet.age_label || "未入力"} / 体重：${pet.weight || "未入力"}kg`,
           ...(optionalLines.length ? optionalLines : ["ホテル宿泊メモ：未入力"])
         ].join("\n");
@@ -1405,7 +1413,7 @@
       text.textContent = "現在受付中・確定済み・お預かり中のホテル申込です。変更やキャンセルはLINEまたは電話でサロンへご相談ください。同じペットで期間が重なる申込は送信できません。";
       list.innerHTML = active.map(h => {
         const pets = Array.isArray(h.pets) ? h.pets : [];
-        const petNames = pets.length ? pets.map(p => `${escapeHtml(p.pet_name || "ペット")}ちゃん`).join("、") : "対象ペット未取得";
+        const petNames = pets.length ? pets.map(p => `${escapeHtml(petDisplayName(p.pet_name || "ペット"))}`).join("、") : "対象ペット未取得";
         return `
           <div class="hotel-card">
             <div class="hotel-card-top">
@@ -1440,15 +1448,32 @@
       }[status] || status || "申込受付中";
     }
 
+    function clearFieldErrors(){
+      document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+    }
+
+    function markField(id){
+      const el = $(id);
+      if(el) el.classList.add('field-error');
+    }
+
+    function validationError(message, fieldId){
+      if(fieldId) markField(fieldId);
+      const err = new Error(message);
+      err.fieldId = fieldId;
+      return err;
+    }
+
     function validatePayload(p){
-      if(!p.owner_name) throw new Error("飼い主さま氏名を入力してください。");
-      if(!p.phone) throw new Error("電話番号を入力してください。");
-      if(!p.checkin_date) throw new Error("チェックイン日を選択してください。");
-      if(!p.checkout_date) throw new Error("チェックアウト日を選択してください。");
-      if(p.checkout_date < p.checkin_date) throw new Error("チェックアウト日はチェックイン日以降を選択してください。");
-      if(!p.emergency_contact_phone) throw new Error("緊急連絡先の電話番号を入力してください。");
-      if(!p.terms_accepted) throw new Error("お預かり確認事項への同意が必要です。");
-      if(!p.pets.length) throw new Error("ペット情報を入力してください。");
+      clearFieldErrors();
+      if(!p.owner_name) throw validationError("飼い主さま氏名を入力してください。", "ownerName");
+      if(!p.phone) throw validationError("電話番号を入力してください。", "phone");
+      if(!p.checkin_date) throw validationError("チェックイン日を選択してください。", "checkinDateSelect");
+      if(!p.checkout_date) throw validationError("チェックアウト日を選択してください。", "checkoutDateSelect");
+      if(p.checkout_date < p.checkin_date) throw validationError("チェックアウト日はチェックイン日以降を選択してください。", "checkoutDateSelect");
+      if(!p.emergency_contact_phone) throw validationError("緊急連絡先の電話番号を入力してください。", "emergencyPhone");
+      if(!p.terms_accepted) throw validationError("お預かり確認事項への同意が必要です。", "termsAccepted");
+      if(!p.pets.length) throw validationError("今回お預かりするペットを選んで、申込欄に反映してください。", "registeredPetsBox");
       p.pets.forEach((pet, i) => {
         if(!pet.pet_name || !pet.pet_name.trim()) throw new Error(`${i + 1}頭目のペット名を入力してください。`);
       });
@@ -1481,10 +1506,10 @@
         const pets = Array.isArray(hotel.pets) ? hotel.pets : [];
         const hitPet = pets.find(p => incomingPetNames.has(normalizePetNameForCompare(p.pet_name)));
         if(hitPet){
-          throw new Error(`${hitPet.pet_name || "このペット"}ちゃんは、すでに ${hotel.checkin_date || "-"} ${hm(hotel.checkin_time || "")}〜${hotel.checkout_date || "-"} ${hm(hotel.checkout_time || "")} のホテル申込があります。期間が重ならない日程を選択してください。`);
+          throw new Error(`${petDisplayName(hitPet.pet_name || "このペット")}は、すでに ${hotel.checkin_date || "-"} ${hm(hotel.checkin_time || "")}〜${hotel.checkout_date || "-"} ${hm(hotel.checkout_time || "")} のホテル申込があります。期間が重ならない日程を選択してください。`);
         }
         if(state.customer){
-          const existingPetNames = pets.length ? pets.map(p => `${p.pet_name || "ペット"}ちゃん`).join("、") : "別のペット";
+          const existingPetNames = pets.length ? pets.map(p => petDisplayName(p.pet_name || "ペット")).join("、") : "別のペット";
           throw new Error(`同じ期間に既存のホテル申込があります（${hotel.checkin_date || "-"}〜${hotel.checkout_date || "-"} / ${existingPetNames}）。同じ日程で別のペットを追加したい場合は、新規申込ではなくサロンへ追加相談してください。`);
         }
       }
@@ -1611,6 +1636,12 @@
 
     function escapeHtml(value){
       return String(value ?? "").replace(/[&<>"']/g, s => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]));
+    }
+
+    function petDisplayName(name){
+      const raw = String(name || "ペット").trim();
+      if(!raw) return "ペットちゃん";
+      return /(ちゃん|くん|君|さん|様)$/.test(raw) ? raw : `${raw}ちゃん`;
     }
 
     function escapeAttr(value){
