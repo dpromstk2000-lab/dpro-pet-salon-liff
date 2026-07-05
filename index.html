@@ -1,9 +1,10 @@
 <!doctype html>
+<!-- STEP PETSALON-20G / index.html / LINE内ブラウザ表示微調整 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜STEP18M サロン予約</title>
+  <title>DPROペットサロン｜サロン予約</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -38,7 +39,7 @@
       background:linear-gradient(135deg,#4b3328,#8a5a3c 55%,#c99a6b);
       color:#fff;
       border-radius:28px;
-      padding:24px 18px;
+      padding:22px 18px;
       box-shadow:var(--shadow);
       position:relative;
       overflow:hidden;
@@ -58,9 +59,18 @@
       border:1px solid rgba(255,255,255,.25);
       font-size:12px;
       letter-spacing:.04em;
+      max-width:100%;
+      line-height:1.45;
     }
-    h1{margin:12px 0 7px;font-size:25px;line-height:1.25}
-    .hero p{margin:0;color:rgba(255,255,255,.88);font-size:14px}
+    h1{
+      margin:12px 0 7px;
+      font-size:25px;
+      line-height:1.25;
+      letter-spacing:-.02em;
+      word-break:keep-all;
+      overflow-wrap:normal;
+    }
+    .hero p{margin:0;color:rgba(255,255,255,.88);font-size:14px;line-height:1.65}
     .status{
       margin-top:12px;
       display:flex;gap:8px;flex-wrap:wrap;
@@ -174,7 +184,8 @@
     .day-btn[disabled],.time-btn[disabled]{opacity:.48;cursor:not-allowed;box-shadow:none;transform:none;background:#f2f0ee}
     .time-list{grid-template-columns:repeat(3,1fr)}
     @media(min-width:720px){.time-list{grid-template-columns:repeat(5,1fr)}}
-    .time-btn{text-align:center;font-weight:900}
+    .time-btn{text-align:center;font-weight:900;line-height:1.25}
+    .time-sub{display:block;font-size:10px;color:var(--muted);line-height:1.35;margin-top:4px}
     .pet-card{
       border:1px solid var(--line);
       background:
@@ -394,20 +405,42 @@
       font-weight:900;
     }
 
+
+    /* STEP PETSALON-20G: LINE内ブラウザ向けの上部表示微調整 */
+    @media(max-width:560px){
+      .wrap{padding:14px 12px 44px}
+      .hero{border-radius:24px;padding:18px 16px}
+      .hero:after{width:190px;height:190px;right:-76px;top:-72px}
+      .badge{font-size:11px;padding:6px 10px;letter-spacing:0;max-width:92%}
+      h1{font-size:clamp(21px,6.1vw,25px);line-height:1.22;margin:11px 0 6px}
+      .hero p{font-size:13px;line-height:1.6}
+      .status{gap:7px;margin-top:11px}
+      .pill{font-size:11px;padding:6px 9px;line-height:1.35}
+      .pill.dark{max-width:100%}
+      .time-btn{padding:10px 6px;min-height:78px}
+      .time-sub{font-size:10px;line-height:1.25}
+    }
+    @media(max-width:380px){
+      h1{font-size:21px}
+      .hero p{font-size:12.5px}
+      .badge{font-size:10.5px}
+      .status .pill{font-size:10.5px;padding:6px 8px}
+    }
+
   </style>
 </head>
 <body>
   <div class="wrap">
     <section class="hero">
       <div class="hero-content">
-        <span class="badge">🐾 多頭対応 LINE予約・事前カルテ</span>
+        <span class="badge">🐾 LINE予約・事前カルテ</span>
         <h1 id="shopName">DPROペットサロン</h1>
-        <p>1回の入力で、同じ飼い主さまの複数ペットをまとめて予約できます。</p>
+        <p>複数ペットの予約も、スマホからまとめて送信できます。</p>
         <div class="status">
           <span class="pill dark" id="apiState">API確認中</span>
           <span class="pill dark" id="lineState">LINE確認中</span>
           <span class="pill dark" id="openState">営業時間確認中</span>
-          <a class="pill dark hero-member-link" id="memberLinkTop" href="./member.html?v=18m">🐾 会員証を見る</a>
+          <a class="pill dark hero-member-link" id="memberLinkTop" href="./member.html?v=20c">🐾 会員証を見る</a>
         </div>
       </div>
     </section>
@@ -419,8 +452,8 @@
       <div class="member-return-title">🐾 ペット会員証へ戻る</div>
       <p>予約済みの方は、会員証で現在の予約・登録済みペット情報・ホテル申込状況を確認できます。</p>
       <div class="btns">
-        <a class="btn blue" id="memberLinkAlways" href="./member.html?v=18m">ペット会員証を確認する</a>
-        <a class="btn secondary" href="./hotel.html?v=18k">ペットホテル申込へ</a>
+        <a class="btn blue" id="memberLinkAlways" href="./member.html?v=20c">ペット会員証を確認する</a>
+        <a class="btn secondary" href="./hotel.html?v=20f">ペットホテル申込へ</a>
       </div>
     </div>
 
@@ -532,7 +565,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-20C index.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-20G index.html
     </div>
   </div>
 
@@ -714,7 +747,7 @@
         MAX_PETS = Number(status.max_pets_per_group || 3);
         $("apiState").textContent = "API接続OK";
         $("shopName").textContent = status.shop_name || "DPROペットサロン";
-        $("openState").textContent = `営業時間 ${status.open_time}〜${status.close_time} / 1日${status.max_reservations_per_day || 4}件まで`;
+        $("openState").textContent = `営業 ${status.open_time}〜${status.close_time} / 1日${status.max_reservations_per_day || 4}件`;
 
         const servicesRes = await apiGet("/api/public/services?category=salon");
         state.services = servicesRes.services || [];
@@ -1049,6 +1082,17 @@
       }
     }
 
+    function compactTimeDisabledReason(reason){
+      const r = String(reason || "").trim();
+      if(!r) return "受付不可";
+      if(r.includes("より前") || r.includes("本日") || r.includes("過去")) return "受付終了";
+      if(r.includes("満枠")) return "満枠";
+      if(r.includes("定休日")) return "定休日";
+      if(r.includes("休業")) return "休業日";
+      if(r.length > 10) return "受付不可";
+      return r;
+    }
+
     function renderTimes(){
       const el = $("timeList");
       const settings = state.settings;
@@ -1063,8 +1107,8 @@
 
       el.innerHTML = times.map(t => {
         const disabled = !t.can_reserve;
-        const sub = disabled ? (t.disabled_reason || "満枠") : (Number(t.remaining || 0) <= 1 ? "受付可" : `残り${t.remaining}`);
-        return `<button type="button" class="time-btn" data-time="${t.time}" ${disabled ? "disabled" : ""}>${t.time}<br><span style="font-size:10px;color:var(--muted)">${escapeHtml(sub)}</span></button>`;
+        const sub = disabled ? compactTimeDisabledReason(t.disabled_reason || "満枠") : (Number(t.remaining || 0) <= 1 ? "受付可" : `残り${t.remaining}`);
+        return `<button type="button" class="time-btn" data-time="${t.time}" ${disabled ? "disabled" : ""}>${t.time}<span class="time-sub">${escapeHtml(sub)}</span></button>`;
       }).join("");
 
       el.querySelectorAll(".time-btn").forEach(btn => {
