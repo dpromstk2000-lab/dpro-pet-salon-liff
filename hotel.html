@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- STEP PETSALON-20B: 現在ホテル申込表示・重複判定統一 -->
+<!-- STEP PETSALON-20D: hotel.html updateAddButtonエラー修正 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-20B</title>
+  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-20D</title>
   <style>
     :root{
       --bg:#fbf6ef;
@@ -338,7 +338,7 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-20C / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-20D / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
       <p class="lead">ホテル申込専用の画面です。登録済み情報がある場合は、現在の申込を確認してから「別日程で新規申込」または「変更・追加相談」を選びます。現在のホテル申込を確実に確認し、同じ期間の重複申込はできません。</p>
       <div class="notice" style="margin-top:12px"><b>ホテルは定員があります</b><br>ご希望日が定員に達している場合は、別日をご案内します。当日は普段のごはん・必要なお薬・リード・ワクチン証明書などをご持参ください。</div>
@@ -516,7 +516,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-20C hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-20D hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -1182,7 +1182,7 @@
 
       if(count === 0){
         $("petList").innerHTML = `<div class="notice">今回お預かりするペットを選択してから、上の「選んだペットを申込欄に反映」を押してください。選択した子だけ入力欄に表示されます。</div>`;
-        updateAddButton();
+        updateAddPetButton();
         return;
       }
 
@@ -1265,11 +1265,27 @@
     }
 
     function updateAddPetButton(){
+      const btn = $("addPetBtn");
+      if(!btn) return;
+
+      if(state.petCount <= 0){
+        btn.style.display = "none";
+        btn.disabled = true;
+        btn.textContent = "＋ 2頭目を追加";
+        return;
+      }
+
+      btn.style.display = "inline-flex";
       const next = state.petCount + 1;
-      $("addPetBtn").textContent = state.petCount >= state.maxPets
+      btn.textContent = state.petCount >= state.maxPets
         ? `最大${state.maxPets}頭まで入力済み`
         : `＋ ${next}頭目を追加`;
-      $("addPetBtn").disabled = state.petCount >= state.maxPets;
+      btn.disabled = state.petCount >= state.maxPets;
+    }
+
+    // 20C版の一部処理で古い関数名が残っても画面を止めない安全網。
+    function updateAddButton(){
+      updateAddPetButton();
     }
 
     function collectPets(){
