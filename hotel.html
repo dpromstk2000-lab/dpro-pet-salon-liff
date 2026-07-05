@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- STEP PETSALON-20E: hotel.html 送信前確認ペットの情報反映修正 -->
+<!-- STEP PETSALON-20F: hotel.html 送信前確認ペット情報の確実反映修正 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-20E</title>
+  <title>DPROペットサロン｜ペットホテル申込 STEP PETSALON-20F</title>
   <style>
     :root{
       --bg:#fbf6ef;
@@ -338,7 +338,7 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">🏨 STEP PETSALON-20E / PET HOTEL LIFF</div>
+      <div class="pill">🏨 STEP PETSALON-20F / PET HOTEL LIFF</div>
       <h1 id="shopName">DPROペットサロン</h1>
       <p class="lead">ホテル申込専用の画面です。登録済み情報がある場合は、現在の申込を確認してから「別日程で新規申込」または「変更・追加相談」を選びます。現在のホテル申込を確実に確認し、同じ期間の重複申込はできません。</p>
       <div class="notice" style="margin-top:12px"><b>ホテルは定員があります</b><br>ご希望日が定員に達している場合は、別日をご案内します。当日は普段のごはん・必要なお薬・リード・ワクチン証明書などをご持参ください。</div>
@@ -516,7 +516,7 @@
       <div class="summary" id="summaryBox"></div>
     </section>
 
-    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-20E hotel.html</div>
+    <div class="footer">DPRO PET SALON LINE SYSTEM / STEP PETSALON-20F hotel.html</div>
   </div>
 
   <div class="bottom">
@@ -549,7 +549,7 @@
       activeHotels: [],
       confirmedReuse: true,
       selectedRegisteredPetKeys: [],
-      // STEP PETSALON-20E:
+      // STEP PETSALON-20F:
       // スマホ実機確認で、登録済みペットを申込欄に反映した後でも
       // 送信前確認に「ペット情報：未入力」と出るケースがあったため、
       // 反映済みペットを安全に保持する。
@@ -1024,6 +1024,11 @@
       state.petCount = mappedPets.length;
       state.appliedHotelPets = mappedPets.map(p => ({ ...p }));
       renderPets(mappedPets);
+
+      // STEP PETSALON-20F:
+      // renderPets() 内の再描画後も、選択済みペット情報を確実に保持する。
+      // スマホ実機で「申込欄には反映済みなのに、送信前確認だけ未入力」と見える事故を防ぐ。
+      state.appliedHotelPets = mappedPets.map(p => ({ ...p }));
       updateSummary();
       if(showMessage){
         showOk(`${mappedPets.map(p => petDisplayName(p.pet_name || "ペット")).join("、")}を申込欄に反映しました。送信前確認にもペット情報が表示されます。`);
@@ -1300,28 +1305,53 @@
 
     function collectPets(){
       const cards = [...document.querySelectorAll("#petList .pet-card")];
-      const pets = cards.map(card => {
-        const data = {};
-        card.querySelectorAll("[data-pet-field]").forEach(el => {
-          data[el.dataset.petField] = el.value;
-        });
-        return data;
-      }).filter(p => {
-        return Object.values(p).some(v => String(v || "").trim() !== "");
-      });
+      const pets = cards.map(card => readPetCardData(card)).filter(p => isPetDataPresent(p));
 
-      // STEP PETSALON-20E:
-      // 通常はDOMの入力欄から読む。万一、スマホブラウザの再描画や
-      // 自動スクロールのタイミングでDOMから拾えなかった場合だけ、
-      // 「選んだペットを申込欄に反映」時に保存したペット情報を使う。
+      // STEP PETSALON-20F:
+      // 1) まず画面上の申込欄から読む
+      // 2) 申込欄がスマホ再描画などで読めない場合は、反映済みペット情報を使う
+      // 3) それでも無い場合は、チェック済みの登録ペットから最低限の情報を作る
       if(pets.length){
         state.appliedHotelPets = pets.map(p => ({ ...p }));
         return pets;
       }
+
       if(Array.isArray(state.appliedHotelPets) && state.appliedHotelPets.length){
         return state.appliedHotelPets.map(p => ({ ...p }));
       }
+
+      const checkedRegisteredPets = getCheckedRegisteredPetsForSummary();
+      if(checkedRegisteredPets.length){
+        const mapped = checkedRegisteredPets.slice(0, state.maxPets).map(mapExistingPetToHotelPet);
+        state.appliedHotelPets = mapped.map(p => ({ ...p }));
+        return mapped;
+      }
+
       return [];
+    }
+
+    function readPetCardData(card){
+      const data = {};
+      card.querySelectorAll("[data-pet-field]").forEach(el => {
+        data[el.dataset.petField] = el.value;
+      });
+      return data;
+    }
+
+    function isPetDataPresent(p){
+      if(!p) return false;
+      return [
+        p.pet_id, p.pet_name, p.breed, p.age_label, p.weight, p.sex, p.neutered,
+        p.meal_amount, p.medicine_detail, p.allergy_detail, p.health_detail, p.caution_note
+      ].some(v => String(v || "").trim() !== "");
+    }
+
+    function getCheckedRegisteredPetsForSummary(){
+      const checked = [...document.querySelectorAll("[data-registered-pet-check]:checked")].map(el => el.value);
+      if(!checked.length) return [];
+      state.selectedRegisteredPetKeys = checked;
+      const pets = Array.isArray(state.pets) ? state.pets : [];
+      return pets.filter((p, idx) => checked.includes(registeredPetKey(p, idx)));
     }
 
     function buildPayload(){
@@ -1515,7 +1545,7 @@
       if(p.checkout_date < p.checkin_date) throw validationError("チェックアウト日はチェックイン日以降を選択してください。", "checkoutDateSelect");
       if(!p.emergency_contact_phone) throw validationError("緊急連絡先の電話番号を入力してください。", "emergencyPhone");
       if(!p.terms_accepted) throw validationError("お預かり確認事項への同意が必要です。", "termsAccepted");
-      if(!p.pets.length) throw validationError("今回お預かりするペットを選んで、申込欄に反映してください。", "registeredPetsBox");
+      if(!p.pets.length) throw validationError("今回お預かりするペットを選び、『選んだペットを申込欄に反映』を押してください。", "registeredPetsBox");
       p.pets.forEach((pet, i) => {
         if(!pet.pet_name || !pet.pet_name.trim()) throw new Error(`${i + 1}頭目のペット名を入力してください。`);
       });
