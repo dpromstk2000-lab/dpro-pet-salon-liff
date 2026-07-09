@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-19K: 店舗設定インデックス化・メニュー料金一覧整理 完全版 -->
+<!-- STEP PETSALON-PHONE-2: owner.html 電話番号正規化検索対応 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-19K</title>
+  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-PHONE-2</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -1235,7 +1235,7 @@
           </div>
 
           <div class="notice" style="margin-top:12px">
-            電話番号はハイフンあり・なし両方をある程度拾えるようにしています。検索結果から「サロン電話予約」または「ホテル電話受付」へ進めます。LINE名・飼い主名・電話番号もコピーできます。
+            電話番号は、ハイフンあり・なし・スペース入り・全角数字・+81形式でも同じお客様を探せるようにしています。検索結果から「サロン電話予約」または「ホテル電話受付」へ進めます。LINE名・飼い主名・電話番号もコピーできます。
           </div>
 
           <div id="customerSearchResults" style="margin-top:14px"></div>
@@ -1696,7 +1696,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-20C owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-PHONE-2 owner.html
     </div>
   </div>
 
@@ -3136,19 +3136,22 @@
     }
 
     function filterCustomersOnClient(customers, q){
-      const keyword = String(q || "").trim().toLowerCase();
-      const digits = keyword.replace(/[^\d]/g, "");
+      const keyword = normalizeSearchKeyword(q);
+      const phoneNeedle = normalizePhoneForSearch(q);
 
-      if(!keyword) return customers || [];
+      if(!keyword && !phoneNeedle) return customers || [];
 
       function contains(value){
-        return String(value || "").toLowerCase().includes(keyword);
+        return normalizeSearchKeyword(value).includes(keyword);
       }
 
       function phoneMatches(phone){
-        const raw = String(phone || "");
-        const phoneDigits = raw.replace(/[^\d]/g, "");
-        return contains(raw) || (digits.length >= 4 && phoneDigits.includes(digits));
+        const raw = normalizeSearchKeyword(phone);
+        const phoneDigits = normalizePhoneForSearch(phone);
+        const phoneContainsText = keyword && raw.includes(keyword);
+        const phoneContainsDigits = phoneNeedle && phoneNeedle.length >= 4 && phoneDigits.includes(phoneNeedle);
+        const phoneDomesticMatch = phoneNeedle && phoneNeedle.length >= 10 && phoneDigits === phoneNeedle;
+        return Boolean(phoneContainsText || phoneContainsDigits || phoneDomesticMatch);
       }
 
       return (customers || []).filter(c => {
@@ -4625,6 +4628,33 @@
         console.error(e);
         showError(e.message || "臨時休業日の保存に失敗しました。");
       }
+    }
+
+    function toHalfWidthForSearch(value){
+      return String(value ?? "")
+        .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+        .replace(/[Ａ-Ｚａ-ｚ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+        .replace(/[＋]/g, "+")
+        .replace(/[－ー―‐‑–—]/g, "-")
+        .replace(/[　]/g, " ");
+    }
+
+    function normalizeSearchKeyword(value){
+      return toHalfWidthForSearch(value)
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+    }
+
+    function normalizePhoneForSearch(value){
+      let digits = toHalfWidthForSearch(value).replace(/[^0-9]/g, "");
+
+      // +81 90-xxxx-xxxx / 8190xxxxxxx を 090xxxxxxx と同じ扱いにする。
+      if(digits.startsWith("81") && digits.length >= 11){
+        digits = "0" + digits.slice(2);
+      }
+
+      return digits;
     }
 
     async function apiGet(path, params = {}){
