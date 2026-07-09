@@ -1,25 +1,26 @@
 <!doctype html>
-<!-- STEP PETSALON-19A: 現場用iPad画面 本番運用・営業デモ統合ブラッシュアップ -->
+<!-- STEP PETSALON-PHONE-3: owner-ipad.html 電話番号正規化検索補助対応 / 現場用iPad画面 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜現場用iPad STEP PETSALON-19A</title>
+  <title>DPROペットサロン｜現場用iPad STEP PETSALON-PHONE-3</title>
   <style>
     :root{--bg:#fffaf4;--card:#fff;--ink:#2f2722;--muted:#7d6f66;--line:#eadfd5;--main:#8a5a3c;--soft:#fff4ea;--danger:#b54747;--ok:#2f7d55;--blue:#315f8f;--shadow:0 14px 32px rgba(70,42,25,.10);--radius:22px}
-    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--ink);background:linear-gradient(180deg,#fffaf4,#fff 48%,#fffaf4);line-height:1.58} button,input{font:inherit}.wrap{max-width:980px;margin:0 auto;padding:16px 12px 36px}.hero{background:linear-gradient(135deg,#3f2b22,#8a5a3c 58%,#c99a6b);color:#fff;border-radius:26px;padding:20px;box-shadow:var(--shadow)}h1{font-size:24px;margin:6px 0}.badge{display:inline-flex;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.16);font-size:12px;font-weight:900}.controls{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-top:12px}.controls input{border:1px solid rgba(255,255,255,.36);border-radius:14px;padding:10px;background:rgba(255,255,255,.95)}.btn{border:none;border-radius:14px;padding:11px 14px;background:var(--main);color:#fff;font-weight:900;cursor:pointer}.btn.secondary{background:#f8efe6;color:var(--main);border:1px solid var(--line)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}.card h2{font-size:18px;margin:0 0 8px}.lead{font-size:13px;color:var(--muted);font-weight:800;margin:0 0 10px}.item{border:1px solid var(--line);background:#fffaf7;border-radius:18px;padding:13px;margin-top:10px}.time{font-size:22px;font-weight:1000;color:var(--main)}.name{font-size:17px;font-weight:1000}.sub{color:var(--muted);font-size:13px;font-weight:800}.status{display:inline-flex;margin-top:8px;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:1000;background:#f5eee7;color:var(--main)}.status.requested{background:#fff4d6;color:#9a6b00}.status.confirmed,.status.checked_in{background:#eaf3ff;color:#315f8f}.status.visited{background:#eefaf3;color:#2f7d55}.notice{border:1px solid var(--line);background:#fffaf7;border-radius:18px;padding:13px;color:var(--muted);font-weight:800}.empty{padding:14px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);font-weight:900;background:#fffaf7}.copy{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.copy .btn{font-size:12px;padding:8px 10px}.alert{display:none;margin-top:12px;border-radius:18px;padding:12px;font-weight:900}.alert.show{display:block}.alert.err{background:#fff0f0;color:var(--danger);border:1px solid #f0cccc}.alert.ok{background:#eefaf3;color:var(--ok);border:1px solid #ccebd9}@media(max-width:760px){.controls{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.hero{border-radius:0;margin:-16px -12px 0}.wrap{padding-top:16px}}
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--ink);background:linear-gradient(180deg,#fffaf4,#fff 48%,#fffaf4);line-height:1.58} button,input{font:inherit}.wrap{max-width:980px;margin:0 auto;padding:16px 12px 36px}.hero{background:linear-gradient(135deg,#3f2b22,#8a5a3c 58%,#c99a6b);color:#fff;border-radius:26px;padding:20px;box-shadow:var(--shadow)}h1{font-size:24px;margin:6px 0}.badge{display:inline-flex;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.16);font-size:12px;font-weight:900}.controls{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;margin-top:12px}.controls input{border:1px solid rgba(255,255,255,.36);border-radius:14px;padding:10px;background:rgba(255,255,255,.95)}.btn{border:none;border-radius:14px;padding:11px 14px;background:var(--main);color:#fff;font-weight:900;cursor:pointer}.btn.secondary{background:#f8efe6;color:var(--main);border:1px solid var(--line)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}.card h2{font-size:18px;margin:0 0 8px}.lead{font-size:13px;color:var(--muted);font-weight:800;margin:0 0 10px}.item{border:1px solid var(--line);background:#fffaf7;border-radius:18px;padding:13px;margin-top:10px}.time{font-size:22px;font-weight:1000;color:var(--main)}.name{font-size:17px;font-weight:1000}.sub{color:var(--muted);font-size:13px;font-weight:800}.status{display:inline-flex;margin-top:8px;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:1000;background:#f5eee7;color:var(--main)}.status.requested{background:#fff4d6;color:#9a6b00}.status.confirmed,.status.checked_in{background:#eaf3ff;color:#315f8f}.status.visited{background:#eefaf3;color:#2f7d55}.notice{border:1px solid var(--line);background:#fffaf7;border-radius:18px;padding:13px;color:var(--muted);font-weight:800}.empty{padding:14px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);font-weight:900;background:#fffaf7}.copy{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.copy .btn{font-size:12px;padding:8px 10px}.alert{display:none;margin-top:12px;border-radius:18px;padding:12px;font-weight:900}.alert.show{display:block}.alert.err{background:#fff0f0;color:var(--danger);border:1px solid #f0cccc}.alert.ok{background:#eefaf3;color:var(--ok);border:1px solid #ccebd9}@media(max-width:760px){.controls{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.hero{border-radius:0;margin:-16px -12px 0}.wrap{padding-top:16px}}
   </style>
 </head>
 <body>
 <div class="wrap">
   <section class="hero">
-    <span class="badge">🐾 DPRO PET SALON / iPad</span>
+    <span class="badge">🐾 DPRO PET SALON / iPad / STEP PETSALON-PHONE-3</span>
     <h1>現場用iPad画面</h1>
-    <p>スタッフが見る画面です。設定・売上・削除系は出さず、本日の確定予約・ホテル・注意事項に絞っています。</p>
+    <p>スタッフが見る画面です。設定・売上・削除系は出さず、本日の確定予約・ホテル・注意事項に絞っています。電話番号検索はハイフンあり/なし・スペース入り・全角数字・+81形式に対応します。</p>
     <div class="controls">
       <input id="workerUrl" value="https://dpro-pet-salon-api.dpromstk2000.workers.dev" />
       <input id="shopCode" value="pet_salon_demo" />
       <input id="adminCode" value="1234" inputmode="numeric" />
+      <input id="searchKeyword" placeholder="電話番号・飼い主名で検索" />
       <button class="btn" id="reloadBtn">更新</button>
     </div>
   </section>
@@ -35,10 +36,57 @@
   <section class="card" style="margin-top:14px"><h2>宿泊中の子</h2><p class="lead">現在お預かり中のペットを確認します。</p><div id="staying"></div></section>
 </div>
 <script>
-const $=id=>document.getElementById(id);function todayYmd(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset()+540);return d.toISOString().slice(0,10)}function hm(v){return String(v||'').slice(0,5)}function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}function showErr(m){$('errorBox').textContent=m||'';$('errorBox').classList.toggle('show',!!m)}function showOk(m){$('okBox').textContent=m||'';$('okBox').classList.toggle('show',!!m)}function base(){return $('workerUrl').value.replace(/\/$/,'')}function common(){return {shop_code:$('shopCode').value,admin_code:$('adminCode').value}}async function apiGet(path,params={}){const u=new URL(base()+path);Object.entries({...common(),...params}).forEach(([k,v])=>u.searchParams.set(k,v));const r=await fetch(u);const j=await r.json().catch(()=>({}));if(!r.ok||j.ok===false)throw new Error(j.error||'取得に失敗しました');return j}async function copyText(t){await navigator.clipboard.writeText(t||'')}
+const STEP_VERSION = 'STEP PETSALON-PHONE-3';
+const $=id=>document.getElementById(id);
+let state={confirmed:[],pending:[],apps:[],today:todayYmd()};
+
+function todayYmd(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset()+540);return d.toISOString().slice(0,10)}
+function hm(v){return String(v||'').slice(0,5)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function showErr(m){$('errorBox').textContent=m||'';$('errorBox').classList.toggle('show',!!m)}
+function showOk(m){$('okBox').textContent=m||'';$('okBox').classList.toggle('show',!!m)}
+function base(){return $('workerUrl').value.replace(/\/$/,'')}
+function common(){return {shop_code:$('shopCode').value,admin_code:$('adminCode').value}}
+async function apiGet(path,params={}){const u=new URL(base()+path);Object.entries({...common(),...params}).forEach(([k,v])=>u.searchParams.set(k,v));const r=await fetch(u);const j=await r.json().catch(()=>({}));if(!r.ok||j.ok===false)throw new Error(j.error||'取得に失敗しました');return j}
+async function copyText(t){await navigator.clipboard.writeText(t||'')}
+
+function normalizePhoneForSearch(value){
+  let text=String(value??'').trim();
+  text=text.replace(/[０-９]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0));
+  text=text.replace(/[－ー―‐‑‒–—―]/g,'-');
+  text=text.replace(/[＋]/g,'+');
+  let digits=text.replace(/[^0-9+]/g,'');
+  if(digits.startsWith('+81')) digits='0'+digits.slice(3);
+  else if(digits.startsWith('81')&&digits.length>=11) digits='0'+digits.slice(2);
+  return digits.replace(/[^0-9]/g,'');
+}
+function normalizeTextForSearch(value){return String(value??'').replace(/[Ａ-Ｚａ-ｚ０-９]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).toLowerCase().replace(/[\s　\-－ー―‐‑‒–—―]/g,'')}
+function searchNeedle(){const raw=$('searchKeyword')?$('searchKeyword').value:'';return {raw, text:normalizeTextForSearch(raw), phone:normalizePhoneForSearch(raw)}}
+function reservationSearchHaystack(r){const c=r.customer||{},p=r.pet||{};const parts=[c.owner_name,c.owner_kana,c.line_display_name,c.phone,p.pet_name,p.breed,p.species,r.service_name,r.reservation_date,r.reservation_time,r.status];return {text:normalizeTextForSearch(parts.filter(Boolean).join(' ')), phone:normalizePhoneForSearch([c.phone].filter(Boolean).join(' '))}}
+function hotelSearchHaystack(h){const pets=(h.pets||[]).map(p=>[p.pet_name,p.breed,p.age_label].filter(Boolean).join(' ')).join(' ');const parts=[h.owner_name,h.owner_kana,h.line_display_name,h.phone,h.emergency_contact_phone,pets,h.checkin_date,h.checkout_date,h.status];return {text:normalizeTextForSearch(parts.filter(Boolean).join(' ')), phone:normalizePhoneForSearch([h.phone,h.emergency_contact_phone].filter(Boolean).join(' '))}}
+function matchReservation(r,needle){if(!needle.text&&!needle.phone)return true;const hay=reservationSearchHaystack(r);return (needle.text&&hay.text.includes(needle.text))||(needle.phone&&hay.phone.includes(needle.phone))}
+function matchHotel(h,needle){if(!needle.text&&!needle.phone)return true;const hay=hotelSearchHaystack(h);return (needle.text&&hay.text.includes(needle.text))||(needle.phone&&hay.phone.includes(needle.phone))}
+function filterReservations(rows){const n=searchNeedle();return (rows||[]).filter(r=>matchReservation(r,n))}
+function filterHotels(rows){const n=searchNeedle();return (rows||[]).filter(h=>matchHotel(h,n))}
+
 function resItem(r){const c=r.customer||{},p=r.pet||{};return `<div class="item"><div class="time">${esc(hm(r.reservation_time))}</div><div class="name">${esc(p.pet_name||'ペット')}ちゃん / ${esc(c.owner_name||'飼い主')}</div><div class="sub">${esc(r.reservation_date||'')} / ${esc(r.service_name||'')} / LINE名：${esc(c.line_display_name||'-')} / 電話：${esc(c.phone||'-')}</div><span class="status ${esc(r.status||'')}">${r.status==='requested'?'予約希望':r.status==='confirmed'?'予約確定':r.status||''}</span><div class="sub" style="margin-top:8px">注意：${esc([p.personality_notes,p.dislike_notes,p.health_notes,p.skin_condition].filter(Boolean).join(' / ')||'未入力')}</div><div class="copy"><button class="btn secondary" data-copy="${esc(c.line_display_name||c.owner_name||'')}">LINE名コピー</button><button class="btn secondary" data-copy="${esc(c.phone||'')}">電話コピー</button></div></div>`}
-function hotelItem(h){const pets=(h.pets||[]).map(p=>p.pet_name+'ちゃん').join('、')||'ペット';return `<div class="item"><div class="name">${esc(pets)} / ${esc(h.owner_name||'飼い主')}</div><div class="sub">${esc(h.checkin_date)} ${esc(hm(h.checkin_time))} 〜 ${esc(h.checkout_date)} ${esc(hm(h.checkout_time))}</div><span class="status ${esc(h.status||'')}">${hotelLabel(h.status)}</span><div class="sub" style="margin-top:8px">LINE名：${esc(h.line_display_name||'-')} / 電話：${esc(h.phone||'-')} / 緊急：${esc(h.emergency_contact_phone||'-')}</div><div class="copy"><button class="btn secondary" data-copy="${esc(h.line_display_name||h.owner_name||'')}">LINE名コピー</button><button class="btn secondary" data-copy="${esc(h.phone||'')}">電話コピー</button></div></div>`}function hotelLabel(s){return {requested:'申込受付中',confirmed:'確定済み',checked_in:'お預かり中',checked_out:'お迎え済み',cancelled:'キャンセル'}[s]||s||''}
+function hotelItem(h){const pets=(h.pets||[]).map(p=>p.pet_name+'ちゃん').join('、')||'ペット';return `<div class="item"><div class="name">${esc(pets)} / ${esc(h.owner_name||'飼い主')}</div><div class="sub">${esc(h.checkin_date)} ${esc(hm(h.checkin_time))} 〜 ${esc(h.checkout_date)} ${esc(hm(h.checkout_time))}</div><span class="status ${esc(h.status||'')}">${hotelLabel(h.status)}</span><div class="sub" style="margin-top:8px">LINE名：${esc(h.line_display_name||'-')} / 電話：${esc(h.phone||'-')} / 緊急：${esc(h.emergency_contact_phone||'-')}</div><div class="copy"><button class="btn secondary" data-copy="${esc(h.line_display_name||h.owner_name||'')}">LINE名コピー</button><button class="btn secondary" data-copy="${esc(h.phone||'')}">電話コピー</button></div></div>`}
+function hotelLabel(s){return {requested:'申込受付中',confirmed:'確定済み',checked_in:'お預かり中',checked_out:'お迎え済み',cancelled:'キャンセル'}[s]||s||''}
 function render(id,arr,fn,empty){$(id).innerHTML=arr.length?arr.map(fn).join(''):`<div class="empty">${empty}</div>`;$(id).querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{await copyText(b.dataset.copy);const o=b.textContent;b.textContent='コピー済み';setTimeout(()=>b.textContent=o,1200)})}
-async function load(){try{showErr('');showOk('');const today=todayYmd();const s=await apiGet('/api/admin/summary');const h=await apiGet('/api/admin/hotel-applications',{status:'active',from:today,to:addDays(today,90)});const confirmed=(s.today_reservations||[]).filter(r=>['confirmed','visited'].includes(r.status||''));render('todayConfirmed',confirmed,resItem,'本日の確定予約はありません。');render('pendingReservations',s.pending_reservations||[],resItem,'新着予約希望はありません。');const apps=h.applications||[];render('checkins',apps.filter(a=>a.checkin_date===today&&['requested','confirmed'].includes(a.status||'requested')),hotelItem,'本日お預かり予定はありません。');render('checkouts',apps.filter(a=>a.checkout_date===today&&['confirmed','checked_in'].includes(a.status||'requested')),hotelItem,'本日お迎え予定はありません。');render('staying',apps.filter(a=>(a.status||'')==='checked_in'),hotelItem,'現在宿泊中の子はいません。');showOk('更新しました');}catch(e){showErr(e.message||'読み込みに失敗しました')}}function addDays(ymd,n){const d=new Date(ymd+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}$('reloadBtn').onclick=load;load();
+function addDays(ymd,n){const d=new Date(ymd+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
+
+function renderAll(){
+  const today=state.today||todayYmd();
+  const apps=filterHotels(state.apps||[]);
+  render('todayConfirmed',filterReservations(state.confirmed||[]),resItem,'本日の確定予約はありません。');
+  render('pendingReservations',filterReservations(state.pending||[]),resItem,'新着予約希望はありません。');
+  render('checkins',apps.filter(a=>a.checkin_date===today&&['requested','confirmed'].includes(a.status||'requested')),hotelItem,'本日お預かり予定はありません。');
+  render('checkouts',apps.filter(a=>a.checkout_date===today&&['confirmed','checked_in'].includes(a.status||'requested')),hotelItem,'本日お迎え予定はありません。');
+  render('staying',apps.filter(a=>(a.status||'')==='checked_in'),hotelItem,'現在宿泊中の子はいません。');
+}
+async function load(){try{showErr('');showOk('');const today=todayYmd();state.today=today;const s=await apiGet('/api/admin/summary');const h=await apiGet('/api/admin/hotel-applications',{status:'active',from:today,to:addDays(today,90)});state.confirmed=(s.today_reservations||[]).filter(r=>['confirmed','visited'].includes(r.status||''));state.pending=s.pending_reservations||[];state.apps=h.applications||[];renderAll();showOk('更新しました');}catch(e){showErr(e.message||'読み込みに失敗しました')}}
+$('reloadBtn').onclick=load;
+if($('searchKeyword')) $('searchKeyword').addEventListener('input',()=>{renderAll();});
+load();
 </script>
 </body></html>
