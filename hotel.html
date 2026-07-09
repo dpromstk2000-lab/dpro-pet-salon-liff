@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- STEP PETSALON-20I: hotel.html 送信前確認の未入力表示を非表示化 -->
+<!-- STEP PETSALON-PHONE-4 / hotel.html / ホテル申込電話番号正規化対応 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
@@ -575,6 +575,7 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
       bindEvents();
+      setupPhoneNormalization(["phoneSearch", "phone", "emergencyPhone"]);
       fillTimeOptions();
       setDefaultDates();
       renderPets();
@@ -714,8 +715,8 @@
       const url = new URL(window.location.href);
       const phoneFromUrl = (url.searchParams.get("phone") || "").trim();
       if(phoneFromUrl){
-        $("phoneSearch").value = phoneFromUrl;
-        const found = await loadCustomer({ phone: phoneFromUrl, allow_phone: "1" }, "電話番号検索");
+        $("phoneSearch").value = normalizePhoneText(phoneFromUrl);
+        const found = await loadCustomer({ phone: phoneForApi(phoneFromUrl), allow_phone: "1" }, "電話番号検索");
         if(found) return;
       }
 
@@ -727,7 +728,7 @@
         // 電話番号が分かる場合は必ずWorkerへ再確認し、owner.htmlと同じ現在申込を表示する。
         const cachedPhone = cache.customer && cache.customer.phone ? cache.customer.phone : "";
         if(cachedPhone){
-          await loadCustomer({ phone: cachedPhone, allow_phone: "1" }, "前回入力情報の再確認");
+          await loadCustomer({ phone: phoneForApi(cachedPhone), allow_phone: "1" }, "前回入力情報の再確認");
         }
         return;
       }
@@ -736,12 +737,12 @@
     }
 
     async function searchCustomerByPhone(){
-      const phone = ($("phoneSearch").value || $("phone").value || "").trim();
+      const phone = phoneForApi($("phoneSearch").value || $("phone").value || "");
       if(!phone){
         showError("電話番号を入力してください。");
         return;
       }
-      $("phoneSearch").value = phone;
+      $("phoneSearch").value = normalizePhoneText($("phoneSearch").value || $("phone").value || phone);
       const found = await loadCustomer({ phone, allow_phone: "1" }, "電話番号検索");
       if(!found){
         showError("登録情報が見つかりませんでした。初めての方はそのまま入力してください。");
@@ -751,7 +752,7 @@
     async function loadCustomer(params, sourceLabel){
       try{
         showError("");
-        const query = new URLSearchParams(params).toString();
+        const query = new URLSearchParams(normalizeCustomerQueryParams(params)).toString();
         const res = await apiGet(`/api/public/customer?${query}`);
         if(!res.found){
           return false;
@@ -923,7 +924,7 @@
     }
 
     function goReservationWithRegisteredCustomer(){
-      const phone = $("phone").value.trim();
+      const phone = phoneForUrl($("phone").value);
       const qs = phone ? `?phone=${encodeURIComponent(phone)}` : "";
       window.location.href = `index.html${qs}`;
     }
@@ -1059,7 +1060,7 @@
 
     function copyHotelConsultText(kind){
       const customerName = $("ownerName")?.value || state.customer?.owner_name || "";
-      const phone = $("phone")?.value || state.customer?.phone || "";
+      const phone = phoneForApi($("phone")?.value || state.customer?.phone || "");
       const hotels = Array.isArray(state.activeHotels) ? state.activeHotels.filter(h => ["requested","confirmed","checked_in"].includes(h.status || "requested")) : [];
       const hotelLines = hotels.map(h => {
         const pets = Array.isArray(h.pets) ? h.pets.map(p => petDisplayName(p.pet_name || "ペット")).join("、") : "対象ペット";
@@ -1423,7 +1424,7 @@
         line_display_name: state.ignoreLineProfileForSubmit ? "" : state.profile.line_display_name,
         owner_name: $("ownerName").value.trim(),
         owner_kana: $("ownerKana").value.trim(),
-        phone: $("phone").value.trim(),
+        phone: phoneForApi($("phone").value),
         email: $("email").value.trim(),
         checkin_date: $("checkinDate").value,
         checkin_time: $("checkinTime").value,
@@ -1436,7 +1437,7 @@
         health_note: "",
         personality_note: "",
         emergency_contact_name: $("emergencyName").value.trim(),
-        emergency_contact_phone: $("emergencyPhone").value.trim(),
+        emergency_contact_phone: phoneForApi($("emergencyPhone").value),
         vaccine_confirmed: $("vaccineConfirmed").checked,
         rabies_confirmed: $("rabiesConfirmed").checked,
         terms_accepted: $("termsAccepted").checked,
