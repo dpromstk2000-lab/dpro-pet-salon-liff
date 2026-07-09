@@ -1,4 +1,4 @@
-<!-- STEP PETSALON-20C: 最終UX改善（敬称・表示整理） -->
+<!-- STEP PETSALON-PHONE-4 / member.html / 会員証電話番号正規化対応 完全版 -->
 <!doctype html>
 <html lang="ja">
 <head>
@@ -777,7 +777,7 @@
     </section>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-20C member.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-PHONE-4 member.html
     </div>
   </div>
 
@@ -813,6 +813,61 @@
 
     const $ = (id) => document.getElementById(id);
 
+
+    // STEP PETSALON-PHONE-4:
+    // お客様側画面でも電話番号入力・URL引き継ぎ・API検索を同じ仕様に統一する。
+    // 090-1111-2222 / 09011112222 / 090 1111 2222 / ０９０－１１１１－２２２２ / +81 90... を同じ電話番号として扱う。
+    function normalizePhoneText(value){
+      return String(value || "")
+        .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+        .replace(/[－ー―‐‑‒–—]/g, "-")
+        .replace(/[（]/g, "(")
+        .replace(/[）]/g, ")")
+        .replace(/[\u00A0\u3000]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function normalizePhoneDigits(value){
+      let text = normalizePhoneText(value);
+      let hasPlus81 = /^\+\s*81/.test(text);
+      let digits = text.replace(/\D/g, "");
+      if(hasPlus81 && digits.startsWith("81")){
+        digits = `0${digits.slice(2)}`;
+      }else if(digits.startsWith("81") && digits.length >= 11 && !digits.startsWith("810")){
+        digits = `0${digits.slice(2)}`;
+      }
+      return digits;
+    }
+
+    function phoneForApi(value){
+      const digits = normalizePhoneDigits(value);
+      return digits || normalizePhoneText(value);
+    }
+
+    function phoneForUrl(value){
+      return phoneForApi(value);
+    }
+
+    function normalizeCustomerQueryParams(params){
+      const next = { ...(params || {}) };
+      if(next.phone !== undefined && next.phone !== null){
+        next.phone = phoneForApi(next.phone);
+      }
+      return next;
+    }
+
+    function setupPhoneNormalization(ids){
+      (ids || []).forEach(id => {
+        const el = $(id);
+        if(!el) return;
+        el.addEventListener("blur", () => {
+          el.value = normalizePhoneText(el.value);
+        });
+      });
+    }
+
+
     document.addEventListener("DOMContentLoaded", async () => {
       $("searchBtn").addEventListener("click", searchByPhone);
       $("copyConsultBtn").addEventListener("click", copyConsultMessage);
@@ -825,6 +880,7 @@
       $("openAddPetFormBtn").addEventListener("click", openAddPetPanel);
       $("cancelAddPetBtn").addEventListener("click", closeAddPetPanel);
       $("saveAddPetBtn").addEventListener("click", saveAdditionalPet);
+      setupPhoneNormalization(["phoneSearch"]);
 
       await initLiff();
       await boot();
@@ -863,20 +919,20 @@
 
         const urlPhone = getPhoneFromUrl();
         if(urlPhone){
-          $("phoneSearch").value = urlPhone;
+          $("phoneSearch").value = normalizePhoneText(urlPhone);
         }
 
         if(state.profile.line_user_id){
           await loadCustomer({ line_user_id: state.profile.line_user_id });
         }else if(urlPhone){
           $("customerState").textContent = "電話番号で自動確認中";
-          await loadCustomer({ phone: urlPhone });
+          await loadCustomer({ phone: phoneForApi(urlPhone), allow_phone: "1" });
         }else{
           const cache = readCustomerCache();
           if(cache && cache.customer && cache.customer.phone){
-            $("phoneSearch").value = cache.customer.phone;
+            $("phoneSearch").value = normalizePhoneText(cache.customer.phone);
             $("customerState").textContent = "前回入力情報で確認中";
-            await loadCustomer({ phone: cache.customer.phone });
+            await loadCustomer({ phone: phoneForApi(cache.customer.phone), allow_phone: "1" });
           }else{
             $("customerState").textContent = "電話番号で確認（デモ用）";
           }
@@ -889,12 +945,13 @@
     }
 
     async function searchByPhone(){
-      const phone = $("phoneSearch").value.trim();
+      const phone = phoneForApi($("phoneSearch").value);
       if(!phone){
         showError("電話番号を入力してください。");
         return;
       }
-      await loadCustomer({ phone });
+      $("phoneSearch").value = normalizePhoneText($("phoneSearch").value);
+      await loadCustomer({ phone, allow_phone: "1" });
     }
 
     async function loadCustomer(params){
@@ -902,7 +959,7 @@
         showError("");
         showOk("");
 
-        const query = new URLSearchParams(params).toString();
+        const query = new URLSearchParams(normalizeCustomerQueryParams(params)).toString();
         const res = await apiGet(`/api/public/customer?${query}`);
 
         if(!res.found){
@@ -1073,7 +1130,8 @@
         p.last_style_note ? `前回メモ：${p.last_style_note}` : ""
       ].filter(Boolean);
 
-      const phoneQs = state.customer?.phone ? `phone=${encodeURIComponent(state.customer.phone)}&` : "";
+      const phoneQsValue = phoneForUrl(state.customer?.phone || "");
+      const phoneQs = phoneQsValue ? `phone=${encodeURIComponent(phoneQsValue)}&` : "";
       const petQs = p.id ? `&pet_id=${encodeURIComponent(p.id)}&pet_name=${encodeURIComponent(p.pet_name || "")}` : "";
 
       const visitHtml = latestVisit ? `
@@ -1365,7 +1423,7 @@ function findReservationById(id){
           new_reservation_date: newDate,
           new_reservation_time: newTime,
           reason,
-          phone: state.customer?.phone || "",
+          phone: phoneForApi(state.customer?.phone || $("phoneSearch").value || ""),
           line_user_id: state.profile.line_user_id || ""
         };
         await apiPost("/api/reservations/change", payload);
@@ -1385,7 +1443,7 @@ function findReservationById(id){
         const payload = {
           reservation_id: r.id,
           reason,
-          phone: state.customer?.phone || "",
+          phone: phoneForApi(state.customer?.phone || $("phoneSearch").value || ""),
           line_user_id: state.profile.line_user_id || ""
         };
         await apiPost("/api/reservations/cancel", payload);
@@ -1399,7 +1457,7 @@ function findReservationById(id){
       if(state.profile.line_user_id){
         await loadCustomer({ line_user_id: state.profile.line_user_id });
       }else if(state.customer && state.customer.phone){
-        await loadCustomer({ phone: state.customer.phone });
+        await loadCustomer({ phone: phoneForApi(state.customer.phone), allow_phone: "1" });
       }else{
         await searchByPhone();
       }
@@ -1532,7 +1590,7 @@ function findReservationById(id){
             ${petDetails}
             ${noteLines.length ? `<div class="memo">${escapeHtml(noteLines.join("\n"))}</div>` : ""}
             <div class="btns">
-              <a class="btn secondary small" href="./hotel.html?${state.customer?.phone ? `phone=${encodeURIComponent(state.customer.phone)}&` : ""}v=19d">ホテル申込画面を開く</a>
+              <a class="btn secondary small" href="./hotel.html?${phoneForUrl(state.customer?.phone || "") ? `phone=${encodeURIComponent(phoneForUrl(state.customer?.phone || ""))}&` : ""}v=petsalon-phone-4">ホテル申込画面を開く</a>
               <button class="btn secondary small" type="button" data-copy-hotel="${escapeAttr(h.id || "")}" data-hotel-text="${escapeAttr(buildHotelConsultText(h, petNames))}">変更・キャンセル相談をコピー</button>
             </div>
           </div>
@@ -1613,7 +1671,7 @@ function buildHotelConsultText(h, petNames){
         const neuteredValue = $("addPetNeutered").value;
         const payload = {
           customer_id: state.customer.id,
-          phone: state.customer.phone || $("phoneSearch").value.trim(),
+          phone: phoneForApi(state.customer.phone || $("phoneSearch").value),
           line_user_id: state.profile.line_user_id || state.customer.line_user_id || "",
           pet_name: petName,
           species: "dog",
@@ -1638,7 +1696,7 @@ function buildHotelConsultText(h, petNames){
         if(state.profile.line_user_id){
           await loadCustomer({ line_user_id: state.profile.line_user_id });
         }else{
-          await loadCustomer({ phone: state.customer.phone || $("phoneSearch").value.trim() });
+          await loadCustomer({ phone: phoneForApi(state.customer.phone || $("phoneSearch").value), allow_phone: "1" });
         }
       }catch(e){
         console.error(e);
@@ -1711,7 +1769,8 @@ function buildHotelConsultText(h, petNames){
     }
 
     function updateActionLinks(phone){
-      const qs = phone ? `?phone=${encodeURIComponent(phone)}&v=19d` : `?v=19d`;
+      const cleanPhone = phoneForUrl(phone);
+      const qs = cleanPhone ? `?phone=${encodeURIComponent(cleanPhone)}&v=petsalon-phone-4` : `?v=petsalon-phone-4`;
       const reserveLink = $("reserveLink");
       if(reserveLink) reserveLink.href = `./index.html${qs}`;
       document.querySelectorAll('a[href^="./index.html"]').forEach(a => { a.href = `./index.html${qs}`; });
