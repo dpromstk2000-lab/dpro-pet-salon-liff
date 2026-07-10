@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-PHONE-2: owner.html 電話番号正規化検索対応 完全版 -->
+<!-- STEP PETSALON-PHOTO-1D: owner.html 電話番号正規化検索対応 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-PHONE-2</title>
+  <title>DPROペットサロン｜オーナー管理画面 STEP PETSALON-PHOTO-1D</title>
   <style>
     :root{
       --bg:#fffaf4;
@@ -718,6 +718,70 @@
       font-size:12px;
       line-height:1.55;
       min-width:180px;
+    }
+
+    /* STEP PETSALON-PHOTO-1D: 店舗側は写真を見るだけ。写真未登録なら従来アイコン表示 */
+    .pet-with-photo{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .pet-with-photo .pet-copy{
+      min-width:0;
+    }
+    .pet-avatar{
+      width:44px;
+      height:44px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex:0 0 auto;
+      border:1px solid #e5cdbc;
+      background:linear-gradient(135deg,#fff7ef,#ead6c7);
+      color:#8a5a3c;
+      font-size:20px;
+      font-weight:1000;
+      box-shadow:0 8px 18px rgba(80,45,25,.10);
+    }
+    .pet-avatar img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .pet-avatar.small{
+      width:34px;
+      height:34px;
+      font-size:16px;
+      box-shadow:none;
+    }
+    .pet-avatar.large{
+      width:54px;
+      height:54px;
+      font-size:24px;
+    }
+    .pet-chip .pet-with-photo{
+      align-items:flex-start;
+    }
+    .pet-chip .pet-name-line{
+      font-weight:1000;
+      color:#5b3526;
+    }
+    .pet-photo-note{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      color:#8a5a3c;
+      font-size:11px;
+      font-weight:900;
+      margin-top:4px;
+    }
+    .pet-photo-note.missing{
+      color:var(--muted);
+      font-weight:800;
     }
     .mini-list{
       margin-top:10px;
@@ -1696,7 +1760,7 @@
     </main>
 
     <div class="footer">
-      DPRO PET SALON LINE SYSTEM / STEP PETSALON-PHONE-2 owner.html
+      DPRO PET SALON LINE SYSTEM / STEP PETSALON-PHOTO-1D owner.html
     </div>
   </div>
 
@@ -3215,10 +3279,16 @@
         const data = escapeAttr(JSON.stringify({ customer: c, pet: p }));
         return `
           <div class="pet-chip">
-            <b>${escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))}</b><br>
-            ${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg<br>
-            前回来店：${escapeHtml(latest?.visit_date || "未登録")}<br>
-            次回目安：${escapeHtml(latest?.next_recommend_date || "未登録")}
+            <div class="pet-with-photo">
+              ${petAvatarHtml(p, "small")}
+              <div class="pet-copy">
+                <div class="pet-name-line">${escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))}</div>
+                ${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg<br>
+                前回来店：${escapeHtml(latest?.visit_date || "未登録")}<br>
+                次回目安：${escapeHtml(latest?.next_recommend_date || "未登録")}
+                <div class="pet-photo-note ${petPhotoUrl(p) ? "" : "missing"}">${petPhotoUrl(p) ? "写真あり" : "写真未登録"}</div>
+              </div>
+            </div>
             <div class="btns" style="margin-top:8px">
               <button class="btn secondary small" type="button" data-fill-manual="${data}">サロン電話予約へ</button>
               <button class="btn secondary small" type="button" data-fill-hotel-manual="${data}">ホテル受付へ</button>
@@ -3686,9 +3756,14 @@
       ].filter(Boolean).join(" ");
       const petDetail = pets.length ? pets.map((p, i) => `
         <div class="info">
-          <b>${i + 1}頭目：${escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))}</b>
-          ${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg<br>
-          ${hotelPetNoteHtml(p, app)}
+          <div class="pet-with-photo">
+            ${petAvatarHtml(p, "small")}
+            <div class="pet-copy">
+              <b>${i + 1}頭目：${escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))}</b>
+              ${escapeHtml(p.breed || "犬種未入力")} / ${escapeHtml(p.age_label || "年齢未入力")} / ${escapeHtml(p.weight || "-")}kg<br>
+              ${hotelPetNoteHtml(p, app)}
+            </div>
+          </div>
         </div>
       `).join("") : `<div class="info">ペット情報がありません。</div>`;
       const appRequestNote = hotelVisibleRequestNote(app.request_note);
@@ -3949,10 +4024,14 @@
       return `
         <div class="res-card ${isMulti ? "multi" : ""} ${isHistory ? "history" : ""}">
           <div class="res-top">
-            <div>
-              <div class="time">${escapeHtml(hm(r.reservation_time))}</div>
-              <div class="name">${escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))} / ${escapeHtml(c.owner_name || "飼い主未登録")}</div>
-              <div class="sub">${escapeHtml(r.service_name || "")}　${escapeHtml(r.reservation_date || "")}</div>
+            <div class="pet-with-photo">
+              ${petAvatarHtml(p, "large")}
+              <div class="pet-copy">
+                <div class="time">${escapeHtml(hm(r.reservation_time))}</div>
+                <div class="name">${escapeHtml(petDisplayName(p.pet_name || "ペット名未登録"))} / ${escapeHtml(c.owner_name || "飼い主未登録")}</div>
+                <div class="sub">${escapeHtml(r.service_name || "")}　${escapeHtml(r.reservation_date || "")}</div>
+                <div class="pet-photo-note ${petPhotoUrl(p) ? "" : "missing"}">${petPhotoUrl(p) ? "写真アイコン登録済み" : "写真未登録・通常アイコン表示"}</div>
+              </div>
             </div>
             <div style="display:flex;gap:6px;align-items:flex-end;flex-direction:column">
               ${isMulti ? `<span class="multi-badge">${escapeHtml(multiLabel)}</span>` : ""}
@@ -4790,6 +4869,26 @@
 
     function hm(v){
       return String(v || "").slice(0,5);
+    }
+
+    function petPhotoUrl(p){
+      return String((p && (p.photo_url || p.pet_photo_url || p.photoUrl)) || "").trim();
+    }
+
+    function petFallbackIcon(p){
+      const species = String((p && p.species) || "").toLowerCase();
+      if(species.includes("cat") || species.includes("猫")) return "🐱";
+      return "🐶";
+    }
+
+    function petAvatarHtml(p, sizeClass = ""){
+      const url = petPhotoUrl(p);
+      const label = petDisplayName((p && p.pet_name) || "ペット");
+      const cls = ["pet-avatar", sizeClass].filter(Boolean).join(" ");
+      if(url){
+        return `<span class="${escapeAttr(cls)}"><img src="${escapeAttr(url)}" alt="${escapeAttr(label)}" loading="lazy"></span>`;
+      }
+      return `<span class="${escapeAttr(cls)}" aria-label="${escapeAttr(label)}">${escapeHtml(petFallbackIcon(p))}</span>`;
     }
 
     function escapeAttr(str){
