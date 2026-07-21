@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-BRUSHUP-4: owner-ipad.html 今日の施術進捗・4ボタン操作対応 完全版 -->
+<!-- STEP PETSALON-BRUSHUP-5: owner-ipad.html 今日の施術進捗・4ボタン操作対応 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜現場用iPad STEP PETSALON-BRUSHUP-4</title>
+  <title>DPROペットサロン｜現場用iPad STEP PETSALON-BRUSHUP-5</title>
   <style>
     :root{
       --bg:#fffaf4;--card:#fff;--ink:#2f2722;--muted:#7d6f66;--line:#eadfd5;
@@ -52,7 +52,7 @@
     @media(max-width:760px){.wrap{padding:0 12px 32px}.hero{border-radius:0;margin:0 -12px}.settings-grid,.search-row,.grid{grid-template-columns:1fr}.btn{width:100%}.customer-pet-grid{grid-template-columns:1fr}}
   
     /* =========================================================
-       STEP PETSALON-BRUSHUP-4 / DPRO NEXT 今日の施術ボード
+       STEP PETSALON-BRUSHUP-5 / DPRO NEXT 今日の施術ボード
        ========================================================= */
     .next-connection-strip{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;display:grid;grid-template-columns:minmax(300px,1fr) auto;gap:12px;align-items:end}
     .next-connection-strip label{display:block;font-size:13px;font-weight:900;margin-bottom:6px}
@@ -109,7 +109,7 @@
 <body>
 <div class="wrap">
   <section class="hero">
-    <span class="badge">🐾 DPRO PET SALON / iPad / STEP PETSALON-BRUSHUP-4</span>
+    <span class="badge">🐾 DPRO PET SALON / iPad / STEP PETSALON-BRUSHUP-5</span>
     <h1>現場用iPad画面</h1>
     <p>スタッフが見る画面です。設定・売上・削除系は出さず、本日の確定予約・ホテル・注意事項に絞っています。電話番号検索はハイフンあり/なし・スペース入り・全角数字・+81形式に対応します。更新は本日の現場予定、顧客検索は電話番号・飼い主名・ペット名から登録ペットを確認します。</p>
     <div class="control-panel">
@@ -183,7 +183,7 @@
   <section class="card" style="margin-top:14px"><h2>宿泊中の子</h2><p class="lead">現在お預かり中のペットを確認します。</p><div id="staying"></div></section>
 </div>
 <script>
-const STEP_VERSION = 'STEP PETSALON-BRUSHUP-4';
+const STEP_VERSION = 'STEP PETSALON-BRUSHUP-5';
 const $=id=>document.getElementById(id);
 let state={confirmed:[],pending:[],apps:[],today:todayYmd()};
 
@@ -291,7 +291,7 @@ load();
 <script>
 (() => {
   'use strict';
-  const NEXT_STEP_VERSION = 'PETSALON-BRUSHUP-4-OWNER-BOARD-20260721';
+  const NEXT_STEP_VERSION = 'PETSALON-BRUSHUP-5-PET-CHART-LINK-20260721';
   const nextEl = id => document.getElementById(id);
   const nextConfig = window.DPRO_PETSALON_CONFIG || {};
   const nextState = { rows: [], staff: [], filter: 'active', busy: new Set(), date: '' };
@@ -392,14 +392,14 @@ load();
         <div class="next-meta-box"><label>ワクチン・カルテ</label><div>${row.vaccination_summary?.has_expired?'期限切れあり':row.vaccination_summary?.unconfirmed_count>0?'未確認あり':'確認上の警告なし'} ／ ${record?'本日のカルテあり':'本日のカルテ未作成'}</div></div>
       </div>
       <div class="next-actions">${nextActionButtons(row)}</div>
-      <div class="next-secondary-actions"><button class="btn secondary small" type="button" data-next-record="${nextEsc(p.id||r.pet_id||'')}" data-pet-name="${nextEsc(p.pet_name||r.pet_name||'ペット')}" data-owner-name="${nextEsc(c.owner_name||c.name||'飼い主')}">カルテ・ワクチン確認</button>${status==='pickup_ready'?`<button class="btn secondary small" type="button" data-next-prepare-notification="${nextEsc(r.id||'')}">お迎え文面を表示</button>`:''}</div>
+      <div class="next-secondary-actions"><button class="btn secondary small" type="button" data-next-record="${nextEsc(p.id||r.pet_id||'')}" data-reservation-id="${nextEsc(r.id||'')}">施術カルテを開く</button>${status==='pickup_ready'?`<button class="btn secondary small" type="button" data-next-prepare-notification="${nextEsc(r.id||'')}">お迎え文面を表示</button>`:''}</div>
     </article>`;
   }
   function nextRender(){
     nextCounts(); const rows=nextFilteredRows(); const board=nextEl('nextWorkflowBoard'); if(!board)return;
     board.innerHTML=rows.length?rows.map(nextCard).join(''):`<div class="next-empty">この条件に該当する予約はありません。</div>`;
     board.querySelectorAll('[data-next-workflow]').forEach(btn=>btn.addEventListener('click',()=>nextUpdateWorkflow(btn.dataset.reservationId,btn.dataset.nextWorkflow)));
-    board.querySelectorAll('[data-next-record]').forEach(btn=>btn.addEventListener('click',()=>nextOpenRecords(btn.dataset.nextRecord,btn.dataset.petName,btn.dataset.ownerName)));
+    board.querySelectorAll('[data-next-record]').forEach(btn=>btn.addEventListener('click',()=>nextOpenRecords(btn.dataset.nextRecord,btn.dataset.reservationId)));
     board.querySelectorAll('[data-next-prepare-notification]').forEach(btn=>btn.addEventListener('click',()=>nextPrepareNotification(btn.dataset.nextPrepareNotification)));
     board.querySelectorAll('[data-next-save-staff]').forEach(btn=>btn.addEventListener('click',()=>nextSaveStaffAssignment(btn.dataset.nextSaveStaff,btn.dataset.petId)));
   }
@@ -440,18 +440,12 @@ load();
     const select=[...document.querySelectorAll('[data-next-staff-select]')].find(x=>String(x.dataset.nextStaffSelect)===String(reservationId)); const staffId=select?.value||'';
     try{await nextPost('/api/admin/pet-records/save',nextRecordPayload(row.pet_record,row,staffId));await nextLoadBoard({quiet:true});nextMessage(`${nextPetName(row.pet?.pet_name)}の担当スタッフを保存しました。`,'ok');}catch(error){nextMessage(error.message||'担当スタッフを保存できませんでした。','err');}
   }
-  async function nextOpenRecords(petId,petNameValue,ownerName){
-    const modal=nextEl('nextRecordModal'); if(!modal)return; modal.classList.add('show');
-    nextEl('nextRecordModalTitle').textContent=`${nextPetName(petNameValue)}のカルテ`;
-    nextEl('nextRecordModalSub').textContent=`飼い主：${ownerName||'未登録'}さま`;
-    nextEl('nextRecordModalBody').innerHTML='<div class="next-empty">カルテとワクチンを読み込んでいます。</div>';
-    try{
-      const [records,vaccinations]=await Promise.all([nextGet('/api/admin/pet-records',{pet_id:petId,limit:10}),nextGet('/api/admin/vaccinations',{pet_id:petId})]);
-      const v=vaccinations.summary||{}; const recordRows=records.records||[];
-      const vaccineHtml=`<div class="next-meta-box"><label>ワクチン確認</label><div>確認済み ${v.confirmed_count||0}件 ／ 未確認 ${v.unconfirmed_count||0}件 ／ 期限切れ ${v.expired_count||0}件</div></div>`;
-      const recordsHtml=recordRows.length?recordRows.map(rec=>`<div class="next-record-item"><b>${nextEsc(rec.record_date||'日付未入力')}　${nextEsc(rec.menu_done||'施術内容未入力')}</b><div class="next-record-sub">皮膚：${nextEsc(rec.skin_condition||'-')} ／ 耳：${nextEsc(rec.ear_condition||'-')} ／ 爪：${nextEsc(rec.nail_condition||'-')}<br>${nextEsc(rec.behavior_note||rec.owner_message||rec.internal_note||'記録メモなし')}</div></div>`).join(''):'<div class="next-empty" style="margin-top:10px">まだ施術カルテはありません。</div>';
-      nextEl('nextRecordModalBody').innerHTML=vaccineHtml+recordsHtml;
-    }catch(error){nextEl('nextRecordModalBody').innerHTML=`<div class="next-board-message show err">${nextEsc(error.message||'読み込みに失敗しました。')}</div>`;}
+  function nextOpenRecords(petId,reservationId){
+    if(!petId){nextMessage('ペット情報を確認できませんでした。','err');return;}
+    nextSaveInputs();
+    const query=new URLSearchParams({pet_id:String(petId),reservation_id:String(reservationId||''),record_date:String(nextState.date||nextToday()),from:location.pathname.includes('ipad')?'ipad':'owner'});
+    if(new URLSearchParams(location.search).get('demo')==='1')query.set('demo','1');
+    location.href=`pet-record.html?${query.toString()}`;
   }
   async function nextPrepareNotification(reservationId){
     try{const result=await nextPost('/api/admin/notifications/prepare',{reservation_id:reservationId,notification_type:'pickup_ready'});nextShowNotification(result.notification?.message_body||'');}catch(error){nextMessage(error.message||'通知文面を準備できませんでした。','err');}
