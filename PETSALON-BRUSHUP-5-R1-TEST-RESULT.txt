@@ -1,0 +1,47 @@
+STEP PETSALON-BRUSHUP-5-R1 検査結果
+Version: PETSALON-BRUSHUP-5-R1-JST-DEMO-WORKER-20260721
+
+【静的検査】
+- worker.js Node構文検査: 正常
+- owner.html インラインJavaScript 2本: 正常
+- owner-ipad.html インラインJavaScript 2本: 正常
+- pet-record.html インラインJavaScript: 正常
+- system-check.html インラインJavaScript: 正常
+- HTML ID重複: 4画面すべて0件
+
+【JST日付対策】
+- Worker todayJst(): 2026-07-21 を確認
+- ブラウザ日付生成を formatToParts 方式へ変更
+- 日付変更時の古い非同期レスポンス上書き防止 requestSeq を実装
+- 既存summaryの日付がJSTと違う場合、/api/admin/dayで選択日の予約を再取得
+- 追加Workerの応答日と画面選択日が不一致の場合はエラー表示
+
+【模擬Supabase・既存Worker統合試験】
+- 確認用飼い主・ペット・予約生成: 正常
+- ペット別施術カルテ自動保存: 正常
+- 非公開Storage確認画像保存: 正常
+- 証明書画像付きワクチン保存: 正常
+- 同じ確認データの再準備（冪等性）: 予約1件・写真1枚・ワクチン1件を維持
+- 今日の施術ボードへのカルテ結合: 正常
+- カルテ画面直接リンク生成: 正常
+- 確認データ削除: 予約1・ペット1・飼い主1・カルテ1・写真1・ワクチン1を削除
+- 削除後ステータス: prepared=false
+
+【system-check模擬試験】
+- 合計: 18
+- 正常: 18
+- 異常: 0
+- 追加項目: jst_date / demo_pet_chart_api
+
+【安全性】
+- 既存予約・ホテルWorkerは変更しない
+- デモ店舗以外では確認データ生成を拒否
+- 確認用データは DPRO_STEP5_R1_DEMO マーカーだけを対象に整理
+- Storage画像を削除してからメタデータを削除
+- 既存予約を物理削除できない場合はキャンセルへ安全退避
+- 追加SQLなし
+
+【公開後に必要な確認】
+- Cloudflare Worker実環境のsystem-checkで18件すべて正常
+- 「確認データを準備」後、カルテ画面でカルテ・写真・ワクチンが表示されること
+- 「確認データを削除」後、確認用予約が一覧から消えること

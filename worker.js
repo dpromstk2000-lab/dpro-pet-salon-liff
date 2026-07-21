@@ -1,16 +1,22 @@
 // ============================================================
 // DPRO PET SALON LINE
-// STEP PETSALON-BRUSHUP-4
+// STEP PETSALON-BRUSHUP-5-R1
 // Additive Extension Worker (safe sidecar API)
-// Version: PETSALON-BRUSHUP-4-OWNER-BOARD-WORKER-20260721
+// Version: PETSALON-BRUSHUP-5-R1-JST-DEMO-WORKER-20260721
 //
 // This Worker DOES NOT replace the existing dpro-pet-salon-api Worker.
-// It handles the new pet-record / vaccination / workflow / check-in APIs.
+// It handles pet charts, before/after photos, vaccinations, workflow and check-in APIs.
 // Existing reservation, member, hotel and pet-photo APIs remain on the
 // legacy Worker until the final integration step.
 // ============================================================
 
-const WORKER_VERSION = "PETSALON-BRUSHUP-4-OWNER-BOARD-WORKER-20260721";
+const WORKER_VERSION = "PETSALON-BRUSHUP-5-R1-JST-DEMO-WORKER-20260721";
+const DEFAULT_LEGACY_WORKER_BASE_URL = "https://dpro-pet-salon-api.dpromstk2000.workers.dev";
+const DEMO_MARKER = "DPRO_STEP5_R1_DEMO";
+const DEMO_PHONE = "09050050501";
+const DEMO_OWNER_NAME = "STEP5確認用";
+const DEMO_PET_NAME = "カルテ確認犬";
+const DEMO_IMAGE_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zcx8AAAAASUVORK5CYII=";
 const SERVICE_NAME = "DPRO PET SALON NEXT EXTENSION API";
 const DEFAULT_SHOP_CODE = "pet_salon_demo";
 const RECORD_PHOTO_BUCKET = "petsalon-record-photos";
@@ -82,6 +88,20 @@ export default {
         return json(await adminTodayBoard(env, url));
       }
 
+      if (method === "GET" && path === "/api/admin/demo/pet-chart/status") {
+        return json(await adminPetChartDemoStatus(env, url));
+      }
+      if (method === "POST" && path === "/api/admin/demo/pet-chart/prepare") {
+        return json(await adminPreparePetChartDemo(env, await readJson(request)));
+      }
+      if (method === "POST" && path === "/api/admin/demo/pet-chart/cleanup") {
+        return json(await adminCleanupPetChartDemo(env, await readJson(request)));
+      }
+
+      if (method === "GET" && path === "/api/admin/pet-chart") {
+        return json(await adminGetPetChart(env, url));
+      }
+
       if (method === "GET" && path === "/api/admin/pet-records") {
         return json(await adminGetPetRecords(env, url));
       }
@@ -103,6 +123,9 @@ export default {
       }
       if (method === "POST" && path === "/api/admin/vaccinations/save") {
         return json(await adminSaveVaccination(env, await readJson(request)));
+      }
+      if (method === "POST" && path === "/api/admin/vaccinations/delete") {
+        return json(await adminDeleteVaccination(env, await readJson(request)));
       }
 
       if (method === "POST" && path === "/api/admin/reservations/update-workflow") {
@@ -194,6 +217,9 @@ async function handleSystemCheck(env, url, startedAt) {
   checks.push(checkItem("service_role_key", Boolean(getSupabaseKey(env)), "SUPABASE_SERVICE_ROLE_KEY"));
   checks.push(checkItem("phone_normalize", normalizePhone("＋８１ ９０－１２３４－５６７８") === "09012345678", "+81・全角・記号対応"));
   checks.push(checkItem("workflow_mapping", legacyStatusForWorkflow("pickup_ready") === "visited", "pickup_ready → visited"));
+  const jstDate = todayJst();
+  checks.push(checkItem("jst_date", /^\d{4}-\d{2}-\d{2}$/.test(jstDate), jstDate));
+  checks.push(checkItem("demo_pet_chart_api", Boolean(legacyWorkerBase(env)), legacyWorkerBase(env)));
 
   const tableNames = [
     "petsalon_extension_settings",
@@ -214,6 +240,13 @@ async function handleSystemCheck(env, url, startedAt) {
     } catch (error) {
       checks.push(checkItem(`table_${table}`, false, `${table}: ${error.message}`));
     }
+  }
+
+  try {
+    const bucket = await sbStorageGetBucket(env, RECORD_PHOTO_BUCKET);
+    checks.push(checkItem("record_photo_bucket", Boolean(bucket && bucket.id), RECORD_PHOTO_BUCKET));
+  } catch (error) {
+    checks.push(checkItem("record_photo_bucket", false, `${RECORD_PHOTO_BUCKET}: ${error.message}`));
   }
 
   try {
@@ -410,6 +443,353 @@ function buildTodayAlerts(pet, vaccinationSummary) {
   if (vaccinationSummary.has_expired) alerts.push({ type: "vaccination", label: "ワクチン期限切れ", text: "証明書・接種状況を確認してください。" });
   if (vaccinationSummary.unconfirmed_count > 0) alerts.push({ type: "vaccination", label: "ワクチン未確認", text: "接種証明を確認してください。" });
   return alerts;
+}
+
+
+// ============================================================
+// STEP5-R1 demo data / JST verification
+// ============================================================
+
+async function adminPetChartDemoStatus(env, url) {
+  const { shopCode } = await requireAdminFromUrl(env, url);
+  await assertDemoShop(env, shopCode);
+  const date = clean(url.searchParams.get("date")) || todayJst();
+  assertYmd(date, "date");
+  const reservation = await findDemoReservation(env, shopCode, date);
+  if (!reservation) return { ok: true, shop_code: shopCode, date, prepared: false, marker: DEMO_MARKER };
+  const pet = reservation.pet_id ? await findOne(env, "pet_salon_pets", [eq("shop_code", shopCode), eq("id", reservation.pet_id)]) : null;
+  const customer = reservation.customer_id ? await findOne(env, "pet_salon_customers", [eq("shop_code", shopCode), eq("id", reservation.customer_id)]) : null;
+  const record = await findOne(env, "petsalon_pet_records", [eq("shop_code", shopCode), eq("reservation_id", String(reservation.id))]);
+  const photos = record ? await sbSelect(env, "petsalon_record_photos", [sel("*"), eq("shop_code", shopCode), eq("pet_record_id", record.id)]) : [];
+  const vaccinations = pet ? (await sbSelect(env, "petsalon_vaccinations", [sel("*"), eq("shop_code", shopCode), eq("pet_id", String(pet.id))])).filter(row => clean(row.note).includes(DEMO_MARKER)) : [];
+  return {
+    ok: true, shop_code: shopCode, date, prepared: true, marker: DEMO_MARKER,
+    reservation, pet: sanitizePet(pet), customer: sanitizeCustomer(customer), record,
+    photo_count: photos.length, vaccination_count: vaccinations.length,
+    direct_query: buildDemoDirectQuery(reservation, date)
+  };
+}
+
+async function adminPreparePetChartDemo(env, body) {
+  const { shopCode, adminCode } = await requireAdminFromBody(env, body);
+  await assertDemoShop(env, shopCode);
+  const date = clean(body.date) || todayJst();
+  assertYmd(date, "date");
+
+  let reservation = await findDemoReservation(env, shopCode, date);
+  let legacyResult = null;
+  if (!reservation) {
+    const serviceCode = await chooseLegacyServiceCode(env, shopCode);
+    const reservationTime = await chooseLegacyReservationTime(env, shopCode, date);
+    legacyResult = await legacyJson(env, "/api/admin/reservations/manual-create", {
+      method: "POST",
+      body: {
+        shop_code: shopCode,
+        admin_code: adminCode,
+        reception_type: "store",
+        owner_name: DEMO_OWNER_NAME,
+        owner_kana: "ステップゴカクニンヨウ",
+        phone: DEMO_PHONE,
+        pet_id: "",
+        pet_name: DEMO_PET_NAME,
+        breed: "トイプードル",
+        age_label: "3歳",
+        weight: "4.2",
+        sex: "female",
+        reservation_date: date,
+        reservation_time: reservationTime,
+        service_code: serviceCode,
+        request_note: `${DEMO_MARKER}\nカルテ・施術写真・ワクチン確認専用のデモ予約です。`
+      }
+    });
+    for (let attempt = 0; attempt < 5 && !reservation; attempt++) {
+      if (attempt) await sleep(250);
+      reservation = await findDemoReservation(env, shopCode, date);
+    }
+  }
+  if (!reservation) throw new AppError(502, "デモ予約を作成しましたが、予約情報を確認できませんでした。", legacyResult);
+
+  const pet = await assertLegacyPet(env, shopCode, clean(reservation.pet_id));
+  const customerId = clean(reservation.customer_id || pet.customer_id);
+  const staffRows = await sbSelect(env, "petsalon_staff", [sel("*"), eq("shop_code", shopCode), eq("is_active", true), "order=sort_order.asc", "limit=1"]);
+  const staffId = staffRows[0]?.id || null;
+
+  let record = await findOne(env, "petsalon_pet_records", [eq("shop_code", shopCode), eq("reservation_id", String(reservation.id))]);
+  const recordResult = await adminSavePetRecord(env, {
+    shop_code: shopCode, admin_code: adminCode,
+    record_id: record?.id || undefined,
+    pet_id: String(pet.id), customer_id: customerId, reservation_id: String(reservation.id),
+    staff_id: staffId, record_date: date,
+    menu_done: "シャンプー＋カット（STEP5確認）",
+    option_names: ["炭酸泉", "歯磨き"], shampoo_name: "低刺激デモシャンプー",
+    clipper_length: "6mm", cut_style: "顔は丸く、足はふんわり。STEP5-R1確認用カルテです。",
+    weight_kg: 4.2, skin_condition: "良好", ear_condition: "異常なし", nail_condition: "爪切り済み",
+    matting_level: "light", behavior_note: "前足は少し苦手ですが、声かけで落ち着きます。",
+    internal_note: DEMO_MARKER, owner_message: "本日も落ち着いて施術できました。",
+    next_recommend_date: addDaysYmd(date, 42), next_recommend_reason: "毛玉予防のため6週間後がおすすめ",
+    created_by: "system"
+  });
+  record = recordResult.record;
+
+  let photos = await sbSelect(env, "petsalon_record_photos", [sel("*"), eq("shop_code", shopCode), eq("pet_record_id", record.id)]);
+  if (!photos.some(row => clean(row.caption).includes(DEMO_MARKER))) {
+    await adminUploadRecordPhoto(env, {
+      shop_code: shopCode, admin_code: adminCode, pet_record_id: record.id, pet_id: String(pet.id),
+      photo_type: "chart", photo_data_url: DEMO_IMAGE_DATA_URL,
+      caption: `${DEMO_MARKER} 自動保存確認画像`, owner_share_allowed: false, created_by: "system"
+    });
+    photos = await sbSelect(env, "petsalon_record_photos", [sel("*"), eq("shop_code", shopCode), eq("pet_record_id", record.id)]);
+  }
+
+  let vaccination = (await sbSelect(env, "petsalon_vaccinations", [sel("*"), eq("shop_code", shopCode), eq("pet_id", String(pet.id))]))
+    .find(row => clean(row.note).includes(DEMO_MARKER));
+  if (!vaccination) {
+    const vaccineResult = await adminSaveVaccination(env, {
+      shop_code: shopCode, admin_code: adminCode, pet_id: String(pet.id), customer_id: customerId,
+      vaccination_type: "combination", vaccination_name: "混合ワクチン（STEP5確認）",
+      vaccinated_on: addDaysYmd(date, -30), expires_on: addDaysYmd(date, 335), verification_status: "confirmed",
+      certificate_data_url: DEMO_IMAGE_DATA_URL, verified_by: "system",
+      note: `${DEMO_MARKER} 証明書画像の保存確認`
+    });
+    vaccination = vaccineResult.vaccination;
+  }
+
+  await sbInsert(env, "petsalon_import_logs", {
+    shop_code: shopCode, import_type: "records", source_filename: DEMO_MARKER,
+    source_hash: String(reservation.id), dry_run: false, total_rows: 3, success_rows: 3,
+    skipped_rows: 0, error_rows: 0,
+    result_summary: { date, reservation_id: String(reservation.id), customer_id: customerId, pet_id: String(pet.id), record_id: record.id, vaccination_id: vaccination?.id || null },
+    created_by: "system"
+  });
+
+  return {
+    ok: true, shop_code: shopCode, date, prepared: true, marker: DEMO_MARKER,
+    reservation, pet: sanitizePet(pet), record,
+    photo_count: photos.length, vaccination_count: vaccination ? 1 : 0,
+    direct_query: buildDemoDirectQuery(reservation, date),
+    jst_date: todayJst()
+  };
+}
+
+async function adminCleanupPetChartDemo(env, body) {
+  const { shopCode, adminCode } = await requireAdminFromBody(env, body);
+  await assertDemoShop(env, shopCode);
+  const date = clean(body.date) || "";
+  if (date) assertYmd(date, "date");
+  const reservations = await findAllDemoReservations(env, shopCode, date || null);
+  const report = { reservations: 0, pets: 0, customers: 0, records: 0, photos: 0, vaccinations: 0, warnings: [] };
+
+  for (const reservation of reservations) {
+    const reservationId = String(reservation.id);
+    const petId = clean(reservation.pet_id);
+    const customerId = clean(reservation.customer_id);
+    const records = await sbSelect(env, "petsalon_pet_records", [sel("*"), eq("shop_code", shopCode), eq("reservation_id", reservationId)]);
+    const recordIds = records.map(row => row.id);
+    const photos = recordIds.length ? await sbSelect(env, "petsalon_record_photos", [sel("*"), eq("shop_code", shopCode), inFilter("pet_record_id", recordIds)]) : [];
+    for (const photo of photos) await sbStorageDeleteQuietly(env, photo.storage_bucket || RECORD_PHOTO_BUCKET, photo.storage_path);
+    if (recordIds.length) {
+      const deletedPhotos = await sbDelete(env, "petsalon_record_photos", [eq("shop_code", shopCode), inFilter("pet_record_id", recordIds)]);
+      report.photos += deletedPhotos.length;
+    }
+    const vaccineRows = petId ? (await sbSelect(env, "petsalon_vaccinations", [sel("*"), eq("shop_code", shopCode), eq("pet_id", petId)])).filter(row => clean(row.note).includes(DEMO_MARKER)) : [];
+    for (const vaccine of vaccineRows) {
+      await sbStorageDeleteQuietly(env, vaccine.certificate_storage_bucket || RECORD_PHOTO_BUCKET, vaccine.certificate_storage_path);
+      await sbDelete(env, "petsalon_vaccinations", [eq("shop_code", shopCode), eq("id", vaccine.id)]);
+      report.vaccinations++;
+    }
+    await sbDelete(env, "petsalon_notification_logs", [eq("shop_code", shopCode), eq("reservation_id", reservationId)]);
+    await sbDelete(env, "petsalon_workflow_events", [eq("shop_code", shopCode), eq("reservation_id", reservationId)]);
+    await sbDelete(env, "petsalon_checkins", [eq("shop_code", shopCode), eq("reservation_id", reservationId)]);
+    if (recordIds.length) {
+      const deletedRecords = await sbDelete(env, "petsalon_pet_records", [eq("shop_code", shopCode), inFilter("id", recordIds)]);
+      report.records += deletedRecords.length;
+    }
+
+    try {
+      const deletedReservations = await sbDelete(env, "pet_salon_reservations", [eq("shop_code", shopCode), eq("id", reservationId)]);
+      report.reservations += deletedReservations.length || 1;
+    } catch (error) {
+      report.warnings.push(`予約${reservationId}は削除できなかったためキャンセルへ変更しました。`);
+      try {
+        await legacyJson(env, "/api/admin/reservations/update-status", { method: "POST", body: { shop_code: shopCode, admin_code: adminCode, reservation_id: reservationId, status: "cancelled" } });
+      } catch (legacyError) {
+        report.warnings.push(`予約${reservationId}のキャンセルにも失敗しました：${legacyError.message}`);
+      }
+    }
+
+    if (petId) {
+      const otherReservations = await sbSelect(env, "pet_salon_reservations", [sel("id"), eq("shop_code", shopCode), eq("pet_id", petId), "limit=1"]);
+      if (!otherReservations.length) {
+        try { const deleted = await sbDelete(env, "pet_salon_pets", [eq("shop_code", shopCode), eq("id", petId)]); report.pets += deleted.length || 1; }
+        catch (error) { report.warnings.push(`デモペット${petId}は関連データがあるため残しました。`); }
+      }
+    }
+    if (customerId) {
+      const otherPets = await sbSelect(env, "pet_salon_pets", [sel("id"), eq("shop_code", shopCode), eq("customer_id", customerId), "limit=1"]);
+      if (!otherPets.length) {
+        try { const deleted = await sbDelete(env, "pet_salon_customers", [eq("shop_code", shopCode), eq("id", customerId)]); report.customers += deleted.length || 1; }
+        catch (error) { report.warnings.push(`デモ飼い主${customerId}は関連データがあるため残しました。`); }
+      }
+    }
+  }
+  await sbDelete(env, "petsalon_import_logs", [eq("shop_code", shopCode), eq("source_filename", DEMO_MARKER)]);
+  return { ok: true, shop_code: shopCode, cleaned: true, marker: DEMO_MARKER, report, jst_date: todayJst() };
+}
+
+async function assertDemoShop(env, shopCode) {
+  const settings = await getLegacySettings(env, shopCode);
+  if (shopCode !== DEFAULT_SHOP_CODE && settings.demo_mode !== true && settings.is_demo !== true) {
+    throw new AppError(403, "デモ確認データはデモ店舗でのみ作成できます。");
+  }
+  return settings;
+}
+
+async function findDemoReservation(env, shopCode, date) {
+  const rows = await findAllDemoReservations(env, shopCode, date);
+  return rows[0] || null;
+}
+
+async function findAllDemoReservations(env, shopCode, date = null) {
+  const parts = [sel("*"), eq("shop_code", shopCode)];
+  if (date) parts.push(eq("reservation_date", date));
+  parts.push("order=created_at.desc", "limit=500");
+  const rows = await sbSelect(env, "pet_salon_reservations", parts);
+  return rows.filter(row => clean(row.request_note).includes(DEMO_MARKER));
+}
+
+async function chooseLegacyServiceCode(env, shopCode) {
+  try {
+    const data = await legacyJson(env, "/api/public/services", { query: { shop_code: shopCode, category: "salon" } });
+    const rows = Array.isArray(data.services) ? data.services : [];
+    const active = rows.find(row => row.is_active !== false && clean(row.service_code || row.code));
+    if (active) return clean(active.service_code || active.code);
+  } catch (_) {}
+  return "shampoo_cut";
+}
+
+async function chooseLegacyReservationTime(env, shopCode, date) {
+  try {
+    const data = await legacyJson(env, "/api/public/available-times", { query: { shop_code: shopCode, date } });
+    const candidates = data.available_times || data.times || data.slots || [];
+    for (const item of candidates) {
+      if (typeof item === "string" && /^\d{2}:\d{2}/.test(item)) return item.slice(0, 5);
+      if (item && item.available !== false && /^\d{2}:\d{2}/.test(clean(item.time || item.start_time))) return clean(item.time || item.start_time).slice(0, 5);
+    }
+  } catch (_) {}
+  return "15:30";
+}
+
+function legacyWorkerBase(env) {
+  return clean(env.LEGACY_WORKER_BASE_URL || DEFAULT_LEGACY_WORKER_BASE_URL).replace(/\/$/, "");
+}
+
+async function legacyJson(env, path, options = {}) {
+  const url = new URL(`${legacyWorkerBase(env)}${path}`);
+  for (const [key, value] of Object.entries(options.query || {})) if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
+  const response = await fetch(url.toString(), {
+    method: options.method || "GET",
+    headers: options.body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: options.body === undefined ? undefined : JSON.stringify(options.body)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.ok === false) throw new AppError(response.status >= 500 ? 502 : response.status, data.error || data.message || `既存Worker連携に失敗しました（${response.status}）`, data);
+  return data;
+}
+
+function buildDemoDirectQuery(reservation, date) {
+  const params = new URLSearchParams({
+    pet_id: String(reservation.pet_id || ""), reservation_id: String(reservation.id || ""),
+    record_date: date, from: "owner", demo: "1", step5_demo: "1"
+  });
+  return params.toString();
+}
+
+function addDaysYmd(ymd, days) {
+  const date = new Date(`${ymd}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + Number(days || 0));
+  return date.toISOString().slice(0, 10);
+}
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+// ============================================================
+// Full pet chart for owner / iPad screens
+// ============================================================
+
+async function adminGetPetChart(env, url) {
+  const { shopCode } = await requireAdminFromUrl(env, url);
+  const settings = await ensureExtensionSettings(env, shopCode);
+  assertFeature(settings.pet_record_enabled, "ペット別カルテ");
+
+  const petId = clean(url.searchParams.get("pet_id"));
+  if (!petId) throw new AppError(400, "pet_id が必要です。");
+  const pet = await assertLegacyPet(env, shopCode, petId);
+
+  let customer = null;
+  if (clean(pet.customer_id)) {
+    const customers = await sbSelect(env, "pet_salon_customers", [
+      sel("*"), eq("shop_code", shopCode), eq("id", pet.customer_id), "limit=1"
+    ]);
+    customer = customers[0] || null;
+  }
+
+  const limit = clampInt(url.searchParams.get("limit"), 1, 100, 50);
+  const records = await sbSelect(env, "petsalon_pet_records", [
+    sel("*"), eq("shop_code", shopCode), eq("pet_id", petId),
+    "order=record_date.desc,created_at.desc", `limit=${limit}`
+  ]);
+  const recordIds = records.map(row => row.id);
+  const photos = recordIds.length ? await sbSelect(env, "petsalon_record_photos", [
+    sel("*"), eq("shop_code", shopCode), inFilter("pet_record_id", recordIds),
+    "order=sort_order.asc,created_at.asc"
+  ]) : [];
+  const photoMap = groupBy(photos, "pet_record_id");
+  const signedRecords = [];
+  for (const record of records) {
+    const signedPhotos = [];
+    for (const photo of photoMap.get(String(record.id)) || []) {
+      signedPhotos.push(await photoWithSignedUrl(env, photo, 900));
+    }
+    signedRecords.push({ ...record, photos: signedPhotos });
+  }
+
+  const vaccinationRows = settings.vaccination_enabled ? await sbSelect(env, "petsalon_vaccinations", [
+    sel("*"), eq("shop_code", shopCode), eq("pet_id", petId),
+    "order=expires_on.desc.nullslast,vaccinated_on.desc.nullslast,created_at.desc"
+  ]) : [];
+  const vaccinations = [];
+  for (const row of vaccinationRows) {
+    let certificateSignedUrl = null;
+    if (clean(row.certificate_storage_path)) {
+      try {
+        certificateSignedUrl = await sbStorageCreateSignedUrl(
+          env,
+          row.certificate_storage_bucket || RECORD_PHOTO_BUCKET,
+          row.certificate_storage_path,
+          900
+        );
+      } catch (_) {
+        certificateSignedUrl = null;
+      }
+    }
+    vaccinations.push({ ...row, certificate_signed_url: certificateSignedUrl });
+  }
+
+  const staff = await sbSelect(env, "petsalon_staff", [
+    sel("*"), eq("shop_code", shopCode), eq("is_active", true), "order=sort_order.asc,staff_name.asc"
+  ]);
+
+  return {
+    ok: true,
+    shop_code: shopCode,
+    pet,
+    customer,
+    staff,
+    records: signedRecords,
+    vaccinations,
+    vaccination_summary: summarizeVaccinations(vaccinationRows),
+    extension_settings: sanitizeExtensionSettings(settings)
+  };
 }
 
 // ============================================================
@@ -764,6 +1144,36 @@ async function adminSaveVaccination(env, body) {
   });
 
   return { ok: true, shop_code: shopCode, pet_id: petId, vaccination: row };
+}
+
+
+async function adminDeleteVaccination(env, body) {
+  const { shopCode } = await requireAdminFromBody(env, body);
+  const settings = await ensureExtensionSettings(env, shopCode);
+  assertFeature(settings.vaccination_enabled, "ワクチン管理");
+
+  const vaccinationId = clean(body.vaccination_id || body.id);
+  if (!vaccinationId) throw new AppError(400, "vaccination_id が必要です。");
+  const rows = await sbSelect(env, "petsalon_vaccinations", [
+    sel("*"), eq("shop_code", shopCode), eq("id", vaccinationId), "limit=1"
+  ]);
+  if (!rows.length) throw new AppError(404, "ワクチン記録が見つかりません。");
+  const vaccination = rows[0];
+
+  if (clean(vaccination.certificate_storage_path)) {
+    await sbStorageDeleteQuietly(
+      env,
+      vaccination.certificate_storage_bucket || RECORD_PHOTO_BUCKET,
+      vaccination.certificate_storage_path
+    );
+  }
+  await sbDelete(env, "petsalon_vaccinations", [eq("shop_code", shopCode), eq("id", vaccinationId)]);
+  await writeAuditQuietly(env, shopCode, "vaccination_deleted", "owner", {
+    pet_id: vaccination.pet_id,
+    vaccination_id: vaccinationId,
+    vaccination_type: vaccination.vaccination_type
+  });
+  return { ok: true, shop_code: shopCode, deleted_vaccination_id: vaccinationId };
 }
 
 function summarizeVaccinations(rows) {
@@ -1297,6 +1707,17 @@ async function sbRequest(env, table, options = {}) {
     });
   }
   return Array.isArray(data) ? data : (data ? [data] : []);
+}
+
+async function sbStorageGetBucket(env, bucket) {
+  const { url, key } = storageConfig(env);
+  const response = await fetch(`${url}/storage/v1/bucket/${encodeURIComponent(bucket)}`, {
+    method: "GET",
+    headers: { apikey: key, Authorization: `Bearer ${key}` }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new AppError(response.status >= 500 ? 502 : response.status, data.message || "写真保存先を確認できませんでした。");
+  return data;
 }
 
 async function sbStorageUpload(env, bucket, path, bytes, mimeType) {

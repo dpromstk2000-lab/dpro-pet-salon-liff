@@ -53,6 +53,7 @@
       </div>
     </details>
     <div class="message info show" id="message">カルテを読み込んでいます。</div>
+    <div id="step5DemoNotice" class="notice" style="display:none">STEP5-R1確認用データです。カルテ・写真・ワクチンの表示と保存を確認後、今日の業務画面から「確認データを削除」できます。</div>
 
     <nav class="tabs" aria-label="カルテメニュー">
       <button type="button" class="tab active" data-tab="record">本日のカルテ</button>
@@ -193,7 +194,7 @@
     function openRecord(id){const r=(state.chart?.records||[]).find(x=>String(x.id)===String(id));if(!r)return;state.selectedRecord=r;populateRecord(r);setTab('record');message(`${r.record_date}のカルテを開きました。`,'info');}
     async function loadChart(selectId=''){if(!petId){message('pet_idがありません。今日の業務画面から開いてください。','err');return;}saveConnection();try{const data=await apiGet('/api/admin/pet-chart',{pet_id:petId,limit:50});state.chart=data;renderHeader();chooseCurrentRecord();if(selectId)state.selectedRecord=(data.records||[]).find(r=>String(r.id)===String(selectId))||state.currentRecord;populateRecord(state.selectedRecord);renderVaccines();renderHistory();$('photoCount').textContent=state.selectedRecord?.photos?.length||0;$('vaccineCount').textContent=data.vaccinations?.length||0;$('historyCount').textContent=data.records?.length||0;message('カルテ・写真・ワクチン情報を読み込みました。','ok');}catch(e){message(e.message||'カルテを読み込めませんでした。','err');$('connectionPanel').open=true;}}
     function bind(){document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));$('backBtn').addEventListener('click',()=>location.href=backUrl());$('saveRecordBtn').addEventListener('click',saveRecord);$('copyLastBtn').addEventListener('click',copyLast);$('newTodayBtn').addEventListener('click',returnToday);$('switchPhotosBtn').addEventListener('click',()=>setTab('photos'));$('reloadPhotosBtn').addEventListener('click',()=>loadChart($('recordId').value));$('vaccineForm').addEventListener('submit',saveVaccine);$('cancelVaccineEditBtn').addEventListener('click',clearVaccineForm);$('newVaccineBtn').addEventListener('click',()=>{clearVaccineForm();$('vaccineForm').scrollIntoView({behavior:'smooth'});});['workerUrl','shopCode','adminCode'].forEach(id=>$(id).addEventListener('change',()=>loadChart($('recordId').value)));window.addEventListener('beforeunload',saveConnection);}
-    function init(){restoreConnection();bindUploadBoxes();bind();loadChart();window.DPRO_PETSALON_PET_CHART={version:VERSION,reload:loadChart};}
+    function init(){restoreConnection();if(params.get('step5_demo')==='1')$('step5DemoNotice').style.display='block';bindUploadBoxes();bind();loadChart();window.DPRO_PETSALON_PET_CHART={version:VERSION,reload:loadChart};}
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
   })();
   </script>

@@ -1,0 +1,10 @@
+STEP PETSALON-BRUSHUP-5-R1 実装仕様
+
+- JST日付をformatToPartsで固定し、ブラウザロケール差を排除
+- 日付変更時の古い非同期応答が画面を上書きしないrequestSeqガード
+- 既存Workerのsummary日付がJSTと違う場合、/api/admin/dayで当日予約を再取得
+- デモ予約・飼い主・ペットを既存Workerのmanual-create APIで安全に生成
+- ペットカルテ、非公開Storage写真、証明書付きワクチンを追加Workerで自動生成
+- 専用カルテ画面へ直接移動
+- 確認後、追加データとStorage画像を削除。既存予約を削除できない場合は安全にキャンセル
+- デモ店舗以外では確認データ生成を拒否

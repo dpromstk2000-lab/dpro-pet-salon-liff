@@ -1,0 +1,2 @@
+STEP PETSALON-BRUSHUP-5-R1では追加SQLはありません。
+STEP3の追加テーブルと非公開Storageをそのまま使用します。

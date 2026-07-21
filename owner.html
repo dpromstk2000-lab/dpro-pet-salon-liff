@@ -1206,6 +1206,16 @@
           </div>
           <div id="nextWorkflowBoard" class="next-workflow-list"><div class="next-empty">追加Workerへ接続して本日の予約を読み込みます。</div></div>
           <div id="nextBoardMessage" class="next-board-message" aria-live="polite"></div>
+          <div class="next-demo-tools" style="margin-top:12px;padding:14px;border:1px solid #eadccf;border-radius:15px;background:#fffaf6">
+            <div style="display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap">
+              <div><strong style="font-size:16px">STEP5 カルテ実機確認</strong><div id="nextDemoStatus" class="next-connection-status" style="margin-top:4px">確認用データを調べています。</div></div>
+              <div class="next-secondary-actions" style="margin-top:0">
+                <button class="btn secondary small" type="button" id="nextDemoPrepareBtn">確認データを準備</button>
+                <button class="btn small" type="button" id="nextDemoOpenBtn" disabled>カルテ画面を開く</button>
+                <button class="btn danger small" type="button" id="nextDemoCleanupBtn">確認データを削除</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="card">
@@ -2481,6 +2491,18 @@
         const res = await apiGet("/api/admin/summary", {
           admin_code: adminCode()
         });
+        const jstToday = todayYmd();
+        if(String(res.today || "") !== jstToday){
+          try{
+            const dayResult = await apiGet("/api/admin/day", { admin_code: adminCode(), date: jstToday });
+            res.worker_reported_today = res.today || "";
+            res.today = jstToday;
+            res.today_reservations = dayResult.reservations || [];
+            res.jst_date_corrected = true;
+          }catch(dateError){
+            console.warn("JST日付補正に失敗しました", dateError);
+          }
+        }
 
         state.summary = res;
 
@@ -5033,10 +5055,10 @@
 <script>
 (() => {
   'use strict';
-  const NEXT_STEP_VERSION = 'PETSALON-BRUSHUP-5-PET-CHART-LINK-20260721';
+  const NEXT_STEP_VERSION = 'PETSALON-BRUSHUP-5-R1-JST-DEMO-LINK-20260721';
   const nextEl = id => document.getElementById(id);
   const nextConfig = window.DPRO_PETSALON_CONFIG || {};
-  const nextState = { rows: [], staff: [], filter: 'active', busy: new Set(), date: '' };
+  const nextState = { rows: [], staff: [], filter: 'active', busy: new Set(), date: '', requestSeq: 0, demo: null };
   const nextStatusLabels = {
     requested:'予約希望', confirmed:'予約確定', checked_in:'受付済み', counseling:'カウンセリング中', waiting:'施術待ち',
     grooming:'施術中', final_check:'仕上げ確認', pickup_ready:'お迎え可能', handed_over:'お渡し完了', cancelled:'キャンセル', no_show:'無断キャンセル'
@@ -5050,7 +5072,7 @@
   const nextOrder = {requested:0,confirmed:0,checked_in:1,counseling:1,waiting:1,grooming:2,final_check:2,pickup_ready:3,handed_over:4,cancelled:5,no_show:5};
 
   function nextEsc(value){return String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-  function nextToday(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
+  function nextToday(){const parts=new Intl.DateTimeFormat('ja-JP-u-ca-gregory',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const map=Object.fromEntries(parts.map(p=>[p.type,p.value]));return `${map.year}-${map.month}-${map.day}`;}
   function nextHm(value){return String(value||'').slice(0,5);}
   function nextPetName(value){const raw=String(value||'ペット').trim();return /(ちゃん|くん|君|さん|様)$/.test(raw)?raw:`${raw}ちゃん`;}
   function nextBase(){return String(nextEl('extensionWorkerUrl')?.value||'').trim().replace(/\/$/,'');}
@@ -5146,14 +5168,18 @@
     board.querySelectorAll('[data-next-save-staff]').forEach(btn=>btn.addEventListener('click',()=>nextSaveStaffAssignment(btn.dataset.nextSaveStaff,btn.dataset.petId)));
   }
   async function nextLoadBoard({quiet=false}={}){
+    const requestId=++nextState.requestSeq;
     try{
-      nextSaveInputs(); if(!quiet)nextMessage('本日の施術進捗を読み込んでいます。','ok');
-      const date=nextEl('nextBoardDate')?.value||nextToday(); nextState.date=date;
-      const [board,staff]=await Promise.all([nextGet('/api/admin/today-board',{date}),nextGet('/api/admin/staff')]);
+      nextSaveInputs(); if(!quiet)nextMessage('選択日の施術進捗を読み込んでいます。','ok');
+      const requestedDate=nextEl('nextBoardDate')?.value||nextToday(); nextState.date=requestedDate;
+      const [board,staff]=await Promise.all([nextGet('/api/admin/today-board',{date:requestedDate}),nextGet('/api/admin/staff')]);
+      if(requestId!==nextState.requestSeq)return;
+      const responseDate=String(board.date||requestedDate);
+      if(responseDate!==requestedDate)throw new Error(`日付応答が一致しません（選択：${requestedDate}／応答：${responseDate}）`);
       nextState.rows=Array.isArray(board.reservations)?board.reservations:[]; nextState.staff=Array.isArray(staff.staff)?staff.staff:[];
-      nextRender(); if(!quiet)nextMessage(`${date}の予約 ${nextState.rows.length}件を更新しました。`,'ok');
-      if(nextEl('nextConnectionStatus')) nextEl('nextConnectionStatus').textContent=`接続正常：${board.shop_code||nextCommon().shop_code} ／ ${nextState.rows.length}件`;
-    }catch(error){nextMessage(error.message||'施術進捗を取得できませんでした。','err'); if(nextEl('nextConnectionStatus')) nextEl('nextConnectionStatus').textContent=`接続エラー：${error.message||''}`;}
+      nextRender(); if(!quiet)nextMessage(`${responseDate}の予約 ${nextState.rows.length}件を更新しました。`,'ok');
+      if(nextEl('nextConnectionStatus')) nextEl('nextConnectionStatus').textContent=`接続正常：${board.shop_code||nextCommon().shop_code} ／ ${responseDate} ／ ${nextState.rows.length}件`;
+    }catch(error){if(requestId!==nextState.requestSeq)return;nextMessage(error.message||'施術進捗を取得できませんでした。','err'); if(nextEl('nextConnectionStatus')) nextEl('nextConnectionStatus').textContent=`接続エラー：${error.message||''}`;}
   }
   async function nextUpdateWorkflow(reservationId,target){
     const row=nextState.rows.find(x=>String(x.reservation?.id)===String(reservationId)); if(!row)return;
@@ -5197,13 +5223,34 @@
     const text=nextEl('nextNotificationText')?.value||''; if(!text)return;
     try{await navigator.clipboard.writeText(text);nextMessage('お迎え可能通知をコピーしました。','ok');}catch(_){nextEl('nextNotificationText').focus();nextEl('nextNotificationText').select();document.execCommand('copy');nextMessage('お迎え可能通知をコピーしました。','ok');}
   }
+  function nextSetDemoStatus(text,prepared=false){
+    const status=nextEl('nextDemoStatus');if(status)status.textContent=text||'';
+    const open=nextEl('nextDemoOpenBtn');if(open)open.disabled=!prepared;
+  }
+  async function nextLoadDemoStatus(){
+    try{const date=nextEl('nextBoardDate')?.value||nextToday();const result=await nextGet('/api/admin/demo/pet-chart/status',{date});nextState.demo=result;nextSetDemoStatus(result.prepared?`準備済み：${result.pet?.pet_name||'確認用ペット'}／カルテ${result.record?'1':'0'}件／写真${result.photo_count||0}枚／ワクチン${result.vaccination_count||0}件`:'確認用データは未作成です。',result.prepared);}catch(error){nextState.demo=null;nextSetDemoStatus(`確認状態を取得できません：${error.message}`,false);}
+  }
+  async function nextPrepareDemo(){
+    if(!confirm('STEP5の確認用予約・カルテ・写真・ワクチンをデモ店舗に作成しますか？'))return;
+    const btn=nextEl('nextDemoPrepareBtn');if(btn)btn.disabled=true;nextSetDemoStatus('確認用データを作成しています。',false);
+    try{const date=nextEl('nextBoardDate')?.value||nextToday();const result=await nextPost('/api/admin/demo/pet-chart/prepare',{date});nextState.demo=result;nextSetDemoStatus(`準備完了：${result.pet?.pet_name||'確認用ペット'}／写真${result.photo_count||0}枚／ワクチン${result.vaccination_count||0}件`,true);await nextLoadBoard({quiet:true});nextMessage('STEP5確認用データを作成しました。「カルテ画面を開く」で確認できます。','ok');}catch(error){nextSetDemoStatus(`作成できませんでした：${error.message}`,false);nextMessage(error.message||'確認用データを作成できませんでした。','err');}finally{if(btn)btn.disabled=false;}
+  }
+  function nextOpenDemo(){
+    const demo=nextState.demo;if(!demo?.prepared||!demo.direct_query){nextMessage('先に確認データを準備してください。','err');return;}nextSaveInputs();location.href=`pet-record.html?${demo.direct_query}`;
+  }
+  async function nextCleanupDemo(){
+    if(!confirm('STEP5確認用の予約・カルテ・写真・ワクチンを削除しますか？'))return;
+    const btn=nextEl('nextDemoCleanupBtn');if(btn)btn.disabled=true;nextSetDemoStatus('確認用データを削除しています。',false);
+    try{const result=await nextPost('/api/admin/demo/pet-chart/cleanup',{});nextState.demo=null;nextSetDemoStatus(result.report?.warnings?.length?`削除完了（一部関連データは残しました）：${result.report.warnings.join(' ')}`:'確認用データを削除しました。',false);await nextLoadBoard({quiet:true});nextMessage('STEP5確認用データを削除しました。','ok');}catch(error){nextSetDemoStatus(`削除できませんでした：${error.message}`,false);nextMessage(error.message||'確認用データを削除できませんでした。','err');}finally{if(btn)btn.disabled=false;}
+  }
   async function nextCheckWorker(){
     try{const health=await nextGet('/api/health',{});nextEl('nextConnectionStatus').textContent=`接続正常：${health.worker_version||health.service||'追加Worker'}`;nextMessage('DPRO NEXT追加Workerへ正常に接続できました。','ok');}catch(error){nextMessage(error.message||'追加Workerへ接続できませんでした。','err');}
   }
   function nextClearAdmin(){if(nextEl('adminCode'))nextEl('adminCode').value='';localStorage.removeItem('petsalon_admin_code');nextMessage('この端末に保存した管理コードを削除しました。','ok');}
   function nextBind(){
     nextEl('nextBoardRefreshBtn')?.addEventListener('click',()=>nextLoadBoard()); nextEl('nextWorkerCheckBtn')?.addEventListener('click',nextCheckWorker); nextEl('clearAdminCodeBtn')?.addEventListener('click',nextClearAdmin);
-    nextEl('nextBoardDate')?.addEventListener('change',()=>nextLoadBoard()); nextEl('extensionWorkerUrl')?.addEventListener('change',()=>{nextSaveInputs();nextLoadBoard();});
+    nextEl('nextDemoPrepareBtn')?.addEventListener('click',nextPrepareDemo); nextEl('nextDemoOpenBtn')?.addEventListener('click',nextOpenDemo); nextEl('nextDemoCleanupBtn')?.addEventListener('click',nextCleanupDemo);
+    nextEl('nextBoardDate')?.addEventListener('change',async()=>{nextMessage('表示日を変更しました。','ok');await nextLoadBoard();await nextLoadDemoStatus();}); nextEl('extensionWorkerUrl')?.addEventListener('change',()=>{nextSaveInputs();nextLoadBoard();nextLoadDemoStatus();});
     nextEl('adminCode')?.addEventListener('change',()=>{nextSaveInputs();nextLoadBoard({quiet:true});}); nextEl('shopCode')?.addEventListener('change',()=>nextLoadBoard());
     nextEl('nextFilterRow')?.addEventListener('click',event=>{const btn=event.target.closest('[data-next-filter]');if(!btn)return;nextState.filter=btn.dataset.nextFilter;document.querySelectorAll('[data-next-filter]').forEach(x=>x.classList.toggle('active',x===btn));nextRender();});
     document.querySelectorAll('[data-next-close]').forEach(btn=>btn.addEventListener('click',()=>nextEl(btn.dataset.nextClose)?.classList.remove('show')));
@@ -5211,7 +5258,7 @@
     nextEl('nextNotificationCopyBtn')?.addEventListener('click',nextCopyNotification);
     document.addEventListener('keydown',event=>{if(event.key==='Escape')document.querySelectorAll('.next-modal.show').forEach(x=>x.classList.remove('show'))});
   }
-  function nextInit(){nextRestoreInputs();nextBind();nextLoadBoard();window.DPRO_PETSALON_NEXT={version:NEXT_STEP_VERSION,reload:nextLoadBoard};}
+  function nextInit(){nextRestoreInputs();nextBind();nextLoadBoard();nextLoadDemoStatus();window.DPRO_PETSALON_NEXT={version:NEXT_STEP_VERSION,reload:nextLoadBoard,demoStatus:nextLoadDemoStatus};}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',nextInit);else nextInit();
 })();
 </script>

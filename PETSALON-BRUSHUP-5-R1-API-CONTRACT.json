@@ -1,0 +1,34 @@
+{
+  "version": "PETSALON-BRUSHUP-5-R1-JST-DEMO-WORKER-20260721",
+  "new_endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/admin/demo/pet-chart/status",
+      "query": [
+        "shop_code",
+        "admin_code",
+        "date?"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/demo/pet-chart/prepare",
+      "body": [
+        "shop_code",
+        "admin_code",
+        "date?"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/demo/pet-chart/cleanup",
+      "body": [
+        "shop_code",
+        "admin_code",
+        "date?"
+      ]
+    }
+  ],
+  "sql_required": false,
+  "legacy_worker_unchanged": true
+}
