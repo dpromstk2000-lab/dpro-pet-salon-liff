@@ -1,0 +1,7 @@
+// DPRO PET SALON LINE / STEP PETSALON-BRUSHUP-3
+window.DPRO_PETSALON_CONFIG = Object.freeze({
+  SHOP_CODE: "pet_salon_demo",
+  LEGACY_WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
+  EXTENSION_WORKER_BASE_URL: "https://dpro-pet-salon-next-api.dpromstk2000.workers.dev",
+  DEMO_ADMIN_CODE: "1234"
+});
