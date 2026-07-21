@@ -1,0 +1,20 @@
+STEP PETSALON-BRUSHUP-4 配置手順
+
+1. Cloudflare Workers
+   既存の dpro-pet-salon-next-api を開き、worker.js を全置換してDeployします。
+   新しい環境変数やSQL追加はありません。
+
+2. GitHub Pages
+   次の実配置名ファイルを dpro-pet-salon-liff の main へアップロードします。
+   - owner.html
+   - owner-ipad.html
+   - config.js
+   - system-check.html
+
+3. 公開確認
+   owner.html?demo=1 と owner-ipad.html?demo=1 を開きます。
+   今日の施術進捗に予約カードが表示され、4ボタンが現在状態に応じて1つだけ有効なら正常です。
+
+4. 安全仕様
+   既存予約・ホテル・顧客検索は残しています。
+   追加Workerに障害があっても既存画面の従来機能は利用できます。

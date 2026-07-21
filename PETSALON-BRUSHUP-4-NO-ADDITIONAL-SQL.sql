@@ -1,0 +1,4 @@
+-- DPRO PET SALON / STEP PETSALON-BRUSHUP-4
+-- このSTEPでは既存のSTEP3テーブルをそのまま使用します。
+-- 追加SQLの実行は不要です。
+select 'PETSALON_BRUSHUP_4_NO_ADDITIONAL_SQL_REQUIRED' as result;

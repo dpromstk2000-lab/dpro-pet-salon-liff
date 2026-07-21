@@ -1,0 +1,46 @@
+STEP PETSALON-BRUSHUP-4 検査結果
+
+1. worker.js
+- Node.js JavaScript構文検査: PASS
+- /api/health 模擬応答: PASS
+- Worker version: PETSALON-BRUSHUP-4-OWNER-BOARD-WORKER-20260721
+- today-board 模擬Supabase接続: PASS
+- 予約・顧客・ペット結合: PASS
+- 本日カルテ pet_record 付与: PASS
+- 担当スタッフ staff 付与: PASS
+- 健康注意 alerts 付与: PASS
+- 電話番号正規化: PASS
+- 不正な進捗逆戻り拒否: PASS
+
+2. owner.html
+- HTMLパース: PASS
+- ID重複: 0
+- 既存インラインJavaScript構文: PASS
+- STEP4追加JavaScript構文: PASS
+- 今日の施術進捗ボード: 実装済み
+- 4ボタン進捗: 実装済み
+- 担当スタッフ保存: 実装済み
+- カルテ・ワクチン確認: 実装済み
+- お迎え文面表示・コピー: 実装済み
+- 管理コード削除: 実装済み
+
+3. owner-ipad.html
+- HTMLパース: PASS
+- ID重複: 0
+- 既存インラインJavaScript構文: PASS
+- STEP4追加JavaScript構文: PASS
+- タッチ向け4ボタン表示: 実装済み
+- 既存顧客検索・ホテル表示: 保持
+
+4. system-check.html
+- JavaScript構文: PASS
+
+5. データベース
+- STEP3の追加テーブルを継続使用
+- STEP4追加SQL: 不要
+- 既存データ削除処理: なし
+
+6. 公開後確認が必要な項目
+- CloudflareへSTEP4 worker.jsをDeploy後の実Supabase応答
+- GitHub Pages公開後のPC/iPad実画面
+- 実際の予約カードで4段階を1件通して操作
