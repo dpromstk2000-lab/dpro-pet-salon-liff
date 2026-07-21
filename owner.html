@@ -5055,7 +5055,7 @@
 <script>
 (() => {
   'use strict';
-  const NEXT_STEP_VERSION = 'PETSALON-BRUSHUP-5-R1-JST-DEMO-LINK-20260721';
+  const NEXT_STEP_VERSION = 'PETSALON-BRUSHUP-5-R2-DEMO-FALLBACK-LINK-20260721';
   const nextEl = id => document.getElementById(id);
   const nextConfig = window.DPRO_PETSALON_CONFIG || {};
   const nextState = { rows: [], staff: [], filter: 'active', busy: new Set(), date: '', requestSeq: 0, demo: null };
@@ -5233,15 +5233,15 @@
   async function nextPrepareDemo(){
     if(!confirm('STEP5の確認用予約・カルテ・写真・ワクチンをデモ店舗に作成しますか？'))return;
     const btn=nextEl('nextDemoPrepareBtn');if(btn)btn.disabled=true;nextSetDemoStatus('確認用データを作成しています。',false);
-    try{const date=nextEl('nextBoardDate')?.value||nextToday();const result=await nextPost('/api/admin/demo/pet-chart/prepare',{date});nextState.demo=result;nextSetDemoStatus(`準備完了：${result.pet?.pet_name||'確認用ペット'}／写真${result.photo_count||0}枚／ワクチン${result.vaccination_count||0}件`,true);await nextLoadBoard({quiet:true});nextMessage('STEP5確認用データを作成しました。「カルテ画面を開く」で確認できます。','ok');}catch(error){nextSetDemoStatus(`作成できませんでした：${error.message}`,false);nextMessage(error.message||'確認用データを作成できませんでした。','err');}finally{if(btn)btn.disabled=false;}
+    try{const date=nextEl('nextBoardDate')?.value||nextToday();const result=await nextPost('/api/admin/demo/pet-chart/prepare',{date});if(result.date&&nextEl('nextBoardDate')){nextEl('nextBoardDate').value=result.date;nextState.date=result.date;}nextState.demo=result;nextSetDemoStatus(`準備完了：${result.pet?.pet_name||'確認用ペット'}／写真${result.photo_count||0}枚／ワクチン${result.vaccination_count||0}件`,true);await nextLoadBoard({quiet:true});nextMessage(`STEP5確認用カルテを準備しました（${result.date||date}）。「カルテ画面を開く」で確認できます。`,'ok');}catch(error){nextSetDemoStatus(`作成できませんでした：${error.message}`,false);nextMessage(error.message||'確認用データを作成できませんでした。','err');}finally{if(btn)btn.disabled=false;}
   }
   function nextOpenDemo(){
     const demo=nextState.demo;if(!demo?.prepared||!demo.direct_query){nextMessage('先に確認データを準備してください。','err');return;}nextSaveInputs();location.href=`pet-record.html?${demo.direct_query}`;
   }
   async function nextCleanupDemo(){
-    if(!confirm('STEP5確認用の予約・カルテ・写真・ワクチンを削除しますか？'))return;
+    if(!confirm('STEP5確認用のカルテ・写真・ワクチンを削除しますか？\n営業用デモ予約・飼い主・ペットは残します。'))return;
     const btn=nextEl('nextDemoCleanupBtn');if(btn)btn.disabled=true;nextSetDemoStatus('確認用データを削除しています。',false);
-    try{const result=await nextPost('/api/admin/demo/pet-chart/cleanup',{});nextState.demo=null;nextSetDemoStatus(result.report?.warnings?.length?`削除完了（一部関連データは残しました）：${result.report.warnings.join(' ')}`:'確認用データを削除しました。',false);await nextLoadBoard({quiet:true});nextMessage('STEP5確認用データを削除しました。','ok');}catch(error){nextSetDemoStatus(`削除できませんでした：${error.message}`,false);nextMessage(error.message||'確認用データを削除できませんでした。','err');}finally{if(btn)btn.disabled=false;}
+    try{const result=await nextPost('/api/admin/demo/pet-chart/cleanup',{});nextState.demo=null;nextSetDemoStatus(result.report?.warnings?.length?`削除完了（注意）：${result.report.warnings.join(' ')}`:`確認用カルテ等を削除しました。営業用デモ予約は${result.report?.preserved_core_reservations||0}件残しています。`,false);await nextLoadBoard({quiet:true});nextMessage('STEP5確認用データを削除しました。','ok');}catch(error){nextSetDemoStatus(`削除できませんでした：${error.message}`,false);nextMessage(error.message||'確認用データを削除できませんでした。','err');}finally{if(btn)btn.disabled=false;}
   }
   async function nextCheckWorker(){
     try{const health=await nextGet('/api/health',{});nextEl('nextConnectionStatus').textContent=`接続正常：${health.worker_version||health.service||'追加Worker'}`;nextMessage('DPRO NEXT追加Workerへ正常に接続できました。','ok');}catch(error){nextMessage(error.message||'追加Workerへ接続できませんでした。','err');}
