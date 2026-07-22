@@ -301,7 +301,7 @@ load();
 <script>
 (() => {
   'use strict';
-  const NEXT_STEP_VERSION = 'PETSALON-BRUSHUP-5-R3-LINKAGE-VERIFIED-20260721';
+  const NEXT_STEP_VERSION = 'PETSALON-BRUSHUP-5-R4-LEGACY-API-BRIDGE-20260722';
   const nextEl = id => document.getElementById(id);
   const nextConfig = window.DPRO_PETSALON_CONFIG || {};
   const nextState = { rows: [], staff: [], filter: 'active', busy: new Set(), date: '', requestSeq: 0, demo: null };
@@ -433,7 +433,7 @@ load();
     if(['pickup_ready','handed_over'].includes(target)&&!confirm(`${nextPetName(row.pet?.pet_name||'ペット')}を「${label}」へ進めますか？`))return;
     nextState.busy.add(String(reservationId)); nextRender();
     try{
-      const result=await nextPost('/api/admin/reservations/update-workflow',{reservation_id:reservationId,workflow_status:target,operation_source:location.pathname.includes('ipad')?'ipad':'owner',operated_by:'owner-screen',checkin_channel:location.pathname.includes('ipad')?'ipad':'owner'});
+      const r=row.reservation||{},p=row.pet||{},c=row.customer||{};const result=await nextPost('/api/admin/reservations/update-workflow',{reservation_id:reservationId,reservation_date:r.reservation_date||nextState.date||nextToday(),pet_id:p.id||r.pet_id||'',customer_id:c.id||r.customer_id||'',legacy_status:r.status||'requested',workflow_status:target,operation_source:location.pathname.includes('ipad')?'ipad':'owner',operated_by:'owner-screen',checkin_channel:location.pathname.includes('ipad')?'ipad':'owner'});
       if(result.prepared_notification?.message_body) nextShowNotification(result.prepared_notification.message_body);
       await nextLoadBoard({quiet:true}); nextMessage(`${nextPetName(row.pet?.pet_name||'ペット')}：${label}へ更新しました。`,'ok');
     }catch(error){nextMessage(error.message||'進捗を更新できませんでした。','err');}finally{nextState.busy.delete(String(reservationId));nextRender();}
