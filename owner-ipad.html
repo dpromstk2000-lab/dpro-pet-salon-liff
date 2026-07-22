@@ -555,7 +555,19 @@ load();
       const result=await nextPost('/api/admin/demo/pet-chart/prepare',{date,reservation_snapshot:reservationSnapshot});if(result.date&&nextEl('nextBoardDate')){nextEl('nextBoardDate').value=result.date;nextState.date=result.date;}nextState.demo=result;nextSetDemoStatus(`準備・関連付け確認完了：${result.pet?.pet_name||'確認用ペット'}／カルテ${result.record_id||result.record?.id||'-'}／写真${result.photo_count||0}枚／ワクチン${result.vaccination_count||0}件`,true);await nextLoadBoard({quiet:true});nextMessage(`STEP5確認用カルテを準備しました（${result.date||date}）。「カルテ画面を開く」で確認できます。`,'ok');}catch(error){nextSetDemoStatus(`作成できませんでした：${error.message}`,false);nextMessage(error.message||'確認用データを作成できませんでした。','err');}finally{if(btn)btn.disabled=false;}
   }
   function nextOpenDemo(){
-    const demo=nextState.demo;if(!demo?.prepared||!demo.direct_query){nextMessage('先に確認データを準備してください。','err');return;}nextSaveInputs();location.href=`pet-record.html?${demo.direct_query}`;
+    const demo=nextState.demo;
+    if(!demo?.prepared){nextMessage('先に確認データを準備してください。','err');return;}
+    nextSaveInputs();
+    const date=demo.date||nextEl('nextBoardDate')?.value||nextToday();
+    const query=new URLSearchParams({
+      demo:'1',
+      step5_demo:'1',
+      demo_key:'latest',
+      record_date:String(date),
+      from:location.pathname.includes('ipad')?'ipad':'owner',
+      r:'PETSALON-BRUSHUP-5-R6'
+    });
+    location.href=`pet-record.html?${query.toString()}`;
   }
   async function nextCleanupDemo(){
     if(!confirm('STEP5確認用のカルテ・写真・ワクチンを削除しますか？\n営業用デモ予約・飼い主・ペットは残します。'))return;
