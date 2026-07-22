@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#754832">
+  <title>DPROペットサロン｜来店受付</title>
+  <style>
+    :root{--ink:#2d211b;--muted:#75665d;--line:#eaded4;--main:#805037;--main2:#b67c52;--ok:#13774b;--okbg:#edf9f3;--err:#b43d32;--errbg:#fff1ef;--card:#fff;--bg:#f7f0e9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#efe2d6,#faf7f3 280px,#f7f0e9);color:var(--ink);font-size:16px}.wrap{width:min(100% - 24px,640px);margin:0 auto;padding:16px 0 50px}
+    .hero{background:linear-gradient(135deg,#4b2d20,#825039 58%,#c39064);color:#fff;border-radius:24px;padding:22px;box-shadow:0 16px 38px rgba(68,42,27,.16)}.eyebrow{font-size:12px;font-weight:900;letter-spacing:.08em;opacity:.85}.hero h1{font-size:27px;margin:8px 0 5px}.hero p{margin:0;line-height:1.75;font-weight:700;opacity:.94}.date{display:inline-flex;margin-top:14px;border-radius:999px;padding:7px 11px;background:rgba(255,255,255,.15);font-weight:900}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-top:14px;box-shadow:0 9px 25px rgba(70,45,30,.08)}.card h2{font-size:20px;margin:0 0 7px}.lead{color:var(--muted);font-size:14px;line-height:1.7;margin:0 0 14px;font-weight:700}
+    label{display:block;font-weight:900;margin-bottom:7px}input{width:100%;border:1px solid #d7c8bc;border-radius:13px;padding:13px 14px;font-size:18px;min-height:52px}input:focus{outline:3px solid rgba(128,80,55,.14);border-color:var(--main)}
+    .consent{display:flex;gap:9px;align-items:flex-start;margin:12px 0;color:var(--muted);font-size:14px;font-weight:700}.consent input{width:20px;height:20px;min-height:0;margin-top:1px}
+    button{width:100%;border:0;border-radius:14px;padding:14px 16px;min-height:52px;background:var(--main);color:#fff;font-size:17px;font-weight:1000;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#f1e7df;color:#5e4030}
+    .message{display:none;border-radius:14px;padding:13px 15px;margin-top:12px;font-weight:900;white-space:pre-wrap}.message.show{display:block}.message.ok{background:var(--okbg);color:var(--ok)}.message.err{background:var(--errbg);color:var(--err)}.message.info{background:#f4eee9;color:#664a3a}
+    .list{display:grid;gap:11px}.item{border:1px solid var(--line);border-radius:17px;padding:15px;background:#fffaf7}.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.time{font-size:25px;font-weight:1000;color:var(--main)}.pet{font-size:20px;font-weight:1000}.meta{font-size:14px;color:var(--muted);font-weight:750;line-height:1.65;margin-top:5px}.status{border-radius:999px;padding:6px 9px;background:#f1e9e3;font-size:12px;font-weight:1000;white-space:nowrap}.item button{margin-top:12px}.done{background:var(--okbg);color:var(--ok);border:1px solid #ccebdc;border-radius:15px;padding:14px;font-weight:900}.privacy{font-size:12px;color:var(--muted);line-height:1.7;margin-top:12px}.hidden{display:none}
+    @media(max-width:480px){.wrap{width:min(100% - 16px,640px);padding-top:8px}.hero{border-radius:18px;padding:18px}.hero h1{font-size:24px}.card{padding:15px;border-radius:17px}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">DPRO PET SALON / QR CHECK-IN</div>
+    <h1 id="shopName">ペットサロン 来店受付</h1>
+    <p id="publicMessage">本日のご予約を確認し、来店受付を行います。</p>
+    <div class="date" id="todayLabel">本日の受付</div>
+  </section>
+
+  <section class="card" id="lookupCard">
+    <h2>電話番号で予約を確認</h2>
+    <p class="lead">予約時に登録した電話番号を入力してください。電話番号は予約照合にだけ使用します。</p>
+    <label for="phone">電話番号</label>
+    <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="例：09012345678">
+    <label class="consent"><input id="consent" type="checkbox"><span>本日の予約照合と来店受付のため、入力した電話番号を使用することに同意します。</span></label>
+    <button id="searchBtn" type="button">本日の予約を確認</button>
+    <div class="message" id="message"></div>
+  </section>
+
+  <section class="card hidden" id="candidateCard">
+    <h2>受付する予約を選択</h2>
+    <p class="lead">ペット名と予約時間を確認して「来店受付をする」を押してください。</p>
+    <div class="list" id="candidateList"></div>
+  </section>
+
+  <section class="card hidden" id="completeCard">
+    <div class="done" id="completeMessage">来店受付が完了しました。</div>
+    <button class="secondary" type="button" id="anotherBtn" style="margin-top:12px">別の予約を確認</button>
+  </section>
+</main>
+<script src="config.js"></script>
+<script>
+(()=>{
+  'use strict';
+  const $=id=>document.getElementById(id),config=window.DPRO_PETSALON_CONFIG||{},params=new URLSearchParams(location.search);
+  const shopCode=params.get('shop_code')||config.SHOP_CODE||'pet_salon_demo';
+  const lineUserId=params.get('line_user_id')||'';
+  const base=String(config.EXTENSION_WORKER_BASE_URL||'').replace(/\/$/,'');
+  let settings=null,candidates=[];
+  function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));}
+  function jstDate(){const parts=new Intl.DateTimeFormat('ja-JP-u-ca-gregory',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'}).formatToParts(new Date());const m=Object.fromEntries(parts.map(p=>[p.type,p.value]));return {ymd:`${m.year}-${m.month}-${m.day}`,label:`${m.year}年${Number(m.month)}月${Number(m.day)}日（${m.weekday}）`};}
+  function normalizePhone(value){let s=String(value||'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[^0-9+]/g,'');if(s.startsWith('+81'))s='0'+s.slice(3);else if(s.startsWith('81')&&s.length>=11)s='0'+s.slice(2);return s.replace(/\D/g,'');}
+  function show(text,type='info'){const el=$('message');el.textContent=text||'';el.className=`message ${text?'show':''} ${type}`;}
+  async function get(path,query={}){const u=new URL(base+path);Object.entries({shop_code:shopCode,...query}).forEach(([k,v])=>{if(v)u.searchParams.set(k,v)});const r=await fetch(u,{cache:'no-store'});const d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw new Error(d.error||d.message||`取得に失敗しました（${r.status}）`);return d;}
+  async function post(path,body={}){const r=await fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({shop_code:shopCode,...body})});const d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw new Error(d.error||d.message||`受付に失敗しました（${r.status}）`);return d;}
+  async function loadSettings(){try{settings=await get('/api/public/checkin-settings');$('shopName').textContent=`${settings.shop_name||'ペットサロン'} 来店受付`;$('publicMessage').textContent=settings.message||'本日のご予約を確認し、来店受付を行います。';if(!settings.enabled){$('searchBtn').disabled=true;show('現在、QR来店受付は停止しています。店舗スタッフへお声がけください。','err');}}catch(e){$('searchBtn').disabled=true;show(e.message||'受付設定を確認できませんでした。','err');}}
+  function render(){const labels={requested:'予約確認中',confirmed:'予約確定',checked_in:'受付済み',grooming:'施術中',pickup_ready:'お迎え可能',handed_over:'お渡し完了'};$('candidateList').innerHTML=candidates.map(c=>`<article class="item"><div class="top"><div><div class="time">${esc(c.reservation_time||'時間未設定')}</div><div class="pet">${esc(c.pet?.pet_name||'ペット')}</div></div><span class="status">${esc(labels[c.workflow_status]||c.workflow_status||'予約')}</span></div><div class="meta">${esc(c.pet?.breed||'')}<br>${esc(c.service_name||'予約メニュー')}${c.window_message?`<br>${esc(c.window_message)}`:''}</div><button type="button" data-checkin="${esc(c.reservation_id)}" ${c.can_checkin?'':'disabled'}>${c.can_checkin?'来店受付をする':c.workflow_status==='checked_in'?'受付済み':'現在は受付できません'}</button></article>`).join('')||'<div class="done">本日の受付対象予約はありません。</div>';$('candidateCard').classList.remove('hidden');document.querySelectorAll('[data-checkin]').forEach(b=>b.onclick=()=>checkin(b.dataset.checkin));}
+  async function search(){const phone=normalizePhone($('phone').value);if(!$('consent').checked){show('同意欄を確認してください。','err');return;}if(phone.length<10&&!lineUserId){show('予約時の電話番号を正しく入力してください。','err');return;}show('予約を確認しています。','info');$('searchBtn').disabled=true;try{const result=await get('/api/public/checkin-candidates',{phone,line_user_id:lineUserId,date:jstDate().ymd});candidates=result.candidates||[];sessionStorage.setItem('petsalon_checkin_phone',phone);render();show(candidates.length?`${candidates.length}件の予約を確認しました。`:'本日の予約が見つかりません。入力内容を確認するか、店舗スタッフへお声がけください。',candidates.length?'ok':'err');}catch(e){show(e.message||'予約を確認できませんでした。','err');}finally{$('searchBtn').disabled=false;}}
+  async function checkin(id){const phone=normalizePhone($('phone').value);const button=document.querySelector(`[data-checkin="${CSS.escape(String(id))}"]`);if(button)button.disabled=true;show('来店受付を登録しています。','info');try{const result=await post('/api/public/checkin',{reservation_id:id,phone,line_user_id:lineUserId});$('lookupCard').classList.add('hidden');$('candidateCard').classList.add('hidden');$('completeCard').classList.remove('hidden');$('completeMessage').textContent=result.public_message||'来店受付が完了しました。';window.scrollTo({top:0,behavior:'smooth'});}catch(e){show(e.message||'来店受付を登録できませんでした。','err');if(button)button.disabled=false;}}
+  $('todayLabel').textContent=jstDate().label;
+  $('phone').value=sessionStorage.getItem('petsalon_checkin_phone')||'';
+  $('searchBtn').onclick=search;$('phone').onkeydown=e=>{if(e.key==='Enter')search();};$('anotherBtn').onclick=()=>{location.reload();};
+  loadSettings();
+})();
+</script>
+</body>
+</html>

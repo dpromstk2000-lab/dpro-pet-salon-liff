@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- STEP PETSALON-BRUSHUP-5: owner-ipad.html 今日の施術進捗・4ボタン操作対応 完全版 -->
+<!-- STEP PETSALON-BRUSHUP-6: owner-ipad.html 今日の施術進捗・4ボタン操作対応 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DPROペットサロン｜現場用iPad STEP PETSALON-BRUSHUP-5</title>
+  <title>DPROペットサロン｜現場用iPad STEP PETSALON-BRUSHUP-6</title>
   <style>
     :root{
       --bg:#fffaf4;--card:#fff;--ink:#2f2722;--muted:#7d6f66;--line:#eadfd5;
@@ -52,7 +52,7 @@
     @media(max-width:760px){.wrap{padding:0 12px 32px}.hero{border-radius:0;margin:0 -12px}.settings-grid,.search-row,.grid{grid-template-columns:1fr}.btn{width:100%}.customer-pet-grid{grid-template-columns:1fr}}
   
     /* =========================================================
-       STEP PETSALON-BRUSHUP-5 / DPRO NEXT 今日の施術ボード
+       STEP PETSALON-BRUSHUP-6 / DPRO NEXT 今日の施術ボード
        ========================================================= */
     .next-connection-strip{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;display:grid;grid-template-columns:minmax(300px,1fr) auto;gap:12px;align-items:end}
     .next-connection-strip label{display:block;font-size:13px;font-weight:900;margin-bottom:6px}
@@ -104,12 +104,20 @@
     @media(max-width:900px){.next-res-top{grid-template-columns:78px minmax(0,1fr)}.next-res-top .next-status{grid-column:1/-1;justify-self:start}.next-counts{grid-template-columns:1fr 1fr}.next-meta-row{grid-template-columns:1fr}.next-actions{grid-template-columns:1fr 1fr}}
     @media(max-width:640px){.next-connection-strip{grid-template-columns:1fr}.next-board-head{display:block}.next-board-tools{justify-content:flex-start;margin-top:12px}.next-counts{grid-template-columns:1fr 1fr}.next-res-top{grid-template-columns:1fr}.next-time{font-size:22px}.next-actions{grid-template-columns:1fr}.next-action-btn{min-height:52px}.next-staff-row{display:grid;grid-template-columns:1fr}.next-staff-row .btn{width:100%}}
 
+  
+    /* STEP PETSALON-BRUSHUP-6 / QR・iPad受付 */
+    .step6-reception-entry{border:2px solid #dcc2ae;background:linear-gradient(135deg,#fff,#fff6ee);overflow:hidden}
+    .step6-entry-grid{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center}
+    .step6-entry-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+    .step6-entry-actions a{text-decoration:none}
+    @media(max-width:760px){.step6-entry-grid{grid-template-columns:1fr}.step6-entry-actions{justify-content:flex-start}.step6-entry-actions a{flex:1;text-align:center}}
+
   </style>
 </head>
 <body>
 <div class="wrap">
   <section class="hero">
-    <span class="badge">🐾 DPRO PET SALON / iPad / STEP PETSALON-BRUSHUP-5</span>
+    <span class="badge">🐾 DPRO PET SALON / iPad / STEP PETSALON-BRUSHUP-6</span>
     <h1>現場用iPad画面</h1>
     <p>スタッフが見る画面です。設定・売上・削除系は出さず、本日の確定予約・ホテル・注意事項に絞っています。電話番号検索はハイフンあり/なし・スペース入り・全角数字・+81形式に対応します。更新は本日の現場予定、顧客検索は電話番号・飼い主名・ペット名から登録ペットを確認します。</p>
     <div class="control-panel">
@@ -181,6 +189,14 @@
             </div>
           </div>
         </section>
+
+  <section class="card step6-reception-entry" id="step6ReceptionEntry" style="margin-top:14px">
+          <div class="step6-entry-grid">
+            <div><h2 style="margin:0 0 5px">QR来店受付・店舗iPad受付</h2><p class="lead" style="margin:0">店頭QR、スタッフ受付、受付履歴を専用画面で管理します。通常の4段階施術進捗へ自動反映されます。</p></div>
+            <div class="step6-entry-actions"><a class="btn" id="step6ReceptionLink" href="reception.html?demo=1">受付専用iPadを開く</a><a class="btn secondary" id="step6PublicCheckinLink" href="checkin.html?shop_code=pet_salon_demo" target="_blank" rel="noopener">お客様用QR受付を確認</a></div>
+          </div>
+  </section>
+
   <section class="card" id="customerSearchSection" style="margin-top:14px;display:none"><h2>顧客検索結果</h2><p class="lead">顧客検索は、今日の予約がない時でも登録ペットと写真アイコンを確認できます。</p><div id="customerSearchResults"></div></section>
   <div class="grid">
     <section class="card"><h2>本日の確定予約</h2><p class="lead">今日来店する確定済み予約だけを表示します。</p><div id="todayConfirmed"></div></section>
@@ -193,7 +209,7 @@
   <section class="card" style="margin-top:14px"><h2>宿泊中の子</h2><p class="lead">現在お預かり中のペットを確認します。</p><div id="staying"></div></section>
 </div>
 <script>
-const STEP_VERSION = 'STEP PETSALON-BRUSHUP-5';
+const STEP_VERSION = 'STEP PETSALON-BRUSHUP-6';
 const $=id=>document.getElementById(id);
 let state={confirmed:[],pending:[],apps:[],today:todayYmd()};
 
@@ -591,6 +607,17 @@ load();
   }
   function nextInit(){nextRestoreInputs();nextBind();nextLoadBoard();nextLoadDemoStatus();window.DPRO_PETSALON_NEXT={version:NEXT_STEP_VERSION,reload:nextLoadBoard,demoStatus:nextLoadDemoStatus};}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',nextInit);else nextInit();
+})();
+</script>
+
+
+<script>
+(()=>{
+  const config=window.DPRO_PETSALON_CONFIG||{},params=new URLSearchParams(location.search);
+  const shop=String(document.getElementById('shopCode')?.value||config.SHOP_CODE||'pet_salon_demo').trim();
+  const reception=document.getElementById('step6ReceptionLink'),publicLink=document.getElementById('step6PublicCheckinLink');
+  if(reception){const q=new URLSearchParams();if(params.get('demo')==='1')q.set('demo','1');reception.href=`${config.RECEPTION_PAGE||'reception.html'}${q.toString()?`?${q}`:''}`;}
+  if(publicLink){const u=new URL(config.PUBLIC_CHECKIN_PAGE||'checkin.html',location.href);u.searchParams.set('shop_code',shop);publicLink.href=u.toString();}
 })();
 </script>
 
