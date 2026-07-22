@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#754832">
-  <title>DPROペットサロン｜来店受付</title>
+  <title>DPROペットサロン｜来店受付 STEP6-R2</title>
   <style>
     :root{--ink:#2d211b;--muted:#75665d;--line:#eaded4;--main:#805037;--main2:#b67c52;--ok:#13774b;--okbg:#edf9f3;--err:#b43d32;--errbg:#fff1ef;--card:#fff;--bg:#f7f0e9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
     *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#efe2d6,#faf7f3 280px,#f7f0e9);color:var(--ink);font-size:16px}.wrap{width:min(100% - 24px,640px);margin:0 auto;padding:16px 0 50px}
@@ -26,6 +26,8 @@
     <p id="publicMessage">本日のご予約を確認し、来店受付を行います。</p>
     <div class="date" id="todayLabel">本日の受付</div>
   </section>
+
+  <section class="card hidden" id="demoHint"><div class="done">QR受付の確認モードです。受付専用iPadに表示された「確認用電話番号」を入力してください。</div></section>
 
   <section class="card" id="lookupCard">
     <h2>電話番号で予約を確認</h2>
@@ -68,6 +70,7 @@
   async function search(){const phone=normalizePhone($('phone').value);if(!$('consent').checked){show('同意欄を確認してください。','err');return;}if(phone.length<10&&!lineUserId){show('予約時の電話番号を正しく入力してください。','err');return;}show('予約を確認しています。','info');$('searchBtn').disabled=true;try{const result=await get('/api/public/checkin-candidates',{phone,line_user_id:lineUserId,date:jstDate().ymd});candidates=result.candidates||[];sessionStorage.setItem('petsalon_checkin_phone',phone);render();show(candidates.length?`${candidates.length}件の予約を確認しました。`:'本日の予約が見つかりません。入力内容を確認するか、店舗スタッフへお声がけください。',candidates.length?'ok':'err');}catch(e){show(e.message||'予約を確認できませんでした。','err');}finally{$('searchBtn').disabled=false;}}
   async function checkin(id){const phone=normalizePhone($('phone').value);const button=document.querySelector(`[data-checkin="${CSS.escape(String(id))}"]`);if(button)button.disabled=true;show('来店受付を登録しています。','info');try{const result=await post('/api/public/checkin',{reservation_id:id,phone,line_user_id:lineUserId});$('lookupCard').classList.add('hidden');$('candidateCard').classList.add('hidden');$('completeCard').classList.remove('hidden');$('completeMessage').textContent=result.public_message||'来店受付が完了しました。';window.scrollTo({top:0,behavior:'smooth'});}catch(e){show(e.message||'来店受付を登録できませんでした。','err');if(button)button.disabled=false;}}
   $('todayLabel').textContent=jstDate().label;
+  if(params.get('demo')==='1')$('demoHint').classList.remove('hidden');
   $('phone').value=sessionStorage.getItem('petsalon_checkin_phone')||'';
   $('searchBtn').onclick=search;$('phone').onkeydown=e=>{if(e.key==='Enter')search();};$('anotherBtn').onclick=()=>{location.reload();};
   loadSettings();
