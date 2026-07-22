@@ -2527,6 +2527,9 @@
         renderReservations("nextReservations", nextReservations);
         renderFollowups("pendingFollowups", res.pending_followups || [], true);
         renderTodayTasks();
+        if(typeof nextLoadBoard === "function"){
+          await nextLoadBoard({quiet:true});
+        }
 
       }catch(e){
         console.error(e);
@@ -5172,7 +5175,13 @@
     try{
       nextSaveInputs(); if(!quiet)nextMessage('選択日の施術進捗を読み込んでいます。','ok');
       const requestedDate=nextEl('nextBoardDate')?.value||nextToday(); nextState.date=requestedDate;
-      const [board,staff]=await Promise.all([nextGet('/api/admin/today-board',{date:requestedDate}),nextGet('/api/admin/staff')]);
+      let [board,staff]=await Promise.all([nextGet('/api/admin/today-board',{date:requestedDate}),nextGet('/api/admin/staff')]);
+      if(!Array.isArray(board.reservations)||board.reservations.length===0){
+        const screenRows=nextScreenReservationSnapshots(requestedDate);
+        if(screenRows.length){
+          board=await nextPost('/api/admin/today-board/sync',{date:requestedDate,reservations:screenRows});
+        }
+      }
       if(requestId!==nextState.requestSeq)return;
       const responseDate=String(board.date||requestedDate);
       if(responseDate!==requestedDate)throw new Error(`日付応答が一致しません（選択：${requestedDate}／応答：${responseDate}）`);
@@ -5227,13 +5236,80 @@
     const status=nextEl('nextDemoStatus');if(status)status.textContent=text||'';
     const open=nextEl('nextDemoOpenBtn');if(open)open.disabled=!prepared;
   }
+
+  function nextNormalizeScreenReservation(raw){
+    if(!raw || typeof raw!=='object') return null;
+    const pet=(raw.pet && typeof raw.pet==='object')?raw.pet:{};
+    const customer=(raw.customer && typeof raw.customer==='object')?raw.customer:{};
+    const id=String(raw.id||raw.reservation_id||raw.booking_id||'').trim();
+    const petId=String(
+      raw.pet_id||raw.petId||
+      pet.id||pet.pet_id||pet.petId||pet.uuid||''
+    ).trim();
+    const customerId=String(
+      raw.customer_id||raw.owner_id||raw.customerId||
+      customer.id||customer.customer_id||customer.customerId||customer.owner_id||''
+    ).trim();
+    if(!id) return null;
+    return {
+      ...raw,
+      id,
+      reservation_date:String(raw.reservation_date||raw.booking_date||raw.date||raw.target_date||'').trim(),
+      reservation_time:String(raw.reservation_time||raw.booking_time||raw.time||raw.start_time||'').trim(),
+      status:String(raw.status||raw.reservation_status||'requested').trim(),
+      service_name:String(raw.service_name||raw.menu_name||raw.service?.name||'').trim(),
+      request_note:String(raw.request_note||raw.note||'').trim(),
+      pet_id:petId,
+      customer_id:customerId,
+      pet:{...pet,id:petId||pet.id||'',pet_id:petId||pet.pet_id||''},
+      customer:{...customer,id:customerId||customer.id||'',customer_id:customerId||customer.customer_id||''}
+    };
+  }
+  function nextScreenReservationRows(){
+    const rows=[];
+    const s=(typeof state==='object'&&state)?state:{};
+    const summary=s.summary&&typeof s.summary==='object'?s.summary:null;
+    if(summary){
+      ['today_reservations','pending_reservations','next_business_reservations','reservations']
+        .forEach(key=>{if(Array.isArray(summary[key]))rows.push(...summary[key]);});
+    }
+    ['confirmed','pending','reservations'].forEach(key=>{
+      if(Array.isArray(s[key])) rows.push(...s[key]);
+    });
+    if(Array.isArray(nextState.rows)){
+      rows.push(...nextState.rows.map(x=>x?.reservation||x).filter(Boolean));
+    }
+    const map=new Map();
+    rows.map(nextNormalizeScreenReservation).filter(Boolean).forEach(r=>{
+      if(!map.has(String(r.id))) map.set(String(r.id),r);
+    });
+    return [...map.values()];
+  }
+  function nextScreenReservationSnapshots(date){
+    const active=nextScreenReservationRows().filter(r=>
+      !['completed','cancelled','no_show'].includes(String(r.status||''))
+    );
+    const sameDate=active.filter(r=>!r.reservation_date||r.reservation_date===date);
+    return (sameDate.length?sameDate:active).filter(r=>r.id&&r.pet_id);
+  }
+  function nextPickScreenReservation(date){
+    const rows=nextScreenReservationSnapshots(date);
+    return rows.find(r=>['confirmed','visited','requested'].includes(String(r.status||'')))||rows[0]||null;
+  }
+
   async function nextLoadDemoStatus(){
     try{const date=nextEl('nextBoardDate')?.value||nextToday();const result=await nextGet('/api/admin/demo/pet-chart/status',{date});nextState.demo=result;nextSetDemoStatus(result.prepared?`関連付け確認済み：${result.pet?.pet_name||'確認用ペット'}／カルテ${result.linkage?.record_id||result.record?.id||'-'}／写真${result.photo_count||0}枚／ワクチン${result.vaccination_count||0}件`:result.linkage?.prepared?`関連付け異常：${(result.linkage.problems||[]).join('／')||'確認が必要です。'}`:'確認用データは未作成です。',result.prepared);}catch(error){nextState.demo=null;nextSetDemoStatus(`確認状態を取得できません：${error.message}`,false);}
   }
   async function nextPrepareDemo(){
     if(!confirm('STEP5の確認用予約・カルテ・写真・ワクチンをデモ店舗に作成しますか？'))return;
     const btn=nextEl('nextDemoPrepareBtn');if(btn)btn.disabled=true;nextSetDemoStatus('確認用データを作成しています。',false);
-    try{const date=nextEl('nextBoardDate')?.value||nextToday();const result=await nextPost('/api/admin/demo/pet-chart/prepare',{date});if(result.date&&nextEl('nextBoardDate')){nextEl('nextBoardDate').value=result.date;nextState.date=result.date;}nextState.demo=result;nextSetDemoStatus(`準備・関連付け確認完了：${result.pet?.pet_name||'確認用ペット'}／カルテ${result.record_id||result.record?.id||'-'}／写真${result.photo_count||0}枚／ワクチン${result.vaccination_count||0}件`,true);await nextLoadBoard({quiet:true});nextMessage(`STEP5確認用カルテを準備しました（${result.date||date}）。「カルテ画面を開く」で確認できます。`,'ok');}catch(error){nextSetDemoStatus(`作成できませんでした：${error.message}`,false);nextMessage(error.message||'確認用データを作成できませんでした。','err');}finally{if(btn)btn.disabled=false;}
+    try{const date=nextEl('nextBoardDate')?.value||nextToday();
+      const reservationSnapshot=nextPickScreenReservation(date);
+      if(!reservationSnapshot){
+        const visible=nextScreenReservationRows();
+        throw new Error(`画面から確認用予約を選べませんでした（取得${visible.length}件）。予約カードが表示された状態でCtrl＋F5を押して、もう一度お試しください。`);
+      }
+      const result=await nextPost('/api/admin/demo/pet-chart/prepare',{date,reservation_snapshot:reservationSnapshot});if(result.date&&nextEl('nextBoardDate')){nextEl('nextBoardDate').value=result.date;nextState.date=result.date;}nextState.demo=result;nextSetDemoStatus(`準備・関連付け確認完了：${result.pet?.pet_name||'確認用ペット'}／カルテ${result.record_id||result.record?.id||'-'}／写真${result.photo_count||0}枚／ワクチン${result.vaccination_count||0}件`,true);await nextLoadBoard({quiet:true});nextMessage(`STEP5確認用カルテを準備しました（${result.date||date}）。「カルテ画面を開く」で確認できます。`,'ok');}catch(error){nextSetDemoStatus(`作成できませんでした：${error.message}`,false);nextMessage(error.message||'確認用データを作成できませんでした。','err');}finally{if(btn)btn.disabled=false;}
   }
   function nextOpenDemo(){
     const demo=nextState.demo;if(!demo?.prepared||!demo.direct_query){nextMessage('先に確認データを準備してください。','err');return;}nextSaveInputs();location.href=`pet-record.html?${demo.direct_query}`;
