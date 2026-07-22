@@ -112,7 +112,14 @@
     .step6-entry-actions a{text-decoration:none}
     @media(max-width:760px){.step6-entry-grid{grid-template-columns:1fr}.step6-entry-actions{justify-content:flex-start}.step6-entry-actions a{flex:1;text-align:center}}
 
-  </style>
+  
+    .step7-rebook-entry{border:2px solid #d7bca7;background:linear-gradient(135deg,#fff,#fff4eb)}
+    .step7-entry-grid{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center}
+    .step7-entry-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+    .step7-entry-actions a{text-decoration:none}
+    @media(max-width:760px){.step7-entry-grid{grid-template-columns:1fr}.step7-entry-actions{justify-content:flex-start}.step7-entry-actions a{flex:1;text-align:center}}
+
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -196,6 +203,14 @@
             <div class="step6-entry-actions"><a class="btn" id="step6ReceptionLink" href="reception.html?demo=1">受付専用iPadを開く</a><a class="btn secondary" id="step6PublicCheckinLink" href="checkin.html?shop_code=pet_salon_demo" target="_blank" rel="noopener">お客様用QR受付を確認</a></div>
           </div>
   </section>
+
+        <section class="card step7-rebook-entry" id="step7RebookEntry" style="margin-top:14px">
+          <div class="step7-entry-grid">
+            <div><h2 style="margin:0 0 5px">次回来店・前回と同じ内容で予約希望</h2><p class="lead" style="margin:0">ペット別の前回施術と次回来店目安を使い、予約希望の確認・連絡・確定管理を行います。</p></div>
+            <div class="step7-entry-actions"><a class="btn" id="step7RebookAdminLink" href="rebook-admin.html?demo=1">予約希望を管理</a><a class="btn secondary" id="step7RebookPublicLink" href="repeat-booking.html?shop_code=pet_salon_demo" target="_blank" rel="noopener">お客様画面を確認</a></div>
+          </div>
+        </section>
+
 
   <section class="card" id="customerSearchSection" style="margin-top:14px;display:none"><h2>顧客検索結果</h2><p class="lead">顧客検索は、今日の予約がない時でも登録ペットと写真アイコンを確認できます。</p><div id="customerSearchResults"></div></section>
   <div class="grid">
@@ -618,6 +633,18 @@ load();
   const reception=document.getElementById('step6ReceptionLink'),publicLink=document.getElementById('step6PublicCheckinLink');
   if(reception){const q=new URLSearchParams();if(params.get('demo')==='1')q.set('demo','1');reception.href=`${config.RECEPTION_PAGE||'reception.html'}${q.toString()?`?${q}`:''}`;}
   if(publicLink){const u=new URL(config.PUBLIC_CHECKIN_PAGE||'checkin.html',location.href);u.searchParams.set('shop_code',shop);publicLink.href=u.toString();}
+})();
+</script>
+
+
+<script>
+(()=>{
+  const config=window.DPRO_PETSALON_CONFIG||{},params=new URLSearchParams(location.search);
+  const shop=String(document.getElementById('shopCode')?.value||config.SHOP_CODE||'pet_salon_demo').trim();
+  const admin=document.getElementById('step7RebookAdminLink'),pub=document.getElementById('step7RebookPublicLink');
+  if(admin){const q=new URLSearchParams();if(params.get('demo')==='1')q.set('demo','1');admin.href=`${config.REBOOK_ADMIN_PAGE||'rebook-admin.html'}${q.toString()?`?${q}`:''}`;}
+  if(pub){const u=new URL(config.REBOOK_PAGE||'repeat-booking.html',location.href);u.searchParams.set('shop_code',shop);pub.href=u.toString();}
+  const requested=params.get('open_tab');if(requested)setTimeout(()=>document.querySelector(`.tab[data-tab="${CSS.escape(requested)}"]`)?.click(),0);
 })();
 </script>
 

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#78472f">
+<title>DPROペットサロン｜次回予約希望</title>
+<style>
+:root{--ink:#2f231d;--muted:#78685e;--line:#eadcd0;--main:#805038;--main2:#bd855d;--ok:#14794e;--okbg:#ecf9f2;--err:#b54036;--errbg:#fff0ef;--soft:#fff7f0;--card:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#efe0d3,#fff 330px,#f7efe8);color:var(--ink);font-size:16px}.wrap{width:min(100% - 22px,760px);margin:auto;padding:14px 0 52px}
+.hero{background:linear-gradient(135deg,#482a1e,#7b4933 58%,#c28a5f);color:#fff;border-radius:24px;padding:23px;box-shadow:0 15px 36px rgba(65,40,25,.16)}.eyebrow{font-size:12px;font-weight:1000;letter-spacing:.08em;opacity:.84}.hero h1{font-size:28px;margin:7px 0 6px}.hero p{margin:0;line-height:1.75;font-weight:750}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-top:14px;box-shadow:0 8px 24px rgba(65,42,28,.07)}h2{font-size:21px;margin:0 0 7px}.lead{font-size:14px;color:var(--muted);line-height:1.7;font-weight:750;margin:0 0 14px}
+label{display:block;font-weight:1000;margin:0 0 6px}input,select,textarea{width:100%;border:1px solid #d9c9bd;border-radius:13px;padding:12px 13px;font-size:16px;background:#fff;min-height:48px}textarea{min-height:90px;resize:vertical}input:focus,select:focus,textarea:focus{outline:3px solid rgba(128,80,56,.13);border-color:var(--main)}
+button,.button{border:0;border-radius:13px;padding:13px 15px;min-height:49px;background:var(--main);color:#fff;font-size:16px;font-weight:1000;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#f1e5dc;color:#5b3d2e}.green{background:var(--ok)}
+.row{display:grid;grid-template-columns:1fr auto;gap:9px}.message{display:none;border-radius:13px;padding:12px 14px;margin-top:11px;font-weight:900;white-space:pre-wrap}.message.show{display:block}.message.ok{background:var(--okbg);color:var(--ok)}.message.err{background:var(--errbg);color:var(--err)}.message.info{background:#f3ede8;color:#654938}
+.pet-list{display:grid;gap:10px}.pet-card{border:1px solid var(--line);border-radius:17px;padding:14px;background:#fffaf6;cursor:pointer}.pet-card.selected{border:2px solid var(--main);background:#fff4eb}.pet-top{display:flex;justify-content:space-between;gap:10px}.pet-name{font-size:20px;font-weight:1000}.badge{border-radius:999px;padding:5px 9px;background:#eee5de;font-size:12px;font-weight:1000;height:max-content}.record{margin-top:9px;border-radius:13px;background:#fff;padding:10px;font-size:14px;line-height:1.7}.recommend{color:var(--ok);font-weight:1000}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mode{border:1px solid var(--line);border-radius:16px;padding:13px;background:#fff;cursor:pointer}.mode input{width:auto;min-height:0;margin-right:6px}.mode strong{font-size:17px}.mode p{font-size:13px;color:var(--muted);line-height:1.6;margin:7px 0 0}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}.slot-list{display:grid;gap:10px}.slot{display:grid;grid-template-columns:1fr 1fr;gap:9px;border:1px solid var(--line);border-radius:15px;padding:11px;background:#fffaf7}.options{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.chip{border:1px solid var(--line);border-radius:999px;padding:7px 10px;background:#fff;font-size:13px;font-weight:900}
+.summary{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fffaf7;white-space:pre-wrap;line-height:1.75;font-weight:800}.hidden{display:none!important}.complete{background:var(--okbg);color:var(--ok);border:1px solid #cbe9da;border-radius:16px;padding:17px;font-weight:900;line-height:1.8}
+.notice{font-size:12px;color:var(--muted);line-height:1.7;margin-top:10px}
+@media(max-width:600px){.wrap{width:min(100% - 14px,760px);padding-top:7px}.hero{border-radius:18px;padding:18px}.hero h1{font-size:24px}.card{border-radius:17px;padding:15px}.row,.form-grid,.mode-grid,.slot{grid-template-columns:1fr}.row button{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<section class="hero">
+  <div class="eyebrow">DPRO PET SALON / REPEAT BOOKING</div>
+  <h1 id="shopName">次回予約希望</h1>
+  <p id="publicMessage">前回の施術内容を確認し、次回予約の希望を送信できます。</p>
+</section>
+
+<section class="card" id="lookupCard">
+  <h2>電話番号でペットを確認</h2>
+  <p class="lead">予約時に登録した電話番号を入力してください。登録済みのペットと前回施術内容を表示します。</p>
+  <label for="phone">電話番号</label>
+  <div class="row"><input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="例：09012345678"><button id="lookupBtn" type="button">ペットを確認</button></div>
+  <div class="message" id="message"></div>
+</section>
+
+<section class="card hidden" id="petCard">
+  <h2>予約するペットを選択</h2>
+  <p class="lead">複数登録されている場合は、今回予約するペットを1頭選択してください。</p>
+  <div class="pet-list" id="petList"></div>
+</section>
+
+<section class="card hidden" id="requestCard">
+  <h2>希望内容を入力</h2>
+  <div class="mode-grid">
+    <label class="mode"><div><input type="radio" name="mode" value="same" checked><strong>前回と同じ内容</strong></div><p>前回カルテのメニューとオプションをそのまま使用します。</p></label>
+    <label class="mode"><div><input type="radio" name="mode" value="custom"><strong>内容を変更する</strong></div><p>希望メニューとオプションを入力して店舗へ送ります。</p></label>
+  </div>
+  <div class="form-grid" style="margin-top:14px">
+    <div class="full"><label for="menu">希望メニュー</label><input id="menu" placeholder="例：シャンプー＋全身カット"></div>
+    <div class="full"><label for="options">希望オプション</label><input id="options" placeholder="例：歯磨き、肉球ケア"><div class="options" id="previousOptions"></div></div>
+    <div class="full"><label>希望日時（最大3件）</label><div class="slot-list" id="slotList"></div></div>
+    <div class="full"><label for="note">店舗への連絡事項</label><textarea id="note" placeholder="例：前回と同じ丸い仕上がりを希望します。"></textarea></div>
+    <div class="full"><div class="summary" id="summary">ペットと希望日時を選択してください。</div></div>
+  </div>
+  <button id="submitBtn" type="button" style="width:100%;margin-top:13px">この内容で予約希望を送る</button>
+  <div class="notice">送信時点では予約確定ではありません。店舗が空き状況を確認し、LINEまたは電話でご連絡します。</div>
+</section>
+
+<section class="card hidden" id="completeCard">
+  <div class="complete" id="completeMessage"></div>
+</section>
+</main>
+<script src="config.js"></script>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),config=window.DPRO_PETSALON_CONFIG||{},params=new URLSearchParams(location.search);
+const shopCode=params.get('shop_code')||config.SHOP_CODE||'pet_salon_demo',base=String(config.EXTENSION_WORKER_BASE_URL||'').replace(/\/$/,'');
+const state={settings:null,customer:null,pets:[],pet:null,last:null,slots:[{date:'',time:''},{date:'',time:''},{date:'',time:''}]};
+function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));}
+function normalizePhone(v){let s=String(v||'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[^0-9+]/g,'');if(s.startsWith('+81'))s='0'+s.slice(3);else if(s.startsWith('81')&&s.length>=11)s='0'+s.slice(2);return s.replace(/\D/g,'');}
+function msg(text,type='info'){const e=$('message');e.textContent=text||'';e.className=`message ${text?'show':''} ${type}`;}
+async function get(path,q={}){const u=new URL(base+path);Object.entries({shop_code:shopCode,...q}).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,v)});const r=await fetch(u,{cache:'no-store'}),d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw new Error(d.error||d.message||`取得に失敗しました（${r.status}）`);return d;}
+async function post(path,b={}){const r=await fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({shop_code:shopCode,...b})}),d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw new Error(d.error||d.message||`送信に失敗しました（${r.status}）`);return d;}
+function addDays(ymd,days){const d=new Date(`${ymd}T00:00:00Z`);d.setUTCDate(d.getUTCDate()+Number(days||0));return d.toISOString().slice(0,10);}
+function today(){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),m=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${m.year}-${m.month}-${m.day}`;}
+function formatDate(v){if(!v)return'未設定';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[1]}年${Number(m[2])}月${Number(m[3])}日`:v;}
+async function loadSettings(){try{state.settings=await get('/api/public/rebook/settings');$('shopName').textContent=`${state.settings.shop_name||'ペットサロン'} 次回予約希望`;$('publicMessage').textContent=state.settings.message||'';if(!state.settings.enabled){$('lookupBtn').disabled=true;msg('現在、次回予約希望の受付は停止しています。','err');}renderSlots();}catch(e){$('lookupBtn').disabled=true;msg(e.message,'err');}}
+async function lookup(){const phone=normalizePhone($('phone').value);if(phone.length<10){msg('予約時の電話番号を正しく入力してください。','err');return;}$('lookupBtn').disabled=true;msg('登録情報を確認しています。','info');try{const d=await get('/api/public/rebook/customer',{phone});if(!d.found)throw new Error('登録情報が見つかりませんでした。店舗へお問い合わせください。');state.customer=d.customer;state.pets=d.pets||[];renderPets();$('petCard').classList.remove('hidden');msg(`${state.pets.length}頭の登録ペットを確認しました。`,'ok');}catch(e){msg(e.message,'err');}finally{$('lookupBtn').disabled=false;}}
+function renderPets(){$('petList').innerHTML=state.pets.map(p=>{const r=p.last_record,selected=state.pet?.id===p.id;return `<article class="pet-card ${selected?'selected':''}" data-pet="${esc(p.id)}"><div class="pet-top"><div><div class="pet-name">${esc(p.pet_name||'ペット')}</div><div>${esc(p.breed||'')}</div></div><span class="badge">${r?'前回カルテあり':'前回カルテなし'}</span></div><div class="record">${r?`前回施術：${esc(formatDate(r.record_date))}<br>メニュー：${esc(r.menu_done||'未記録')}<br>オプション：${esc((r.option_names||[]).join('、')||'なし')}<br><span class="recommend">次回来店目安：${esc(r.next_recommend_date?formatDate(r.next_recommend_date):'未設定')}</span>`:'前回カルテがないため、希望内容を入力して予約希望を送信できます。'}</div></article>`}).join('');document.querySelectorAll('[data-pet]').forEach(e=>e.onclick=()=>selectPet(e.dataset.pet));}
+function selectPet(id){state.pet=state.pets.find(p=>String(p.id)===String(id))||null;state.last=state.pet?.last_record||null;renderPets();$('requestCard').classList.remove('hidden');if(state.last){document.querySelector('[name="mode"][value="same"]').checked=true;$('menu').value=state.last.menu_done||'';$('options').value=(state.last.option_names||[]).join('、');$('previousOptions').innerHTML=(state.last.option_names||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join('');}else{document.querySelector('[name="mode"][value="custom"]').checked=true;$('menu').value='';$('options').value='';$('previousOptions').innerHTML='';}syncMode();updateSummary();$('requestCard').scrollIntoView({behavior:'smooth'});}
+function syncMode(){const same=document.querySelector('[name="mode"]:checked')?.value==='same';if(same&&!state.last){document.querySelector('[name="mode"][value="custom"]').checked=true;}const actual=document.querySelector('[name="mode"]:checked')?.value==='same';$('menu').readOnly=actual;$('options').readOnly=actual;if(actual&&state.last){$('menu').value=state.last.menu_done||'';$('options').value=(state.last.option_names||[]).join('、');}updateSummary();}
+function renderSlots(){const min=state.settings?.min_date||addDays(today(),1);$('slotList').innerHTML=state.slots.map((s,i)=>`<div class="slot"><div><label for="date${i}">第${i+1}希望日</label><input id="date${i}" type="date" min="${esc(min)}" value="${esc(s.date)}"></div><div><label for="time${i}">希望時間</label><select id="time${i}"><option value="">日付を選択</option></select></div></div>`).join('');state.slots.forEach((s,i)=>{$(`date${i}`).onchange=()=>loadTimes(i);$(`time${i}`).onchange=()=>{state.slots[i].time=$(`time${i}`).value;updateSummary();};});}
+async function loadTimes(i){const date=$(`date${i}`).value;state.slots[i]={date,time:''};if(!date){updateSummary();return;}const sel=$(`time${i}`);sel.innerHTML='<option value="">空き時間を確認中</option>';sel.disabled=true;try{const d=await get('/api/public/rebook/available-times',{date});const available=(d.times||[]).filter(x=>x.can_reserve);sel.innerHTML=available.length?'<option value="">時間を選択</option>'+available.map(x=>`<option value="${esc(x.time)}">${esc(x.time)}（受付可）</option>`).join(''):'<option value="">空き時間なし</option>';sel.disabled=!available.length;}catch(e){sel.innerHTML='<option value="">取得失敗</option>';msg(e.message,'err');}updateSummary();}
+function optionsArray(){return $('options').value.split(/[、,，]/).map(x=>x.trim()).filter(Boolean).slice(0,20);}
+function validSlots(){return state.slots.filter(x=>x.date&&x.time);}
+function updateSummary(){if(!state.pet){$('summary').textContent='ペットを選択してください。';return;}const mode=document.querySelector('[name="mode"]:checked')?.value==='same'?'前回と同じ内容':'内容を変更';const slots=validSlots();$('summary').textContent=[`ペット：${state.pet.pet_name||'ペット'}`,`内容：${mode}`,`メニュー：${$('menu').value||'未入力'}`,`オプション：${optionsArray().join('、')||'なし'}`,`希望日時：${slots.length?slots.map((x,i)=>`第${i+1}希望 ${formatDate(x.date)} ${x.time}`).join('\n'):'未選択'}`].join('\n');}
+async function submit(){if(!state.pet){msg('ペットを選択してください。','err');return;}const slots=validSlots();if(!slots.length){msg('希望日時を1件以上選択してください。','err');return;}const mode=document.querySelector('[name="mode"]:checked')?.value||'same';if(!$('menu').value.trim()){msg('希望メニューを入力してください。','err');return;}$('submitBtn').disabled=true;msg('予約希望を送信しています。','info');try{const d=await post('/api/public/rebook/request',{phone:normalizePhone($('phone').value),pet_id:state.pet.id,request_mode:mode,requested_menu:$('menu').value.trim(),requested_options:optionsArray(),preferred_slots:slots,customer_note:$('note').value.trim(),source_channel:params.get('line')==='1'?'line':'public'});$('lookupCard').classList.add('hidden');$('petCard').classList.add('hidden');$('requestCard').classList.add('hidden');$('completeCard').classList.remove('hidden');$('completeMessage').textContent=d.public_message||'予約希望を受け付けました。';window.scrollTo({top:0,behavior:'smooth'});}catch(e){msg(e.message,'err');}finally{$('submitBtn').disabled=false;}}
+$('lookupBtn').onclick=lookup;$('phone').onkeydown=e=>{if(e.key==='Enter')lookup();};document.querySelectorAll('[name="mode"]').forEach(x=>x.onchange=syncMode);['menu','options','note'].forEach(id=>$(id).oninput=updateSummary);$('submitBtn').onclick=submit;loadSettings();
+})();
+</script>
+</body>
+</html>

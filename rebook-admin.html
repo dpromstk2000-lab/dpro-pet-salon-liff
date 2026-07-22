@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#70422e">
+<title>DPROペットサロン｜次回予約希望管理</title>
+<style>
+:root{--ink:#2e231d;--muted:#76685f;--line:#eaded4;--main:#805038;--ok:#15794e;--okbg:#edf9f3;--warn:#9b6828;--err:#b43f35;--card:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#eee0d4,#fff 330px,#f7efe8);color:var(--ink);font-size:16px}.wrap{max-width:1180px;margin:auto;padding:15px 16px 55px}
+.hero{background:linear-gradient(135deg,#452a1f,#7c4b35 58%,#c08a60);color:#fff;border-radius:24px;padding:20px;box-shadow:0 15px 36px rgba(60,37,24,.16)}.top{display:flex;justify-content:space-between;gap:14px;align-items:start}.eyebrow{font-size:12px;font-weight:1000;letter-spacing:.08em;opacity:.84}.hero h1{font-size:28px;margin:6px 0 4px}.hero p{margin:0;font-weight:750}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions a,.actions button{border:1px solid rgba(255,255,255,.42);background:rgba(255,255,255,.13);color:#fff;border-radius:12px;padding:10px 13px;text-decoration:none;font-weight:1000;cursor:pointer}
+.connection{display:grid;grid-template-columns:1.5fr .7fr .55fr auto;gap:8px;margin-top:13px}.connection input{border:0;border-radius:11px;padding:10px 12px;min-height:44px}.connection button{border:0;border-radius:11px;background:#fff;color:#533626;font-weight:1000;padding:10px 13px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:17px;margin-top:14px;box-shadow:0 8px 23px rgba(63,41,28,.07)}.panel-head{display:flex;justify-content:space-between;gap:12px;align-items:start}.panel h2{font-size:22px;margin:0 0 5px}.lead{font-size:14px;color:var(--muted);line-height:1.65;font-weight:750;margin:0}
+.btn{border:0;border-radius:12px;padding:10px 13px;min-height:43px;background:var(--main);color:#fff;font-weight:1000;cursor:pointer}.btn.secondary{background:#f0e6de;color:#5b3d2e}.btn.green{background:var(--ok)}.btn.warn{background:var(--warn)}.btn.danger{background:var(--err)}.btn:disabled{opacity:.45}
+.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:13px}.stat{border:1px solid var(--line);border-radius:15px;padding:12px;background:#fffaf7}.stat strong{display:block;font-size:26px;color:var(--main)}.stat span{font-size:13px;color:var(--muted);font-weight:900}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.toolbar select,.toolbar input{border:1px solid #d8cabf;border-radius:12px;padding:10px 12px;min-height:43px;font-size:15px}.toolbar input{flex:1;min-width:220px}
+.message{display:none;border-radius:13px;padding:12px 14px;margin-top:10px;font-weight:900}.message.show{display:block}.message.ok{background:var(--okbg);color:var(--ok)}.message.err{background:#fff0ef;color:var(--err)}.message.info{background:#f3ede8;color:#674a3a}
+.list{display:grid;gap:11px;margin-top:13px}.item{border:1px solid var(--line);border-radius:18px;padding:15px;background:#fff}.item-head{display:flex;justify-content:space-between;gap:12px}.title{font-size:20px;font-weight:1000}.sub{font-size:13px;color:var(--muted);font-weight:800;margin-top:4px}.status{border-radius:999px;padding:6px 10px;font-size:12px;font-weight:1000;height:max-content;background:#eee6df}.status.pending{color:#8a5720;background:#fff2df}.status.contacted{color:#315f8f;background:#edf4fb}.status.confirmed{color:var(--ok);background:var(--okbg)}.status.declined,.status.cancelled{color:var(--err);background:#fff0ef}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:11px}.box{border-radius:14px;padding:11px;background:#fff8f2;line-height:1.7}.box b{display:block;margin-bottom:3px}.slots{display:flex;gap:7px;flex-wrap:wrap}.slot{border-radius:999px;padding:6px 9px;background:#fff;border:1px solid var(--line);font-size:13px;font-weight:900}
+.note{width:100%;border:1px solid #d9cabe;border-radius:12px;padding:10px;min-height:70px;margin-top:10px;font-size:14px}.item-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.empty{border:1px dashed var(--line);border-radius:15px;padding:25px;text-align:center;color:var(--muted);font-weight:900}
+.demo{border:2px solid #d9bca5;background:linear-gradient(135deg,#fffaf5,#fff1e7)}.demo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+@media(max-width:760px){.top,.panel-head{flex-direction:column}.connection{grid-template-columns:1fr 1fr}.connection input:first-child{grid-column:1/-1}.summary{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.item-head{flex-direction:column}.actions{width:100%}.actions a,.actions button{flex:1;text-align:center}}
+@media(max-width:500px){.wrap{padding:0 9px 40px}.hero{border-radius:0;margin:0 -9px}.connection{grid-template-columns:1fr}.connection input:first-child{grid-column:auto}.summary{grid-template-columns:1fr 1fr}.item-actions .btn{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<section class="hero">
+<div class="top"><div><div class="eyebrow">DPRO PET SALON / REBOOK ADMIN</div><h1>次回予約希望管理</h1><p>前回と同じ内容の予約希望を確認し、店舗から連絡・予約登録します。</p></div><div class="actions"><a id="ownerLink" href="owner.html">管理画面へ戻る</a><a id="publicLink" target="_blank" rel="noopener">お客様画面</a><button id="refreshBtn">更新</button></div></div>
+<div class="connection"><input id="workerUrl"><input id="shopCode"><input id="adminCode" type="password" inputmode="numeric"><button id="saveBtn">接続保存</button></div>
+</section>
+<div class="message" id="message"></div>
+
+<section class="panel demo">
+<div class="panel-head"><div><h2>STEP7確認データ</h2><p class="lead">再予約申込の管理画面を安全に確認できます。営業データは変更しません。</p></div></div>
+<div class="demo-actions"><button class="btn" id="demoPrepareBtn">確認データを準備</button><button class="btn secondary" id="demoRefreshBtn">状態を更新</button><button class="btn danger" id="demoCleanupBtn">確認データを削除</button></div>
+<div id="demoStatus" class="box" style="margin-top:10px">確認データは未準備です。</div>
+</section>
+
+<section class="panel">
+<div class="panel-head"><div><h2>予約希望一覧</h2><p class="lead">「連絡済み」にした後、既存の電話・店頭予約画面で予約を登録し、最後に「確定済み」にします。</p></div><a class="btn secondary" id="manualLink" href="owner.html?open_tab=manual">電話・店頭予約画面を開く</a></div>
+<div class="summary"><div class="stat"><strong id="allCount">0</strong><span>全件</span></div><div class="stat"><strong id="pendingCount">0</strong><span>確認待ち</span></div><div class="stat"><strong id="contactedCount">0</strong><span>連絡済み</span></div><div class="stat"><strong id="confirmedCount">0</strong><span>確定済み</span></div><div class="stat"><strong id="declinedCount">0</strong><span>見送り</span></div></div>
+<div class="toolbar"><select id="statusFilter"><option value="all">すべて</option><option value="pending">確認待ち</option><option value="contacted">連絡済み</option><option value="confirmed">確定済み</option><option value="declined">見送り</option><option value="cancelled">取消</option></select><input id="search" placeholder="申込番号・飼い主名・ペット名・電話番号で検索"><button class="btn secondary" id="clearBtn">検索解除</button></div>
+<div class="list" id="list"><div class="empty">予約希望を読み込んでいます。</div></div>
+</section>
+</main>
+<script src="config.js"></script>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),config=window.DPRO_PETSALON_CONFIG||{},params=new URLSearchParams(location.search),state={rows:[],demo:null};
+const labels={pending:'確認待ち',contacted:'連絡済み',confirmed:'確定済み',declined:'見送り',cancelled:'取消'};
+function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));}
+function base(){return $('workerUrl').value.trim().replace(/\/$/,'');}function common(){return{shop_code:$('shopCode').value.trim(),admin_code:$('adminCode').value.trim()};}
+function msg(text,type='info'){const e=$('message');e.textContent=text||'';e.className=`message ${text?'show':''} ${type}`;}
+async function get(path,q={}){const u=new URL(base()+path);Object.entries({...common(),...q}).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,v)});const r=await fetch(u,{cache:'no-store'}),d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw new Error(d.error||d.message||`取得に失敗しました（${r.status}）`);return d;}
+async function post(path,b={}){const r=await fetch(base()+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...common(),...b})}),d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw new Error(d.error||d.message||`更新に失敗しました（${r.status}）`);return d;}
+function restore(){$('workerUrl').value=localStorage.getItem('petsalon_extension_worker_url')||config.EXTENSION_WORKER_BASE_URL||'';$('shopCode').value=config.SHOP_CODE||'pet_salon_demo';$('adminCode').value=localStorage.getItem('petsalon_admin_code')||((params.get('demo')==='1')?(config.DEMO_ADMIN_CODE||'1234'):'');const demo=params.get('demo')==='1'?'?demo=1':'';$('ownerLink').href=`owner.html${demo}`;$('manualLink').href=`owner.html${demo?demo+'&':'?'}open_tab=manual`;const u=new URL(config.REBOOK_PAGE||'repeat-booking.html',location.href);u.searchParams.set('shop_code',$('shopCode').value);$('publicLink').href=u.toString();}
+function save(){localStorage.setItem('petsalon_extension_worker_url',base());if($('adminCode').value)localStorage.setItem('petsalon_admin_code',$('adminCode').value);msg('接続設定を保存しました。','ok');}
+function normalize(v){return String(v||'').toLowerCase().replace(/[\s　\-－ー―]/g,'');}
+function filtered(){const q=normalize($('search').value),status=$('statusFilter').value;return state.rows.filter(r=>(status==='all'||r.status===status)&&(!q||normalize([r.request_no,r.owner_name,r.pet_name,r.phone_normalized].join(' ')).includes(q)));}
+function formatDate(v){if(!v)return'-';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[1]}/${m[2]}/${m[3]}`:v;}
+function copyText(text){navigator.clipboard?.writeText(text).then(()=>msg('コピーしました。','ok')).catch(()=>msg(text,'info'));}
+function registrationText(r){return [`【次回予約希望 ${r.request_no}】`,`飼い主：${r.owner_name}さま`,`電話：${r.phone_normalized}`,`ペット：${r.pet_name} / ${r.breed||''}`,`希望メニュー：${r.requested_menu}`,`オプション：${(r.requested_options||[]).join('、')||'なし'}`,`希望日時：${(r.preferred_slots||[]).map((x,i)=>`第${i+1} ${x.date} ${x.time}`).join(' / ')}`,`連絡事項：${r.customer_note||'なし'}`].join('\n');}
+function render(){const rows=filtered();$('list').innerHTML=rows.length?rows.map(r=>`<article class="item"><div class="item-head"><div><div class="title">${esc(r.pet_name)} ／ ${esc(r.owner_name)}さま</div><div class="sub">${esc(r.request_no)}　${esc(formatDate(String(r.created_at||'').slice(0,10)))}　${r.request_mode==='same'?'前回と同じ内容':'内容変更'}</div></div><span class="status ${esc(r.status)}">${esc(labels[r.status]||r.status)}</span></div><div class="grid"><div class="box"><b>希望内容</b>メニュー：${esc(r.requested_menu)}<br>オプション：${esc((r.requested_options||[]).join('、')||'なし')}<br>前回施術：${esc(formatDate(r.previous_record_date))}</div><div class="box"><b>希望日時</b><div class="slots">${(r.preferred_slots||[]).map((x,i)=>`<span class="slot">第${i+1} ${esc(formatDate(x.date))} ${esc(x.time)}</span>`).join('')}</div></div></div>${r.customer_note?`<div class="box" style="margin-top:10px"><b>お客様メモ</b>${esc(r.customer_note)}</div>`:''}<textarea class="note" data-note="${esc(r.id)}" placeholder="店舗内メモ">${esc(r.owner_note||'')}</textarea><div class="item-actions"><button class="btn secondary" data-copy-registration="${esc(r.id)}">予約登録情報コピー</button><button class="btn secondary" data-copy-reply="${esc(r.id)}">受付返信文コピー</button><button class="btn warn" data-status="contacted" data-id="${esc(r.id)}">連絡済み</button><button class="btn green" data-status="confirmed" data-id="${esc(r.id)}">確定済み</button><button class="btn danger" data-status="declined" data-id="${esc(r.id)}">見送り</button></div></article>`).join(''):'<div class="empty">該当する予約希望はありません。</div>';bind();updateCounts();}
+function bind(){document.querySelectorAll('[data-copy-registration]').forEach(b=>b.onclick=()=>{const r=state.rows.find(x=>x.id===b.dataset.copyRegistration);if(r)copyText(registrationText(r));});document.querySelectorAll('[data-copy-reply]').forEach(b=>b.onclick=()=>{const r=state.rows.find(x=>x.id===b.dataset.copyReply);if(r)copyText(r.customer_reply_message||'');});document.querySelectorAll('[data-status]').forEach(b=>b.onclick=()=>updateStatus(b.dataset.id,b.dataset.status));}
+function updateCounts(){const c={pending:0,contacted:0,confirmed:0,declined:0,cancelled:0};state.rows.forEach(r=>{if(c[r.status]!=null)c[r.status]++});$('allCount').textContent=state.rows.length;$('pendingCount').textContent=c.pending;$('contactedCount').textContent=c.contacted;$('confirmedCount').textContent=c.confirmed;$('declinedCount').textContent=c.declined+c.cancelled;}
+async function load(){msg('予約希望を読み込んでいます。','info');try{const d=await get('/api/admin/rebook/requests',{status:'all'});state.rows=d.requests||[];render();msg(`予約希望 ${state.rows.length}件を読み込みました。`,'ok');}catch(e){msg(e.message,'err');}}
+async function updateStatus(id,status){const row=state.rows.find(r=>r.id===id),note=document.querySelector(`[data-note="${CSS.escape(id)}"]`)?.value||'';if(!row)return;try{const d=await post('/api/admin/rebook/update',{id,status,owner_note:note});Object.assign(row,d.request);render();msg(`${row.request_no}を「${labels[status]}」に更新しました。`,'ok');}catch(e){msg(e.message,'err');}}
+function renderDemo(){const d=state.demo;$('demoStatus').textContent=d?.prepared?`確認データ準備済み：${d.request_no} ／ 状態 ${labels[d.status]||d.status}`:'確認データは未準備です。';}
+async function loadDemo(){try{state.demo=await get('/api/admin/demo/rebook/status');renderDemo();}catch(e){msg(e.message,'err');}}
+async function prepareDemo(){try{state.demo=await post('/api/admin/demo/rebook/prepare',{});renderDemo();await load();msg('STEP7確認データを準備しました。','ok');}catch(e){msg(e.message,'err');}}
+async function cleanupDemo(){if(!confirm('STEP7確認データだけを削除しますか？'))return;try{await post('/api/admin/demo/rebook/cleanup',{});state.demo=null;renderDemo();await load();msg('STEP7確認データを削除しました。','ok');}catch(e){msg(e.message,'err');}}
+restore();$('saveBtn').onclick=save;$('refreshBtn').onclick=()=>Promise.all([load(),loadDemo()]);$('statusFilter').onchange=render;$('search').oninput=render;$('clearBtn').onclick=()=>{$('search').value='';render();};$('demoPrepareBtn').onclick=prepareDemo;$('demoRefreshBtn').onclick=loadDemo;$('demoCleanupBtn').onclick=cleanupDemo;Promise.all([load(),loadDemo()]);
+})();
+</script>
+</body>
+</html>
