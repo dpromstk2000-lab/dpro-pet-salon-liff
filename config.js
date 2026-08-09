@@ -1,4 +1,4 @@
-// STEP PETSALON-BRUSHUP-7 + DPRO-AUTH-5-R4
+// STEP PETSALON-BRUSHUP-7 + DPRO-AUTH-5-R5
 window.DPRO_PETSALON_CONFIG = Object.freeze({
   SHOP_CODE: "pet_salon_demo",
   LEGACY_WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
@@ -11,7 +11,7 @@ window.DPRO_PETSALON_CONFIG = Object.freeze({
   REBOOK_ADMIN_PAGE: "rebook-admin.html"
 });
 
-// DPRO-AUTH-5-R4:
+// DPRO-AUTH-5-R5:
 // Existing admin sub-pages load config.js immediately before their page script.
 // Inject the common auth guard synchronously here so their existing fetch()
 // calls automatically receive the Bearer session without rewriting each page.
@@ -45,6 +45,6 @@ window.DPRO_PETSALON_CONFIG = Object.freeze({
   }
 
   if (!document.querySelector('script[src*="dpro-auth-guard.js"]')) {
-    document.write('<script src="./dpro-auth-guard.js?v=DPRO-AUTH-5-R4-20260809"><\\/script>');
+    document.write('<script src="./dpro-auth-guard.js?v=DPRO-AUTH-5-R5-20260809"><\/script>');
   }
 })();
