@@ -1,9 +1,27 @@
 <!doctype html>
-<!-- STEP PETSALON-BRUSHUP-6: owner-ipad.html 今日の施術進捗・4ボタン操作対応 完全版 -->
+<!-- STEP PETSALON-BRUSHUP-6 + DPRO-AUTH-5: owner-ipad.html 今日の施術進捗・4ボタン操作対応 完全版 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <!-- STEP DPRO-AUTH-5: 共通オーナー認証 -->
+  <script>
+    (()=>{
+      const q=new URLSearchParams(location.search);
+      const facility=String(q.get("shop_code")||"pet_salon_demo").trim();
+      window.DPRO_AUTH_CONFIG={
+        project:"GENERAL",
+        system:"PETSALON",
+        facility,
+        protectedApiOrigins:[
+          "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
+          "https://dpro-pet-salon-next-api.dpromstk2000.workers.dev"
+        ]
+      };
+    })();
+  </script>
+  <script src="./dpro-auth-guard.js?v=DPRO-AUTH-5-R2-20260809"></script>
+
   <title>DPROペットサロン｜現場用iPad STEP PETSALON-BRUSHUP-6</title>
   <style>
     :root{
