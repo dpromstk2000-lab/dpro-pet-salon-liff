@@ -1,10 +1,13 @@
 /* DPRO OWNER AUTH GUARD
- * Version: DPRO-AUTH-5-R3-GUARD-20260809
+ * Version: DPRO-AUTH-5-R4-GUARD-20260809
  * Common login/session guard + Authorization header injection.
- * R3: validate session immediately and gate protected API calls until auth is ready.
+ * R4: R3 auth gate + idempotent install + safer legacy-control hiding for all admin pages.
  */
 (() => {
   "use strict";
+
+  if (window.__DPRO_AUTH_GUARD_INSTALLED__) return;
+  window.__DPRO_AUTH_GUARD_INSTALLED__ = true;
 
   const cfg = window.DPRO_AUTH_CONFIG || {};
   const PROJECT = String(cfg.project || "GENERAL").toUpperCase();
@@ -153,8 +156,11 @@
     const input = document.getElementById("adminCode");
     if (input) {
       input.value = "";
-      const box = input.closest(".field") || input.parentElement;
-      if (box) box.classList.add("dpro-auth-legacy-admin");
+      const field = input.closest(".field");
+      if (field) field.classList.add("dpro-auth-legacy-admin");
+      else input.classList.add("dpro-auth-legacy-admin");
+      const label = document.querySelector('label[for="adminCode"]');
+      if (label) label.classList.add("dpro-auth-legacy-admin");
     }
     document.getElementById("clearAdminCodeBtn")?.classList.add("dpro-auth-legacy-admin");
   }
@@ -223,7 +229,7 @@
       authSession = session;
       authState = "ready";
       window.DPRO_AUTH = Object.freeze({
-        version: "DPRO-AUTH-5-R3-GUARD-20260809",
+        version: "DPRO-AUTH-5-R4-GUARD-20260809",
         project: PROJECT, system: SYSTEM, facility: FACILITY, session,
         getToken, logout,
         authHeaders(extra = {}) { return { ...extra, Authorization: `Bearer ${getToken()}` }; }
