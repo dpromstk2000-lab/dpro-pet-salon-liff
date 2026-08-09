@@ -1,6 +1,7 @@
 /* DPRO OWNER AUTH GUARD
- * Version: DPRO-AUTH-5-R2-GUARD-20260809
+ * Version: DPRO-AUTH-5-R3-GUARD-20260809
  * Common login/session guard + Authorization header injection.
+ * R3: validate session immediately and gate protected API calls until auth is ready.
  */
 (() => {
   "use strict";
@@ -31,6 +32,11 @@
   document.head.appendChild(style);
   document.documentElement.dataset.dproAuth = "checking";
 
+  let authState = "checking";
+  let authSession = null;
+  let resolveAuthGate;
+  const authGate = new Promise(resolve => { resolveAuthGate = resolve; });
+
   function storageKeys() {
     const scope = `${PROJECT}:${SYSTEM}:${FACILITY}`;
     return {
@@ -57,6 +63,8 @@
   }
 
   function loginRedirect() {
+    if (authState === "redirecting") return;
+    authState = "redirecting";
     const p = new URLSearchParams({ project: PROJECT, system: SYSTEM, facility: FACILITY, next: currentNext() });
     location.replace(`${LOGIN_URL}?${p.toString()}`);
   }
@@ -72,16 +80,14 @@
     return Boolean(url && PROTECTED_ORIGINS.has(url.origin) && url.pathname.startsWith("/api/admin/"));
   }
 
-  // Install synchronously before page scripts run. This lets existing DPRO pages
-  // keep their apiGet/apiPost functions unchanged while sending the session token.
-  window.fetch = function dproAuthenticatedFetch(input, init = {}) {
-    const url = requestUrl(input);
-    if (!shouldAttachAuth(url)) return nativeFetch(input, init);
+  async function sendProtected(input, init = {}) {
+    const gate = await authGate;
+    if (!gate.ok) throw new Error("DPRO_OWNER_SESSION_REQUIRED");
 
     const token = getToken();
     if (!token) {
       loginRedirect();
-      return Promise.reject(new Error("DPRO_OWNER_SESSION_REQUIRED"));
+      throw new Error("DPRO_OWNER_SESSION_REQUIRED");
     }
 
     if (input instanceof Request) {
@@ -94,13 +100,21 @@
     const headers = new Headers(init.headers || {});
     headers.set("Authorization", `Bearer ${token}`);
     return nativeFetch(input, { ...init, headers }).then(handleProtectedResponse);
+  }
+
+  // Install synchronously before page scripts run. R3 intentionally queues
+  // /api/admin/* calls until /auth/session has completed successfully.
+  window.fetch = function dproAuthenticatedFetch(input, init = {}) {
+    const url = requestUrl(input);
+    if (!shouldAttachAuth(url)) return nativeFetch(input, init);
+    return sendProtected(input, init);
   };
 
   async function handleProtectedResponse(response) {
     if (response.status === 401) {
       const copy = response.clone();
       const data = await copy.json().catch(() => ({}));
-      const code = String(data.error || data.code || "");
+      const code = String(data.error || data.code || data.detail?.code || "");
       if (["DPRO_AUTH_REQUIRED", "DPRO_AUTH_INVALID", "SESSION_REQUIRED", "SESSION_INVALID", "SESSION_EXPIRED"].includes(code)) {
         clearToken();
         loginRedirect();
@@ -111,7 +125,7 @@
 
   async function authRequest(path, options = {}) {
     const token = getToken();
-    if (!token) throw new Error("SESSION_REQUIRED");
+    if (!token) throw Object.assign(new Error("SESSION_REQUIRED"), { code: "SESSION_REQUIRED" });
     const res = await nativeFetch(`${AUTH_API}${path}`, {
       ...options,
       headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` },
@@ -122,6 +136,7 @@
     if (!res.ok || data.ok === false) {
       const err = new Error(data.message || "AUTH_FAILED");
       err.code = data.error || "AUTH_FAILED";
+      err.status = res.status;
       throw err;
     }
     return data;
@@ -153,47 +168,78 @@
     document.body.appendChild(bar);
   }
 
+  function finishUi() {
+    hideLegacyAdminControls();
+    addSessionBar();
+    document.documentElement.dataset.dproAuth = "ready";
+    if (document.body) document.body.style.visibility = "visible";
+    window.dispatchEvent(new CustomEvent("dpro-auth-ready", { detail: authSession }));
+  }
+
+  function scheduleFinishUi() {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", finishUi, { once: true });
+    } else {
+      finishUi();
+    }
+  }
+
   async function boot() {
     if (!AUTH_API || !SYSTEM || !FACILITY) {
+      authState = "error";
+      resolveAuthGate({ ok: false, code: "CONFIG_INCOMPLETE" });
       document.documentElement.dataset.dproAuth = "error";
-      document.body.style.visibility = "visible";
+      if (document.body) document.body.style.visibility = "visible";
       console.error("DPRO_AUTH_CONFIG is incomplete");
       return;
     }
 
-    const token = getToken();
-    if (!token) return loginRedirect();
+    if (!getToken()) {
+      resolveAuthGate({ ok: false, code: "SESSION_REQUIRED" });
+      return loginRedirect();
+    }
 
     try {
-      const session = await authRequest("/auth/session");
+      // One retry protects the immediate post-login handoff from a transient edge/network hiccup.
+      let session;
+      let lastError;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          session = await authRequest("/auth/session");
+          break;
+        } catch (e) {
+          lastError = e;
+          if (attempt === 0) await new Promise(r => setTimeout(r, 250));
+        }
+      }
+      if (!session) throw lastError || new Error("AUTH_FAILED");
+
       if (String(session.systemCode || "").toUpperCase() !== SYSTEM || String(session.facilityCode || "") !== FACILITY) {
-        throw new Error("SESSION_SCOPE_MISMATCH");
+        const e = new Error("SESSION_SCOPE_MISMATCH");
+        e.code = "SESSION_SCOPE_MISMATCH";
+        throw e;
       }
 
+      authSession = session;
+      authState = "ready";
       window.DPRO_AUTH = Object.freeze({
+        version: "DPRO-AUTH-5-R3-GUARD-20260809",
         project: PROJECT, system: SYSTEM, facility: FACILITY, session,
         getToken, logout,
         authHeaders(extra = {}) { return { ...extra, Authorization: `Bearer ${getToken()}` }; }
       });
-      hideLegacyAdminControls();
-      addSessionBar();
-      document.documentElement.dataset.dproAuth = "ready";
-      document.body.style.visibility = "visible";
-      window.dispatchEvent(new CustomEvent("dpro-auth-ready", { detail: session }));
+      resolveAuthGate({ ok: true, session });
+      scheduleFinishUi();
     } catch (e) {
+      console.error("DPRO AUTH GUARD SESSION CHECK FAILED", e?.code || e?.message || e);
+      authState = "failed";
+      resolveAuthGate({ ok: false, code: e?.code || "AUTH_FAILED" });
       clearToken();
       loginRedirect();
     }
   }
 
-  // No stored session: redirect before the rest of the admin page initializes.
-  if (!AUTH_API || !SYSTEM || !FACILITY) {
-    document.documentElement.dataset.dproAuth = "error";
-  } else if (!getToken()) {
-    loginRedirect();
-  } else if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot, { once: true });
-  } else {
-    boot();
-  }
+  // R3 starts session validation immediately while <head> is still parsing.
+  // Protected API calls made by later page scripts are queued on authGate.
+  boot();
 })();
