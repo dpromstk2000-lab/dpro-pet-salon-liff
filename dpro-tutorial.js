@@ -20,7 +20,7 @@
   const tutorialId = String(content.tutorial.id || "first10");
   const progressKey = `dpro_tutorial_progress:${content.productId || "SYSTEM"}:${facility}:owner`;
   const sessionPrefix = `dpro_tutorial_session:${content.productId || "SYSTEM"}:${facility}`;
-  const state = { active:false, index:0, target:null, lastFocus:null, repositionRaf:0, missing:[] };
+  const state = { active:false, index:0, target:null, focusTarget:null, lastFocus:null, repositionRaf:0, missing:[], anchors:new Map() };
 
   const safeParse = value => { try { return JSON.parse(value || "null"); } catch { return null; } };
   const readProgress = () => safeParse(localStorage.getItem(progressKey)) || { state:"NOT_STARTED", guide_version:guideVersion, step_index:0 };
@@ -48,11 +48,13 @@
   function bindTargets() {
     const misses=[];
     for (const b of content.bindings || []) {
-      let el;
-      try { el = document.querySelector(b.existing_locator); } catch { el = null; }
-      if (!el) { misses.push(b.guide_id); continue; }
-      if (b.phase4_action === "ADD_TO_NEAREST_CARD") el = el.closest(".card") || el;
+      let anchor;
+      try { anchor = document.querySelector(b.existing_locator); } catch { anchor = null; }
+      if (!anchor) { misses.push(b.guide_id); continue; }
+      let el = anchor;
+      if (b.phase4_action === "ADD_TO_NEAREST_CARD") el = anchor.closest(".card") || anchor;
       addGuideId(el, b.guide_id);
+      state.anchors.set(b.guide_id, anchor);
     }
     addGuideId(document.body, "petsalon.owner.page");
     state.missing = misses;
@@ -79,7 +81,10 @@
     welcome.className="dpro-tutorial-welcome";
     welcome.hidden=true;
     welcome.setAttribute("aria-label","最初の10分ガイド");
-    document.body.appendChild(welcome);
+    // R2: welcome/resume notice is inline so it never covers owner screen text or fields.
+    const hero = document.querySelector(".hero");
+    if (hero?.parentNode) hero.insertAdjacentElement("afterend", welcome);
+    else document.body.appendChild(welcome);
 
     const layer=document.createElement("div");
     layer.id="dproTutorialLayer";
@@ -173,8 +178,22 @@
     box.querySelector('button')?.focus();
   }
   function cleanupTarget() {
-    state.target?.classList?.remove("dpro-tutorial-target-active");
+    state.focusTarget?.classList?.remove("dpro-tutorial-target-active");
+    if (state.target && state.target !== state.focusTarget) state.target.classList?.remove("dpro-tutorial-target-active");
+    state.focusTarget=null;
     state.target=null;
+  }
+
+  function preferredFocusTarget(target, step) {
+    if (!target) return null;
+    const anchor = state.anchors.get(step?.target);
+    const r = target.getBoundingClientRect();
+    const isLarge = r.width > innerWidth * 0.62 || r.height > innerHeight * 0.42;
+    if (!isLarge) return target;
+    // Large cards are identified by their heading/anchor instead of outlining the whole card.
+    // This keeps the explanation card from hiding the very text being explained.
+    const semantic = target.querySelector?.(".card-head,.next-board-head,.step7-entry-grid,h2,h1,[role=heading]");
+    return semantic || anchor || target;
   }
 
   function chapterLabel(step) {
@@ -189,9 +208,12 @@
     let target=targetByGuideId(step.target);
     if (!target && step.target === "existing-id:#dproAuthSessionBar") target=document.getElementById("dproAuthSessionBar");
     state.target=target;
+    state.focusTarget=preferredFocusTarget(target, step);
     if (target) {
-      target.classList.add("dpro-tutorial-target-active");
-      target.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center',inline:'nearest'});
+      // Raise only the visual focus element. For large cards this is a heading/header,
+      // so the full business card never sits above the tutorial dialog.
+      (state.focusTarget || target).classList.add("dpro-tutorial-target-active");
+      (state.focusTarget || target).scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center',inline:'nearest'});
     } else if (!state.missing.includes(step.target)) state.missing.push(step.target);
 
     document.getElementById("dproTutorialKicker").textContent=`${chapterLabel(step)} ・ ${state.index+1}/${steps.length}`;
@@ -226,21 +248,71 @@
   function goTo(next){state.index=Math.max(0,Math.min(next,content.tutorial.steps.length-1));writeProgress({state:"IN_PROGRESS",step_index:state.index});writeSession(state.index);renderStep();}
 
   function queuePosition(){if(!state.active)return;cancelAnimationFrame(state.repositionRaf);state.repositionRaf=requestAnimationFrame(positionUi);}
+  function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
+  function intersectionArea(a,b,pad=0){
+    const left=Math.max(a.left,b.left-pad),top=Math.max(a.top,b.top-pad);
+    const right=Math.min(a.right,b.right+pad),bottom=Math.min(a.bottom,b.bottom+pad);
+    return Math.max(0,right-left)*Math.max(0,bottom-top);
+  }
   function positionUi(){
     const focus=document.getElementById("dproTutorialFocus"),card=document.getElementById("dproTutorialCard");
     if (!focus||!card) return;
-    const target=state.target;
-    if (!target || !target.isConnected) { focus.className="dpro-tutorial-focus is-fallback";card.style.left="50%";card.style.top="50%";card.style.right="auto";card.style.bottom="auto";card.style.transform="translate(-50%,-50%)";return; }
+    const target=state.focusTarget || state.target;
+    if (!target || !target.isConnected) {
+      focus.className="dpro-tutorial-focus is-fallback";
+      card.dataset.placement="center";
+      card.style.left="50%";card.style.top="50%";card.style.right="auto";card.style.bottom="auto";card.style.transform="translate(-50%,-50%)";
+      return;
+    }
     focus.className="dpro-tutorial-focus";
     focus.style.transform="none";
     const r=target.getBoundingClientRect(),pad=7;
-    focus.style.left=`${Math.max(4,r.left-pad)}px`;focus.style.top=`${Math.max(4,r.top-pad)}px`;focus.style.width=`${Math.max(18,Math.min(innerWidth-8,r.width+pad*2))}px`;focus.style.height=`${Math.max(18,r.height+pad*2)}px`;
-    if (innerWidth<=760) {card.style.left="8px";card.style.right="8px";card.style.bottom="8px";card.style.top="auto";card.style.transform="none";return;}
-    const cw=380,ch=Math.min(card.offsetHeight||300,620),gap=16;
-    let left=r.right+gap,top=Math.max(12,Math.min(r.top,innerHeight-ch-12));
-    if (left+cw>innerWidth-12) left=Math.max(12,r.left-cw-gap);
-    if (left<12) left=Math.max(12,(innerWidth-cw)/2);
-    card.style.left=`${left}px`;card.style.top=`${top}px`;card.style.right="auto";card.style.bottom="auto";card.style.transform="none";
+    focus.style.left=`${Math.max(4,r.left-pad)}px`;focus.style.top=`${Math.max(4,r.top-pad)}px`;
+    focus.style.width=`${Math.max(18,Math.min(innerWidth-8,r.width+pad*2))}px`;focus.style.height=`${Math.max(18,Math.min(innerHeight-8,r.height+pad*2))}px`;
+
+    const vp=10,gap=18;
+    const cw=Math.min(card.offsetWidth||380,innerWidth-vp*2);
+    const ch=Math.min(card.offsetHeight||300,innerHeight-vp*2);
+    const fr={left:r.left-pad,top:r.top-pad,right:r.right+pad,bottom:r.bottom+pad};
+    const fullR=(state.target && state.target.isConnected)?state.target.getBoundingClientRect():r;
+    const fullRect={left:fullR.left-pad,top:fullR.top-pad,right:fullR.right+pad,bottom:fullR.bottom+pad};
+
+    // Mobile: use the opposite viewport edge from the highlighted target.
+    // This fixes the previous bottom-sheet overlap when the target was low on screen.
+    if (innerWidth<=760) {
+      const targetCenter=(r.top+r.bottom)/2;
+      const placeTop=targetCenter>innerHeight/2;
+      card.dataset.placement=placeTop?"top-dock":"bottom-dock";
+      card.style.left="8px";card.style.right="8px";
+      card.style.top=placeTop?"8px":"auto";card.style.bottom=placeTop?"auto":"8px";card.style.transform="none";
+      return;
+    }
+
+    const centeredTop=clamp(r.top+(r.height-ch)/2,vp,innerHeight-ch-vp);
+    const centeredLeft=clamp(r.left+(r.width-cw)/2,vp,innerWidth-cw-vp);
+    const candidates=[
+      {name:"right",left:r.right+gap,top:centeredTop,rank:0},
+      {name:"left",left:r.left-cw-gap,top:centeredTop,rank:1},
+      {name:"below",left:centeredLeft,top:r.bottom+gap,rank:2},
+      {name:"above",left:centeredLeft,top:r.top-ch-gap,rank:3},
+      {name:"right-dock",left:innerWidth-cw-vp,top:centeredTop,rank:4},
+      {name:"left-dock",left:vp,top:centeredTop,rank:5},
+      {name:"bottom-dock",left:centeredLeft,top:innerHeight-ch-vp,rank:6},
+      {name:"top-dock",left:centeredLeft,top:vp,rank:7}
+    ].map(c=>{
+      const left=clamp(c.left,vp,innerWidth-cw-vp),top=clamp(c.top,vp,innerHeight-ch-vp);
+      const rect={left,top,right:left+cw,bottom:top+ch};
+      const focusOverlap=intersectionArea(rect,fr,10);
+      const targetOverlap=intersectionArea(rect,fullRect,8);
+      const distance=Math.hypot((left+cw/2)-(r.left+r.width/2),(top+ch/2)-(r.top+r.height/2));
+      return {...c,left,top,focusOverlap,targetOverlap,distance};
+    });
+    // Never cover the highlighted text. Then prefer a position that covers as little
+    // as possible of the full business card/section.
+    candidates.sort((a,b)=>a.focusOverlap-b.focusOverlap || a.targetOverlap-b.targetOverlap || a.rank-b.rank || a.distance-b.distance);
+    const best=candidates[0];
+    card.dataset.placement=best.name;
+    card.style.left=`${best.left}px`;card.style.top=`${best.top}px`;card.style.right="auto";card.style.bottom="auto";card.style.transform="none";
   }
 
   function currentStep(){return content.tutorial.steps[state.index]||null;}
@@ -277,7 +349,7 @@
   async function boot(){
     bindTargets();buildUi();
     await waitForAuthUi();bindTargets();
-    window.DPRO_TUTORIAL={version:"DPRO-TUTORIAL-STANDARD-V1.0",product:content.productId,guideVersion,progressKey,start:()=>startTour(0),resume:()=>startTour(Number(readProgress().step_index)||0),open:openWelcome,bindTargets};
+    window.DPRO_TUTORIAL={version:"DPRO-TUTORIAL-STANDARD-V1.0-R2-NO-OVERLAP",product:content.productId,guideVersion,progressKey,start:()=>startTour(0),resume:()=>startTour(Number(readProgress().step_index)||0),open:openWelcome,bindTargets};
     maybeShowWelcome();
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();

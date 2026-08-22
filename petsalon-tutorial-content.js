@@ -1,5 +1,5 @@
 /* DPRO TUTORIAL CONTENT / PET SALON
- * Version: PETSALON-TUTORIAL-V1.0 / PHASE 4
+ * Version: PETSALON-TUTORIAL-V1.0 / PHASE 4 R2 no-overlap
  * Generated from PET_SALON_CONTENT_PACKAGE_V1.0.json.
  */
 (() => {
@@ -198,7 +198,7 @@
         "chapter": "07_LINE",
         "type": "FOCUS",
         "page": "owner.html",
-        "target": "petsalon.owner.today.line",
+        "target": "petsalon.owner.line.list",
         "title": "送る内容を確認する場所",
         "body": "LINE案内では、コピー済み・送信済みの管理ができます。文面そのものは「文面テンプレ」からも確認できます。ガイドがLINEを送信することはありません。",
         "advance": "NEXT_BUTTON",
@@ -327,6 +327,13 @@
       "guide_id": "petsalon.owner.today.line",
       "existing_locator": "#pendingFollowups",
       "phase4_action": "ADD_TO_NEAREST_CARD",
+      "kind": "container"
+    },
+    {
+      "page": "owner.html",
+      "guide_id": "petsalon.owner.line.list",
+      "existing_locator": "#tab-followups .card",
+      "phase4_action": "ADD",
       "kind": "container"
     },
     {

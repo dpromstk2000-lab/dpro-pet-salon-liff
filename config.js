@@ -1,4 +1,4 @@
-// STEP PETSALON-BRUSHUP-7 + DPRO-AUTH-5-R5 + DPRO-TUTORIAL-PHASE4-V1
+// STEP PETSALON-BRUSHUP-7 + DPRO-AUTH-5-R5 + DPRO-TUTORIAL-PHASE4-R2-NO-OVERLAP
 window.DPRO_PETSALON_CONFIG = Object.freeze({
   SHOP_CODE: "pet_salon_demo",
   LEGACY_WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
@@ -59,7 +59,7 @@ window.DPRO_PETSALON_CONFIG = Object.freeze({
   if (window.__DPRO_PETSALON_TUTORIAL_ASSETS_REQUESTED__) return;
   window.__DPRO_PETSALON_TUTORIAL_ASSETS_REQUESTED__ = true;
 
-  const version = "PETSALON-TUTORIAL-V1.0-PHASE4-20260822";
+  const version = "PETSALON-TUTORIAL-V1.0-PHASE4-R2-NO-OVERLAP-20260822";
   if (!document.querySelector('link[data-dpro-tutorial-style]')) {
     const link = document.createElement("link");
     link.rel = "stylesheet";
