@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#6f4935">
+  <title>DPRO PET SALON｜操作ガイド</title>
+  <link rel="stylesheet" href="./dpro-guide-center.css?v=PETSALON-GUIDE-CENTER-V1.0-20260822">
+  <script src="./config.js?v=PETSALON-GUIDE-CENTER-V1.0-20260822"></script>
+</head>
+<body>
+<main class="guide-page" id="guidePage">
+  <header class="guide-hero">
+    <div class="guide-hero-row">
+      <div>
+        <div class="guide-eyebrow">DPRO PET SALON / OPERATION GUIDE</div>
+        <h1>操作ガイド</h1>
+        <p>分からない機能を検索して、必要な操作だけすぐ確認できます。毎日の基本操作から店舗設定、お客様側画面までまとめています。</p>
+      </div>
+      <div class="guide-hero-actions">
+        <a class="guide-btn light" id="guideBackOwner" href="owner.html">管理画面へ戻る</a>
+        <a class="guide-btn ghost" id="guideStartFirst10" href="owner.html?guide=first10">最初の10分ガイド</a>
+        <button class="guide-btn ghost" type="button" id="guidePrintBtn">印刷する</button>
+      </div>
+    </div>
+    <div class="guide-stats" aria-label="ガイド件数">
+      <div><strong id="guideArticleCount">35</strong><span>操作記事</span></div>
+      <div><strong id="guideFaqCount">14</strong><span>FAQ</span></div>
+      <div><strong>8</strong><span>カテゴリ</span></div>
+    </div>
+  </header>
+
+  <section class="guide-search-panel" aria-labelledby="guideSearchTitle">
+    <div class="guide-search-copy">
+      <h2 id="guideSearchTitle">何を確認しますか？</h2>
+      <p>「電話予約」「カルテ」「QR」「営業時間」など、言葉を入れて探せます。</p>
+    </div>
+    <label class="guide-search-box">
+      <span aria-hidden="true">⌕</span>
+      <input id="guideSearch" type="search" autocomplete="off" placeholder="操作を検索（例：電話予約、カルテ、QR、営業時間）" aria-label="操作ガイドを検索">
+      <button type="button" id="guideSearchClear" aria-label="検索をクリア">×</button>
+    </label>
+    <nav class="guide-categories" id="guideCategories" aria-label="操作ガイドのカテゴリ"></nav>
+    <div class="guide-result-summary" id="guideResultSummary" aria-live="polite"></div>
+  </section>
+
+  <section class="guide-section" id="guideQuickSection">
+    <div class="guide-section-head"><div><span>QUICK START</span><h2>よく使うガイド</h2></div><p>最初に迷いやすい操作をすぐ開けます。</p></div>
+    <div class="guide-quick-grid" id="guideQuickGrid"></div>
+  </section>
+
+  <section class="guide-section" id="guideArticleSection">
+    <div class="guide-section-head"><div><span>OPERATION ARTICLES</span><h2>操作ガイド一覧</h2></div><p id="guideArticleSummary">カテゴリごとに確認できます。</p></div>
+    <div class="guide-article-grid" id="guideArticleGrid"></div>
+    <div class="guide-empty" id="guideArticleEmpty" hidden>該当する操作ガイドがありません。別の言葉で検索してください。</div>
+  </section>
+
+  <section class="guide-section" id="guideFaqSection">
+    <div class="guide-section-head"><div><span>FAQ</span><h2>困ったとき</h2></div><p>よくあるつまずきから確認できます。</p></div>
+    <div class="guide-faq-list" id="guideFaqList"></div>
+    <div class="guide-empty" id="guideFaqEmpty" hidden>該当するFAQはありません。</div>
+  </section>
+
+  <footer class="guide-footer">
+    <div><strong>DPRO PET SALON 操作ガイド</strong><br><span id="guideVersionLabel"></span></div>
+    <a id="guideFooterOwner" href="owner.html">管理画面へ戻る</a>
+  </footer>
+</main>
+
+<dialog class="guide-dialog" id="guideArticleDialog" aria-labelledby="guideDialogTitle">
+  <div class="guide-dialog-shell">
+    <div class="guide-dialog-head">
+      <div><div class="guide-dialog-kicker" id="guideDialogKicker"></div><h2 id="guideDialogTitle"></h2></div>
+      <button type="button" class="guide-dialog-close" id="guideDialogClose" aria-label="記事を閉じる">×</button>
+    </div>
+    <div class="guide-dialog-body" id="guideDialogBody"></div>
+    <div class="guide-dialog-actions" id="guideDialogActions"></div>
+  </div>
+</dialog>
+
+<section id="guidePrintManual" class="guide-print-manual" aria-hidden="true"></section>
+<div class="guide-toast" id="guideToast" role="status" aria-live="polite"></div>
+
+<script src="./petsalon-guide-content.js?v=PETSALON-GUIDE-CENTER-V1.0-20260822"></script>
+<script src="./dpro-guide-center.js?v=PETSALON-GUIDE-CENTER-V1.0-20260822"></script>
+</body>
+</html>

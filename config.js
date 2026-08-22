@@ -1,4 +1,4 @@
-// STEP PETSALON-BRUSHUP-7 + DPRO-AUTH-5-R5 + DPRO-TUTORIAL-PHASE4-R2-NO-OVERLAP
+// STEP PETSALON-BRUSHUP-7 + DPRO-AUTH-5-R5 + DPRO-TUTORIAL-PHASE4-R2-NO-OVERLAP + DPRO-GUIDE-CENTER-PHASE5-V1
 window.DPRO_PETSALON_CONFIG = Object.freeze({
   SHOP_CODE: "pet_salon_demo",
   LEGACY_WORKER_BASE_URL: "https://dpro-pet-salon-api.dpromstk2000.workers.dev",
@@ -24,7 +24,8 @@ window.DPRO_PETSALON_CONFIG = Object.freeze({
     "owner-ipad.html",
     "reception.html",
     "rebook-admin.html",
-    "pet-record.html"
+    "pet-record.html",
+    "guide-center.html"
   ]);
   if (!protectedPages.has(page)) return;
 
@@ -91,4 +92,27 @@ window.DPRO_PETSALON_CONFIG = Object.freeze({
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
   else boot();
+})();
+
+// DPRO GUIDE CENTER PHASE 5:
+// Add a permanent operation-guide entry to protected PET SALON business screens.
+// The Guide Center itself is owner-auth protected by the protectedPages list above.
+(() => {
+  "use strict";
+  const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+  const guideEntryPages = new Set([
+    "owner.html",
+    "owner-ipad.html",
+    "reception.html",
+    "rebook-admin.html",
+    "pet-record.html"
+  ]);
+  if (!guideEntryPages.has(page)) return;
+  if (window.__DPRO_PETSALON_GUIDE_ENTRY_REQUESTED__) return;
+  window.__DPRO_PETSALON_GUIDE_ENTRY_REQUESTED__ = true;
+  const script = document.createElement("script");
+  script.src = "./dpro-guide-entry.js?v=PETSALON-GUIDE-CENTER-V1.0-20260822";
+  script.defer = true;
+  script.dataset.dproGuideEntry = "PETSALON-GUIDE-CENTER-V1.0";
+  document.head.appendChild(script);
 })();
