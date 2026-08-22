@@ -1,0 +1,149 @@
+/* DPRO TUTORIAL STANDARD V1.0 / In-App Runtime */
+:root{
+  --dpro-guide-bg:#fff;
+  --dpro-guide-ink:#2f2722;
+  --dpro-guide-muted:#756b64;
+  --dpro-guide-line:#e7ddd5;
+  --dpro-guide-brand:#8a5a3c;
+  --dpro-guide-brand-deep:#4b3328;
+  --dpro-guide-soft:#fff5ed;
+  --dpro-guide-ok:#23754f;
+  --dpro-guide-shadow:0 22px 70px rgba(39,27,20,.24);
+}
+.dpro-tutorial-launcher{
+  border:1px solid rgba(255,255,255,.38)!important;
+  background:rgba(255,255,255,.14)!important;
+  color:#fff!important;
+  min-height:36px;
+  padding:8px 12px!important;
+  border-radius:999px!important;
+  box-shadow:none!important;
+  font-weight:900!important;
+  cursor:pointer;
+}
+.dpro-tutorial-launcher:focus-visible,
+.dpro-tutorial-btn:focus-visible,
+.dpro-tutorial-close:focus-visible{
+  outline:3px solid rgba(49,95,143,.36);
+  outline-offset:2px;
+}
+.dpro-tutorial-welcome{
+  position:fixed;
+  right:18px;
+  bottom:70px;
+  z-index:2147483645;
+  width:min(390px,calc(100vw - 24px));
+  background:var(--dpro-guide-bg);
+  color:var(--dpro-guide-ink);
+  border:1px solid var(--dpro-guide-line);
+  border-radius:22px;
+  box-shadow:var(--dpro-guide-shadow);
+  padding:18px;
+}
+.dpro-tutorial-welcome[hidden]{display:none!important}
+.dpro-tutorial-welcome h2{font-size:19px;margin:0 0 7px;line-height:1.4}
+.dpro-tutorial-welcome p{font-size:13px;color:var(--dpro-guide-muted);margin:0;line-height:1.7}
+.dpro-tutorial-welcome .dpro-tutorial-actions{margin-top:14px}
+.dpro-tutorial-layer{
+  position:fixed;
+  inset:0;
+  z-index:2147483640;
+  pointer-events:none;
+}
+.dpro-tutorial-layer[hidden]{display:none!important}
+.dpro-tutorial-dim{
+  position:absolute;
+  inset:0;
+  background:rgba(28,20,16,.42);
+  pointer-events:none;
+}
+.dpro-tutorial-focus{
+  position:fixed;
+  border:3px solid #fff;
+  border-radius:16px;
+  box-shadow:0 0 0 4px rgba(138,90,60,.9),0 12px 42px rgba(0,0,0,.28);
+  background:transparent;
+  transition:top .18s ease,left .18s ease,width .18s ease,height .18s ease;
+  pointer-events:none;
+}
+.dpro-tutorial-focus.is-fallback{
+  left:50%!important;
+  top:42%!important;
+  width:120px!important;
+  height:8px!important;
+  transform:translate(-50%,-50%);
+  border:0;
+  box-shadow:none;
+  background:transparent;
+}
+.dpro-tutorial-card{
+  position:fixed;
+  z-index:2147483646;
+  width:min(380px,calc(100vw - 24px));
+  max-height:min(72vh,620px);
+  overflow:auto;
+  pointer-events:auto;
+  background:var(--dpro-guide-bg);
+  color:var(--dpro-guide-ink);
+  border:1px solid var(--dpro-guide-line);
+  border-radius:22px;
+  box-shadow:var(--dpro-guide-shadow);
+  padding:17px;
+}
+.dpro-tutorial-card-top{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.dpro-tutorial-kicker{font-size:11px;font-weight:1000;color:var(--dpro-guide-brand);letter-spacing:.05em}
+.dpro-tutorial-card h2{font-size:19px;line-height:1.4;margin:5px 0 0}
+.dpro-tutorial-card p{font-size:13px;line-height:1.75;color:var(--dpro-guide-muted);margin:10px 0 0}
+.dpro-tutorial-close{
+  flex:0 0 auto;width:36px;height:36px;border:0;border-radius:999px;
+  background:#f2ece7;color:#5e4b40;font-size:20px;font-weight:900;cursor:pointer;
+}
+.dpro-tutorial-progress{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:14px}
+.dpro-tutorial-progress-track{height:7px;border-radius:999px;background:#eee7e1;overflow:hidden}
+.dpro-tutorial-progress-bar{height:100%;background:var(--dpro-guide-brand);border-radius:inherit;transition:width .2s ease}
+.dpro-tutorial-progress-text{font-size:11px;color:var(--dpro-guide-muted);font-weight:900;white-space:nowrap}
+.dpro-tutorial-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.dpro-tutorial-btn{
+  border:0;border-radius:13px;min-height:42px;padding:10px 13px;
+  background:var(--dpro-guide-brand);color:#fff;font-weight:1000;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+}
+.dpro-tutorial-btn.secondary{background:#f2ece7;color:#604638}
+.dpro-tutorial-btn.ghost{background:#fff;color:var(--dpro-guide-brand);border:1px solid var(--dpro-guide-line)}
+.dpro-tutorial-btn[disabled]{opacity:.48;cursor:not-allowed}
+.dpro-tutorial-hint{
+  display:none;margin-top:10px;padding:9px 10px;border-radius:12px;
+  background:var(--dpro-guide-soft);color:#75533e;font-size:12px;font-weight:800;line-height:1.55;
+}
+.dpro-tutorial-hint.show{display:block}
+.dpro-tutorial-target-active{
+  position:relative!important;
+  z-index:2147483644!important;
+  isolation:isolate;
+}
+.dpro-tutorial-live{
+  position:fixed;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;
+}
+@media(max-width:760px){
+  .dpro-tutorial-launcher{width:auto!important;min-height:36px!important}
+  .dpro-tutorial-welcome{left:10px;right:10px;bottom:14px;width:auto;border-radius:20px}
+  .dpro-tutorial-card{
+    left:8px!important;right:8px!important;bottom:8px!important;top:auto!important;
+    width:auto;max-height:55vh;border-radius:20px;padding:15px;
+  }
+  .dpro-tutorial-card h2{font-size:18px}
+  .dpro-tutorial-card p{font-size:13px}
+  .dpro-tutorial-focus{transition:none}
+}
+@media(max-width:420px){
+  .dpro-tutorial-actions{display:grid;grid-template-columns:1fr 1fr}
+  .dpro-tutorial-actions .dpro-tutorial-btn:first-child:last-child{grid-column:1/-1}
+  .dpro-tutorial-btn{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .dpro-tutorial-focus,.dpro-tutorial-progress-bar{transition:none!important}
+  html{scroll-behavior:auto!important}
+}
+@media print{
+  .dpro-tutorial-launcher,.dpro-tutorial-welcome,.dpro-tutorial-layer{display:none!important}
+}
